@@ -491,12 +491,8 @@ i64 i64_add(i64 a, i64 b){
   return a + b;
 }
 
-void lisp_run_script_file(compiler_state * c, char * filepath){
-  char * test_code = read_file_to_string(filepath);
-  size_t exprcnt;
-  expr * exprs = lisp_parse_all(test_code, &exprcnt);
-  load_defs();
-  with_compiler(c,lambda(void, (){
+void lisp_load_compiler(compiler_state * c){
+  with_compiler(c, lambda(void, (){
 	load_defs();
 	define_macro("type",1,&type_macro);
 	define_macro("defun",3,&defun_macro);
@@ -513,6 +509,12 @@ void lisp_run_script_file(compiler_state * c, char * filepath){
 	  compiler_define_variable_ptr("i64_add", str2type("(fcn i64 (a i64) (b i64))"), &i64_add);
 	  ASSERT(NULL != get_variable2("i64_add"));
 	}
+      }));
+}
+
+void lisp_run_exprs(compiler_state * c, expr * exprs, size_t exprcnt){
+  lisp_load_compiler(c);
+  with_compiler(c,lambda(void, (){
 	for(size_t i = 0; i < exprcnt; i++){
 	  c_root_code cl = compile_lisp_to_eval(exprs[i]);
 	  compile_as_c(&cl,1);
@@ -545,6 +547,14 @@ void lisp_run_script_file(compiler_state * c, char * filepath){
 	  }
 	}
       };));
+
+}
+
+void lisp_run_script_file(compiler_state * c, char * filepath){
+  char * test_code = read_file_to_string(filepath);
+  size_t exprcnt;
+  expr * exprs = lisp_parse_all(test_code, &exprcnt);
+  lisp_run_exprs(c, exprs, exprcnt);
 }
 	  
 bool test_lisp2c(){

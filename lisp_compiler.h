@@ -44,8 +44,10 @@ typedef struct{
 
 compiler_state * get_compiler();
 compiler_state * compiler_make();
-
+void lisp_load_compiler(compiler_state * c);
 void * compiler_define_variable(char * name, type_def * t);
+void lisp_run_exprs(compiler_state * c, expr * exprs, size_t exprcnt);
+
 // defines a variable pointer.
 void compiler_define_variable_ptr(char * name, type_def * t, void * ptr);
 void define_macro(char * name, int nargs, void * fcn);

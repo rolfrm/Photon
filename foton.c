@@ -9,6 +9,7 @@
 #include "lisp_parser.h"
 #include "lisp_types.h"
 #include "lisp_compiler.h"
+#include "repl.h"
 const char * allowed_errors[] ={
   "Unknown touch device",
   "Invalid renderer"
@@ -41,7 +42,7 @@ bool test_lisp2c();
 
 int main(int argc, char *argv[] ){
   if(argc == 2 && strcmp(argv[1],"--repl") == 0){
-    ERROR("not implemented");
+    repl();
     return 0;
   }
   
