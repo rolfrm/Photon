@@ -2,9 +2,13 @@
 "hello world!"
 (write_line "hello world!")
 
-; It is possible to compile functions
-(defun adds (i64 (a i64) (b i64) (c i64))
-  (progn
-    (i64_add a (i64_add b c))))
+(defun + (i64 (a i64) (b i64))
+  (i64_add a b))
 
-(adds 3 4 5) ; this code should print 12
+(defun plus (i64 (a i64) (b i64))
+  (i64_add a b))
+
+(defun +plus2 (i64 (a i64)) (+ 2 a))
+
+(+ 2 (plus 5 10))
+(+plus2 111)

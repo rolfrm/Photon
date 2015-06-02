@@ -39,7 +39,7 @@ void _error(const char * file, int line, const char * str, ...){
 bool lisp_compiler_test();
 bool test_lisp_parser();
 bool test_lisp2c();
-
+bool test_get_cname();
 int main(int argc, char *argv[] ){
   if(argc == 1 || argc == 2 && strcmp(argv[1],"--repl") == 0){
     repl();
@@ -50,6 +50,7 @@ int main(int argc, char *argv[] ){
     log("Running tests...\n");
     TEST(test_lisp_parser);
     TEST(test_lisp2c);
+    TEST(test_get_cname);
     return 0;
   }
 

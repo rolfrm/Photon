@@ -308,10 +308,10 @@ void compile_as_c(c_root_code * codes, size_t code_cnt){
   for(size_t i = 0; i < array_count(vdeps) && vdeps[i] != NULL; i++){
     var_def * var = get_variable2(vdeps[i]);
     if(var->type->kind == FUNCTION){
-      int fail = tcc_add_symbol(tccs,var->name,var->data);
+      int fail = tcc_add_symbol(tccs,get_c_name(var->name),var->data);
       ASSERT(!fail);
     }else{
-      int fail = tcc_add_symbol(tccs,var->name,&var->data);
+      int fail = tcc_add_symbol(tccs,get_c_name(var->name),&var->data);
       ASSERT(!fail);
     }
   }
@@ -327,7 +327,7 @@ void compile_as_c(c_root_code * codes, size_t code_cnt){
     c_root_code r = codes[i];
     if(r.type == C_FUNCTION_DEF){
       decl fdecl = r.fcndef.fdecl;
-      void * ptr = tcc_get_symbol(tccs, fdecl.name);
+      void * ptr = tcc_get_symbol(tccs, get_c_name(fdecl.name));
       ASSERT(ptr != NULL);
       compiler_define_variable_ptr(fdecl.name, fdecl.type, ptr);
     }
