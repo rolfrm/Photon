@@ -9,3 +9,7 @@ Only works onl 64bit Linux at the moment.
 3. make
 4. ./photon test.lisp
 5. ./photon \#to start the REPL
+
+Features
+--------
+
