@@ -69,6 +69,7 @@ void with_compiler(compiler_state * c, void (* fcn)());
 
 void lisp_run_script_file(compiler_state * c, char * filepath);
 
+char * get_c_name(char * sym);
 // symbols
 void with_symbols(var_def ** vars, size_t * vars_cnt, void (*fcn)());
 

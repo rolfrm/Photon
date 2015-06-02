@@ -284,7 +284,7 @@ void print_value(c_value val){
     format("%s", val.raw.value);
     break;
   case C_FUNCTION_CALL:
-    format("%s(", val.call.name);
+    format("%s(", get_c_name(val.call.name));
     for(size_t i = 0; i < val.call.arg_cnt; i++){
       print_value(val.call.args[i]);
 
@@ -300,7 +300,7 @@ void print_value(c_value val){
     print_value(*val.operator.right);
     break;
   case C_SYMBOL:
-    format("%s", val.symbol);
+    format("%s", get_c_name(val.symbol));
     break;
   case C_CAST:
     format("((");
@@ -493,7 +493,7 @@ void register_type(type_def * ptr, char * name){
   newitem->ptr = ptr;
   newitem->name = name;
   //logd("Register: '%s' %i\n", name, ptr);
-  HASH_ADD_STR(items, name, newitem);
+  HASH_ADD_KEYPTR(hh, items, name, strlen(name), newitem);
 }
 
 void print_cdecl(decl idecl){
@@ -506,12 +506,12 @@ void print_cdecl(decl idecl){
     case SIMPLE:
     case POINTER:
       print_def(def,true);
-      format(" %s",idecl.name);
+      format(" %s",get_c_name(idecl.name));
       break;
     case FUNCTION:
       
       print_def(def->fcn.ret,true);
-      format(" %s(",idecl.name);
+      format(" %s(",get_c_name(idecl.name));
       for(i64 i = 0; i < def->fcn.cnt; i++){
 	inner_print(def->fcn.args[i]);
 	if(i + 1 != def->fcn.cnt)
@@ -547,10 +547,10 @@ void write_dependencies(type_def ** deps){
 	char * name = inner->cstruct.name;
 	char _namebuf[100];
 	if(name == NULL){
-	  sprintf(_namebuf, "_%s_", t->ctypedef.name);
+	  sprintf(_namebuf, "_%s_", get_c_name(t->ctypedef.name));
 	  name = _namebuf;
 	}	
-	format("typedef struct %s %s;\n", name, t->ctypedef.name);
+	format("typedef struct %s %s;\n", name, get_c_name(t->ctypedef.name));
       }
       if(inner->kind == ENUM){
 	format("typedef enum {\n");
@@ -558,7 +558,7 @@ void write_dependencies(type_def ** deps){
 	  char * comma = (j !=(inner->cenum.cnt-1) ? "," : "");
 	  format("   %s = %i%s\n", inner->cenum.names[j], inner->cenum.values[j], comma);
 	}
-	format("}%s;\n",t->ctypedef.name);
+	format("}%s;\n",get_c_name(t->ctypedef.name));
       }
     }
   }

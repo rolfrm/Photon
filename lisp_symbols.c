@@ -5,8 +5,7 @@
 #include "lisp_types.h"
 #include "lisp_compiler.h"
 #include "lisp_std_types.h"
-
-//todo: Optimize to use symbols instead.
+#include <ctype.h>
 
 typedef struct _symbol_stack symbol_stack;
 struct _symbol_stack{
@@ -52,33 +51,60 @@ var_def * get_variable2(char * name){
   return get_variable(name,strlen(name));
 }
 
-/*type_def * name_to_type_def(char * name, size_t len){
-  if(strncmp("void",name,len) == 0){
-    return &void_def;
-  }
-  compiler_state * c = lisp_state;
-  for(size_t i = 0;i < c->var_cnt; i++){
-    var_def * v = c->vars + i;
-    logd("loc type\n");
-    if(v->type ! = type_def_def)
-      goto next_item;
-    type_def * d = (type_def *) v->data;
-    char * tname = NULL;
-    if(d->kind == SIMPLE){
-      tname = d->simple.name;
-    }
-    logd("TYPE: %s\n",tname);
-    if(tname != NULL){
-      if(strncmp(tname,name,len) ==0){
-	return d;
-      }
-    }
-  next_item:
-    continue;
-  }
-  return NULL;
-  }*/
+#include "uthash.h"
 
+typedef struct {
+  char * key;
+  char * cname;
+  UT_hash_handle hh;
+}symbol_lookup;
+
+char * get_c_name(char * sym){
+  bool first_alpha = isalpha(sym[0]) || '_' == sym[0];
+  bool all_alphanum = true;
+  for(size_t i = 0; sym[i];i++){
+    if(isalnum(sym[i]) == false && sym[i] !='_'){
+      all_alphanum = false;
+      break;
+    }
+  }
+  
+  if(all_alphanum){
+    if(first_alpha) return sym;
+    return fmtstr("S_%s",sym);
+  }else{
+    static i32 uniqueid = 0;
+    static symbol_lookup * lut = NULL;
+    symbol_lookup _lut_item;
+    symbol_lookup * lut_item = &_lut_item;
+    HASH_FIND_STR(lut, sym, lut_item);
+    if(lut_item != NULL) return lut_item->cname;
+    lut_item = alloc0(sizeof(symbol_lookup));
+    char * value = fmtstr("S__%i", uniqueid);
+
+    lut_item->key = sym;
+    lut_item->cname = value;
+    HASH_ADD_KEYPTR(hh, lut, lut_item->key, strlen(lut_item->key), lut_item);
+    uniqueid += 1;
+    return value;
+  }
+}
+
+bool test_get_cname(){
+  char * n1 = get_c_name("thingy");
+  char * n2 = get_c_name("2thingy");
+  char * n3 = get_c_name("321");
+  char * n4 = get_c_name("+");
+  char * n5 = get_c_name("things-and-epic-things");
+  char * n6 = get_c_name("+");
+  char * n7 = get_c_name("+plus");
+  char * n8 = get_c_name("+plus");
+  
+  logd("%s %s %s %s %s %s %s %s\n",n1, n2, n3, n4, n5, n6, n7, n8);
+  TEST_ASSERT(n6 == n4);
+  TEST_ASSERT(n7 == n8);
+  return TEST_SUCCESS;
+}
 
 fcn_def * get_fcn_def(char * name, size_t name_len){
   var_def * var = get_variable(name, name_len);
