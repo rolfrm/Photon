@@ -6,11 +6,12 @@ Only works onl 64bit Linux at the moment.
 
 Planed Features
 --------
+* [x] Naming functions anything.
 * [ ] Loading / defining functions dynamically
 * [ ] Loading lisp code
 * [ ] Lisp macros
 * [ ] Structs
-
+* ... 
 To test the compiler.
 ---------------------
 
