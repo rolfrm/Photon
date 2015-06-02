@@ -41,7 +41,7 @@ bool test_lisp_parser();
 bool test_lisp2c();
 
 int main(int argc, char *argv[] ){
-  if(argc == 2 && strcmp(argv[1],"--repl") == 0){
+  if(argc == 1 || argc == 2 && strcmp(argv[1],"--repl") == 0){
     repl();
     return 0;
   }

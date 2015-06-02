@@ -20,7 +20,7 @@ int check_expression(int status, char * buffer){
 }
 
 bool start_read_eval_print_loop(compiler_state * c){
-  log("C-LISP REPL\n");
+  log("PHOTON REPL\n");
 
   char * expr_reader = NULL;
   size_t cnt;
@@ -50,7 +50,6 @@ bool start_read_eval_print_loop(compiler_state * c){
     
     size_t exprcnt;
     expr * exprs = lisp_parse_all(data, &exprcnt);
-    logd("Expr state: %i %s\n", expr_state, expr_reader);
     lisp_run_exprs(c, exprs, exprcnt);
     
   reset:
