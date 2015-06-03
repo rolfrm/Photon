@@ -4,23 +4,6 @@ A c based Lisp compiler / language. It should be fast and lightweight, hence the
 
 Only works on 64bit Linux at the moment.
 
-Short Term Features
---------
-* [x] Naming functions anything.
-* [ ] floats / doubles
-* [ ] Function overloading
-* [ ] Loading / defining functions dynamically
-* [ ] Loading lisp code
-* [ ] Proper symbols
-* [ ] Lisp macros (tick/backtick syntax)
-* [ ] Structs
-* [ ] ...
-
-Long Term Features
----------
-* [ ] libgccjit backend.
-* [ ] offloading compiled code into a c-compatible dll and header file.
-* [ ] Front end optimizations like tail call optimizations, function inlining and constant propagation. Note: pure functions can be evaluated during constant propagation.
 To test the compiler.
 ---------------------
 
@@ -29,3 +12,33 @@ To test the compiler.
 3. make
 4. ./photon test.lisp
 5. ./photon \#to start the REPL
+
+Short Term Features
+--------
+* [x] Naming symbols anything.
+* [ ] Function overloading
+* [ ] Global variables.
+* [ ] floats / doubles
+* [ ] Loading lisp code
+* [ ] Proper symbols
+* [ ] Lisp macros (tick/backtick syntax)
+* [ ] Structs
+ * [ ] Defining
+ * [ ] member access
+* [ ] Arrays / pointers
+* [ ] sizeof macro.
+* [ ] Standard library
+ * [ ] -ldl related
+ * [ ] -lm related
+* [ ] ffi
+* [ ] enums
+* [ ] ...
+
+
+Long Term Features
+---------
+* [ ] Packages / Modules
+* [ ] libgccjit backend.
+* [ ] offloading compiled code into a c-compatible static or dynamic link library and header file.
+* [ ] Front end optimizations like tail call optimizations, function inlining and constant propagation. Note: pure functions can be evaluated during constant propagation.
+* [ ] Bignums
