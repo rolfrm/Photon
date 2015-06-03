@@ -14,15 +14,17 @@ const char * allowed_errors[] ={
   "Unknown touch device",
   "Invalid renderer"
 };
+
 #include <signal.h>
 bool faulty = false;
+bool break_on_errors = true;
 void _error(const char * file, int line, const char * str, ...){
   char buffer[1000];  
   va_list arglist;
   va_start (arglist, str);
   vsprintf(buffer,str,arglist);
   va_end(arglist);
-  bool noncritical = false;
+  bool noncritical = break_on_errors;
   for(u32 i = 0; i < array_count(allowed_errors);i++)
     if(strstr(buffer, allowed_errors[i]) != NULL)
       noncritical = true;
@@ -33,7 +35,8 @@ void _error(const char * file, int line, const char * str, ...){
   loge("%s", buffer);
   printf("\n");
   printf("** **\n");
-  raise(SIGINT);
+  if(break_on_errors)
+    raise(SIGINT);
 }
 
 bool lisp_compiler_test();
@@ -42,6 +45,7 @@ bool test_lisp2c();
 bool test_get_cname();
 int main(int argc, char *argv[] ){
   if(argc == 1 || argc == 2 && strcmp(argv[1],"--repl") == 0){
+    break_on_errors = false;
     repl();
     return 0;
   }
