@@ -203,7 +203,7 @@ void value_dep(type_def ** deps, char ** vdeps, c_value val){
     break;
   case C_SUB_EXPR:
   case C_DEREF:
-    value_dep(deps, vdeps,*val.value);
+    value_dep(deps, vdeps, *val.value);
     break;
   case C_SYMBOL:
     var = get_variable2(val.symbol);
@@ -558,7 +558,7 @@ void write_dependencies(type_def ** deps){
 	  char * comma = (j !=(inner->cenum.cnt-1) ? "," : "");
 	  format("   %s = %i%s\n", inner->cenum.names[j], inner->cenum.values[j], comma);
 	}
-	format("}%s;\n",get_c_name(t->ctypedef.name));
+	format("}%s;\n", get_c_name(t->ctypedef.name));
       }
     }
   }

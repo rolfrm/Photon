@@ -44,7 +44,7 @@ bool test_lisp_parser();
 bool test_lisp2c();
 bool test_get_cname();
 int main(int argc, char *argv[] ){
-  if(argc == 1 || argc == 2 && strcmp(argv[1],"--repl") == 0){
+  if(argc == 1 || (argc == 2 && strcmp(argv[1],"--repl") == 0)){
     break_on_errors = false;
     repl();
     return 0;
