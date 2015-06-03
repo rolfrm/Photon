@@ -60,6 +60,7 @@ comp_state comp_state_make();
 var_def * get_variable(char * name, size_t name_len);
 var_def * get_variable2(char * name);
 fcn_def * get_fcn_def(char * name, size_t name_len);
+var_def * get_function(char * name, type_def * type);
 cmacro_def * get_cmacro_def(char * name, size_t name_len);
 compiled_expr compile_expr(expr * e);
 type_def compile_iexpr(expr expr1);

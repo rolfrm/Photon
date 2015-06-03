@@ -51,6 +51,27 @@ var_def * get_variable2(char * name){
   return get_variable(name,strlen(name));
 }
 
+var_def * get_function(char * name, type_def * type){
+  size_t name_len = strlen(name);
+  symbol_stack * ss = symbolstack;
+  while(ss != NULL){
+    var_def * vars = *ss->vars;
+    size_t varcnt = *ss->vars_cnt;
+    for(size_t i = 0;i < varcnt; i++){
+      for(size_t j = 0; j < name_len; j++){
+	if(name[j] != vars[i].name[j])
+	  goto next_item;
+      }
+      if(vars[i].type == type)
+	return vars + i;
+    next_item:
+      continue;
+    }
+    ss = ss->tail;
+  }
+  return NULL;
+}
+
 #include "uthash.h"
 
 typedef struct {
