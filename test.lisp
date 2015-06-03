@@ -2,8 +2,8 @@
 ;"hello world!"
 ;(write_line "hello world!")
 
-(defun + (i64 (a i64) (b i64))
-  (i64_add a b))
+;(defun + (i64 (a i64) (b i64))
+;  (i64_add a b))
 
 (defun + ((ptr char) (a (ptr char)) (b (ptr char)))
   b)
@@ -13,5 +13,5 @@
 
 ;(defun +plus2 (i64 (a i64)) (+ 2 a))
 (write_line "print +")
-(+ 10 10)
+;(+ 10 10)
 (+ "asd" "dsa")

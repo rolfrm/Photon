@@ -162,11 +162,10 @@ static type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se
     type_def * farg_types[argcnt];
     for(i64 i = 0; i < argcnt; i++){
       farg_types[i] = _compile_expr(block, fargs + i, args[i]);
+      if(farg_types[i] != td->fcn.args[i].type){
+	ERROR("Non matching types");
+      }
     }
-    fvar = find_function(fvar->name, farg_types, argcnt);
-    if(fvar == NULL) ERROR("Unable to find matching function");
-
-    td = fvar->type;
     
     c_function_call call;
     call.type = td;
@@ -261,12 +260,10 @@ TCCState * mktccs(){
 void compile_as_c(c_root_code * codes, size_t code_cnt){
   type_def * deps[100];
   char * vdeps[100];
-  type_def * vdep_t[100];
   memset(deps, 0, sizeof(deps));
   memset(vdeps, 0, sizeof(vdeps));
-  memset(vdep_t, 0, sizeof(vdep_t));
   for(size_t i = 0; i < code_cnt; i++){
-    c_root_code_dep(deps, vdeps, vdep_t, codes[i]);
+    c_root_code_dep(deps, vdeps, codes[i]);
   }
   
   void go_write(){
@@ -285,9 +282,6 @@ void compile_as_c(c_root_code * codes, size_t code_cnt){
     for(size_t i = 0; i < array_count(vdeps) && vdeps[i] != NULL; i++){
       
       var_def * var = get_variable2(vdeps[i]);
-      if(var->type->kind == FUNCTION){
-	var = get_function(vdeps[i], vdep_t[i]);
-      }
       ASSERT(var != NULL);
       decl dcl;
       dcl.name = var->name;
@@ -297,7 +291,7 @@ void compile_as_c(c_root_code * codes, size_t code_cnt){
     }
   
     for(size_t i = 0; i < code_cnt; i++){
-      c_root_code_dep(deps, vdeps, vdep_t, codes[i]);
+      c_root_code_dep(deps, vdeps, codes[i]);
       print_c_code(codes[i]);
     }
   }
@@ -312,13 +306,8 @@ void compile_as_c(c_root_code * codes, size_t code_cnt){
   TCCState * tccs = mktccs();
   for(size_t i = 0; i < array_count(vdeps) && vdeps[i] != NULL; i++){
     var_def * var = get_variable2(vdeps[i]);
-    type_def * t = vdep_t[i];
     if(var->type->kind == FUNCTION){
-      if(t != NULL){
-	var = get_function(vdeps[i],t);
-      }
       int fail = tcc_add_symbol(tccs,get_c_name(var->name),var->data);
-
       ASSERT(!fail);
     }else{
       int fail = tcc_add_symbol(tccs,get_c_name(var->name),&var->data);

@@ -185,9 +185,9 @@ void make_dependency_graph(type_def ** deps, type_def * def);
 
 
 // Calculates the type and variable dependencies for a c_root_code.
-void c_root_code_dep(type_def ** deps, char ** vdeps, type_def ** vdep_types, c_root_code code);
+void c_root_code_dep(type_def ** deps, char ** vdeps, c_root_code code);
 // Calculates the type and variable dependencies for a c code block.
-void block_dep(type_def ** deps, char ** vdeps, type_def ** vdep_types,  c_block blk);
+void block_dep(type_def ** deps, char ** vdeps, c_block blk);
 
 
 void get_var_dependencies(char ** type_names, c_root_code * code);

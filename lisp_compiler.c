@@ -26,34 +26,12 @@ void compiler_define_variable_ptr(char * name, type_def * t, void * ptr){
 
   for(size_t i = 0; i < lisp_state->var_cnt; i++){
     if(strcmp(name,lisp_state->vars[i].name) == 0){
-
-      if(t->kind == FUNCTION){
-	type_def * t2 = lisp_state->vars[i].type;
-	bool same_args = t->fcn.cnt == t2->fcn.cnt;
-	if(same_args){
-	  for(int i = 0; i < t->fcn.cnt; i++){
-	    if(t->fcn.args[i].type != t2->fcn.args[i].type){
-	      same_args = false;
-	      break;
-	    }
-	  }
-	}
-	
-	if(same_args){
-	  lisp_state->vars[i].type = t;
-	  lisp_state->vars[i].data = ptr;
-	}else{
-
-	  continue;
-	}
-      }else{
 	lisp_state->vars[i].type = t;
 	lisp_state->vars[i].data = ptr;
-      }
-      return;
+	return;
     }
   }
-
+  
   var_def vdef;
   vdef.name = name;
   vdef.type = t;
