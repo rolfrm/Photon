@@ -15,3 +15,5 @@
 (write_line "print +")
 ;(+ 10 10)
 (+ "asd" "dsa")
+(defvar test1 10)
+(+ test1 5)

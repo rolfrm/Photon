@@ -225,6 +225,7 @@ void expr_dep(type_def ** deps, char ** vdeps, c_expr expr){
   switch(expr.type){
   case C_VAR:
     make_dependency_graph(deps, expr.var.var.type);
+    add_var_dep(vdeps, expr.var.var.name);
     if(expr.var.value != NULL){
       value_dep(deps, vdeps, *expr.var.value);
     }
@@ -252,6 +253,7 @@ void c_root_code_dep(type_def ** deps, char ** vdeps, c_root_code code){
     block_dep(deps, vdeps, code.fcndef.block);
     break;
   case C_VAR_DEF:
+    //add_var_dep(vdeps, code.var.var.name);
     make_dependency_graph(deps, code.var.var.type);
     if(code.var.value != NULL)
       value_dep(deps, vdeps, *code.var.value);
@@ -295,9 +297,11 @@ void print_value(c_value val){
     format(")");
     break;
   case C_OPERATOR:
+    format("(");
     print_value(*val.operator.left);
     format("%c ",val.operator);
     print_value(*val.operator.right);
+    format(")");
     break;
   case C_SYMBOL:
     format("%s", get_c_name(val.symbol));

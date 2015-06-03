@@ -389,6 +389,36 @@ type_def * var_macro(c_block * block, c_value * val, expr vars, expr body){
   return ret_type;
 }
 
+bool is_symbol(expr exp){
+  return exp.type == VALUE && exp.value.type == SYMBOL;
+}
+
+char * read_symbol(expr name){
+  return fmtstr("%*.s",name.value.strln, name.value.value);
+}
+
+
+type_def * defvar_macro(c_block * block, c_value * val, expr name, expr body){
+  COMPILE_ASSERT(is_symbol(name));
+  char * sym = read_symbol(name);
+  c_value * vr = alloc0(sizeof(c_value));
+  c_value * vl = alloc0(sizeof(c_value));
+  vl->type = C_SYMBOL;
+  vl->symbol = sym;
+  type_def * t = _compile_expr(block, vr, body);
+  val->type = C_OPERATOR;
+  val->operator.left = vl;
+  val->operator.right = vr;
+  val->operator.operator = '=';
+  c_root_code var_root;
+  var_root.type = C_VAR_DEF;
+  var_root.var.var.name = sym;
+  var_root.var.var.type = t;
+  var_root.var.value = NULL;
+  compile_as_c(&var_root,1);
+  return t;
+}
+
 type_def * progn_macro(c_block * block, c_value * val, expr * expressions, size_t expr_cnt){
   // todo: requires varadic macros.
   type_def * d;
@@ -498,6 +528,7 @@ void lisp_load_compiler(compiler_state * c){
 	define_macro("var",2,&var_macro);
 	define_macro("progn", -1,&progn_macro);
 	define_macro("cast", 2, &cast_macro);
+	define_macro("defvar",2, &defvar_macro);
 	{
 	  type_def * type = str2type("(fcn void (a (ptr type_def)))");
 	  type_def * type2 = str2type("(fcn void (a (ptr type_def)))");
