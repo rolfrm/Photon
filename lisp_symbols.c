@@ -62,8 +62,9 @@ var_def * get_function(char * name, type_def * type){
 	if(name[j] != vars[i].name[j])
 	  goto next_item;
       }
-      if(vars[i].type == type)
+      if(vars[i].type == type){
 	return vars + i;
+      }
     next_item:
       continue;
     }
@@ -71,6 +72,36 @@ var_def * get_function(char * name, type_def * type){
   }
   return NULL;
 }
+
+var_def * find_function(char * name, type_def ** arg_types, size_t arg_cnt){
+  size_t name_len = strlen(name);
+  symbol_stack * ss = symbolstack;
+  while(ss != NULL){
+    var_def * vars = *ss->vars;
+    size_t varcnt = *ss->vars_cnt;
+    for(size_t i = 0;i < varcnt; i++){
+      for(size_t j = 0; j < name_len; j++){
+	if(name[j] != vars[i].name[j])
+	  goto next_item;
+      }
+      
+      if(vars[i].type->kind == FUNCTION){
+	if(vars[i].type->fcn.cnt == arg_cnt){
+	  for(size_t k = 0; k < arg_cnt; k++){
+	    if(vars[i].type->fcn.args[k].type != arg_types[k])
+	      goto next_item;
+	  }
+	}else goto next_item;
+      }
+      return vars + i;
+    next_item:
+      continue;
+    }
+    ss = ss->tail;
+  }
+  return NULL;
+}
+
 
 #include "uthash.h"
 

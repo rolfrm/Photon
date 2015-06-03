@@ -175,15 +175,16 @@ void make_dependency_graph(type_def ** defs, type_def * def){
   _make_dependency_graph(defs,def,false);
 }
 
-void add_var_dep(char ** vdeps, char * newdep){
-  for(;*vdeps != NULL;vdeps++){
+void add_var_dep(char ** vdeps, type_def ** vdep_types, char * newdep, type_def * ptr){
+  for(;*vdeps != NULL;vdeps++,vdep_types++){
     if(strcmp(*vdeps,newdep) == 0)
       return;
   }
   *vdeps = newdep;
+  *vdep_types = ptr;
 }
 
-void value_dep(type_def ** deps, char ** vdeps, c_value val){
+void value_dep(type_def ** deps, char ** vdeps, type_def ** vdep_types, c_value val){
   var_def * var;
   switch(val.type){
 
@@ -191,19 +192,19 @@ void value_dep(type_def ** deps, char ** vdeps, c_value val){
     make_dependency_graph(deps, val.raw.type);
     break;
   case C_FUNCTION_CALL:
-    add_var_dep(vdeps, val.call.name);
+    add_var_dep(vdeps, vdep_types, val.call.name, val.call.type);
     make_dependency_graph(deps, val.call.type);
     for(size_t argi = 0; argi < val.call.arg_cnt; argi++){
-      value_dep(deps, vdeps, val.call.args[argi]);
+      value_dep(deps, vdeps, vdep_types, val.call.args[argi]);
     }
     break;
   case C_OPERATOR:
-    value_dep(deps, vdeps, *val.operator.left);
-    value_dep(deps, vdeps, *val.operator.right);
+    value_dep(deps, vdeps, vdep_types, *val.operator.left);
+    value_dep(deps, vdeps, vdep_types, *val.operator.right);
     break;
   case C_SUB_EXPR:
   case C_DEREF:
-    value_dep(deps, vdeps,*val.value);
+    value_dep(deps, vdeps, vdep_types, *val.value);
     break;
   case C_SYMBOL:
     var = get_variable2(val.symbol);
@@ -212,49 +213,49 @@ void value_dep(type_def ** deps, char ** vdeps, c_value val){
       // might be a local variable.
       return;
     }
-    add_var_dep(vdeps, val.symbol);
+    add_var_dep(vdeps, vdep_types, val.symbol, var->type);
     make_dependency_graph(deps, var->type);
     break;
   case C_CAST:
     make_dependency_graph(deps, val.cast.type);
-    value_dep(deps, vdeps, *val.cast.value);
+    value_dep(deps, vdeps, vdep_types, *val.cast.value);
   }
 }
 
-void expr_dep(type_def ** deps, char ** vdeps, c_expr expr){
+void expr_dep(type_def ** deps, char ** vdeps, type_def ** vdep_types, c_expr expr){
   switch(expr.type){
   case C_VAR:
     make_dependency_graph(deps, expr.var.var.type);
     if(expr.var.value != NULL){
-      value_dep(deps, vdeps, *expr.var.value);
+      value_dep(deps, vdeps, vdep_types, *expr.var.value);
     }
     break;
   case C_VALUE:
   case C_RETURN:
-    value_dep(deps, vdeps, expr.value);
+    value_dep(deps, vdeps, vdep_types, expr.value);
     break;
   case C_BLOCK:
-    block_dep(deps, vdeps, expr.block);
+    block_dep(deps, vdeps, vdep_types, expr.block);
     break;
   }
 }
 
-void block_dep(type_def ** deps, char ** vdeps, c_block blk){
+void block_dep(type_def ** deps, char ** vdeps, type_def ** vdep_types, c_block blk){
   for(size_t i = 0; i < blk.expr_cnt; i++){
-    expr_dep(deps, vdeps, blk.exprs[i]);
+    expr_dep(deps, vdeps, vdep_types, blk.exprs[i]);
   }
 }
 
-void c_root_code_dep(type_def ** deps, char ** vdeps, c_root_code code){
+void c_root_code_dep(type_def ** deps, char ** vdeps, type_def ** vdep_types, c_root_code code){
   switch(code.type){
   case C_FUNCTION_DEF:
     make_dependency_graph(deps, code.fcndef.fdecl.type);
-    block_dep(deps, vdeps, code.fcndef.block);
+    block_dep(deps, vdeps, vdep_types, code.fcndef.block);
     break;
   case C_VAR_DEF:
     make_dependency_graph(deps, code.var.var.type);
     if(code.var.value != NULL)
-      value_dep(deps, vdeps, *code.var.value);
+      value_dep(deps, vdeps, vdep_types, *code.var.value);
     break;
   case C_DECL:
     make_dependency_graph(deps, code.decl.type);

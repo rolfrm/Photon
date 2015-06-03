@@ -149,7 +149,7 @@ static type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se
       return ((type_def *(*)(c_block * block, c_value * value, expr,expr,expr)) 
 	      macro->fcn)(block,value,args[0],args[1],args[2]);
     case -1:
-      logd("Varadic macro: %i\n", se->cnt);
+
       return ((type_def *(*)(c_block * block, c_value * value, expr *,size_t))macro->fcn)(block,value,args, argcnt);
     default:
       ERROR("Number of macro arguments not supported: %i", argcnt);
@@ -158,27 +158,26 @@ static type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se
     type_def * td = fvar->type;
     COMPILE_ASSERT(td->fcn.cnt == argcnt);
 
-    c_function_call call;
-    call.type = td;
-    call.name = fvar->name;
     c_value fargs[argcnt];
     type_def * farg_types[argcnt];
     for(i64 i = 0; i < argcnt; i++){
       farg_types[i] = _compile_expr(block, fargs + i, args[i]);
-      // check types works
-      if(farg_types[i] != td->fcn.args[i].type){
-	logd("Types not matching:\n 1: %i\n", farg_types[i]);
-	print_def(farg_types[i],true);
-	logd("\n2: %i\n",td->fcn.args[i].type);	
-	print_def(td->fcn.args[i].type,true);
-	logd("\n");	
-	ERROR("Types not matching");
-      }
     }
+    fvar = find_function(fvar->name, farg_types, argcnt);
+    if(fvar == NULL) ERROR("Unable to find matching function");
+
+    td = fvar->type;
+    
+    c_function_call call;
+    call.type = td;
+    call.name = fvar->name;
+    
     call.args = clone(fargs,sizeof(fargs));
     value->type = C_FUNCTION_CALL;
     value->call = call;
     value->call.arg_cnt = argcnt;
+    
+
     return td->fcn.ret;
   }else{
     ERROR("Not supported..\n");
@@ -262,10 +261,12 @@ TCCState * mktccs(){
 void compile_as_c(c_root_code * codes, size_t code_cnt){
   type_def * deps[100];
   char * vdeps[100];
+  type_def * vdep_t[100];
   memset(deps, 0, sizeof(deps));
   memset(vdeps, 0, sizeof(vdeps));
+  memset(vdep_t, 0, sizeof(vdep_t));
   for(size_t i = 0; i < code_cnt; i++){
-    c_root_code_dep(deps, vdeps, codes[i]);
+    c_root_code_dep(deps, vdeps, vdep_t, codes[i]);
   }
   
   void go_write(){
@@ -282,7 +283,11 @@ void compile_as_c(c_root_code * codes, size_t code_cnt){
     }
     
     for(size_t i = 0; i < array_count(vdeps) && vdeps[i] != NULL; i++){
+      
       var_def * var = get_variable2(vdeps[i]);
+      if(var->type->kind == FUNCTION){
+	var = get_function(vdeps[i], vdep_t[i]);
+      }
       ASSERT(var != NULL);
       decl dcl;
       dcl.name = var->name;
@@ -292,7 +297,7 @@ void compile_as_c(c_root_code * codes, size_t code_cnt){
     }
   
     for(size_t i = 0; i < code_cnt; i++){
-      c_root_code_dep(deps, vdeps, codes[i]);
+      c_root_code_dep(deps, vdeps, vdep_t, codes[i]);
       print_c_code(codes[i]);
     }
   }
@@ -307,8 +312,13 @@ void compile_as_c(c_root_code * codes, size_t code_cnt){
   TCCState * tccs = mktccs();
   for(size_t i = 0; i < array_count(vdeps) && vdeps[i] != NULL; i++){
     var_def * var = get_variable2(vdeps[i]);
+    type_def * t = vdep_t[i];
     if(var->type->kind == FUNCTION){
+      if(t != NULL){
+	var = get_function(vdeps[i],t);
+      }
       int fail = tcc_add_symbol(tccs,get_c_name(var->name),var->data);
+
       ASSERT(!fail);
     }else{
       int fail = tcc_add_symbol(tccs,get_c_name(var->name),&var->data);
