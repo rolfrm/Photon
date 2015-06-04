@@ -1,12 +1,5 @@
 // requires bitguy.h, lisp_parser.h, lisp_types
 
-typedef struct _fcn_def{
-  char * name;
-  type_def * type;
-  u8 is_extern;
-  void * ptr;
-}fcn_def;
-
 typedef struct{
   char * name;
   type_def * type;
@@ -55,7 +48,6 @@ void define_macro(char * name, int nargs, void * fcn);
 void compiler_reg_type(compiler_state *c, char * name, type_def * t);
 void compiler_load_types(compiler_state *);
 
-bool fcn_def_cmp(fcn_def a, fcn_def b);
 comp_state comp_state_make();
 var_def * get_variable(char * name, size_t name_len);
 var_def * get_variable2(char * name);

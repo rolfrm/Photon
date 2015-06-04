@@ -123,18 +123,6 @@ char * get_c_name(char * sym){
   }
 }
 
-fcn_def * get_fcn_def(char * name, size_t name_len){
-  var_def * var = get_variable(name, name_len);
-  if(var == NULL){
-    return NULL;
-  }
-  
-  if(var->type != &fcn_def_def){
-    return NULL;
-  }
-  return (fcn_def *) var->data;
-}
-
 cmacro_def * get_cmacro_def(char * name, size_t name_len){
   var_def * var = get_variable(name, name_len);
   if(var == NULL){
