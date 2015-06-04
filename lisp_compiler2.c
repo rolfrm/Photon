@@ -16,7 +16,6 @@ symbol expr_symbol(expr e){
   return get_symbol(buf);
 }
 
-
 expr symbol_expr(char * name){
   expr e;
   e.type = VALUE;
@@ -73,7 +72,7 @@ bool read_decl(expr dclexpr, decl * out){
       expr name = sexpr.exprs[0];
       expr type = sexpr.exprs[1];
       if(name.type == VALUE && name.value.type == SYMBOL){
-	out->name = fmtstr("%.*s",name.value.strln, name.value.value);
+	out->name = expr_symbol(name);
 	out->type = _type_macro(type);
 	return &error_def != out->type;
       }
@@ -136,10 +135,10 @@ static type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se
   expr * args = se->exprs + 1;
   i64 argcnt = se->cnt - 1;
 
-  char name[name_expr.value.strln + 1];
-  sprintf(name, "%.*s", name_expr.value.strln, name_expr.value.value);
-  var_def * fvar = get_variable(name_expr.value.value, name_expr.value.strln);
-  if(fvar == NULL) COMPILE_ERROR("unknown symbol '%s'", name);
+  symbol name = expr_symbol(name_expr);
+
+  var_def * fvar = get_variable(name);
+  if(fvar == NULL) COMPILE_ERROR("unknown symbol '%s'", name.name);
   if(fvar->type == &cmacro_def_def){
     cmacro_def * macro = fvar->data;
 
@@ -228,7 +227,7 @@ c_root_code compile_lisp_to_eval(expr exp){
   td.fcn.args = NULL;
   td.fcn.cnt = 0;
 
-  f->fdecl.name = "eval";
+  f->fdecl.name = get_symbol("eval");
   f->fdecl.type = get_type_def(td);
 
   c_expr expr;
@@ -268,7 +267,7 @@ TCCState * mktccs(){
 
 void compile_as_c(c_root_code * codes, size_t code_cnt){
   type_def * deps[100];
-  char * vdeps[100];
+  symbol vdeps[100];
   memset(deps, 0, sizeof(deps));
   memset(vdeps, 0, sizeof(vdeps));
   for(size_t i = 0; i < code_cnt; i++){
@@ -288,9 +287,9 @@ void compile_as_c(c_root_code * codes, size_t code_cnt){
       format(";\n");
     }
     
-    for(size_t i = 0; i < array_count(vdeps) && vdeps[i] != NULL; i++){
+    for(size_t i = 0; i < array_count(vdeps) && vdeps[i].name != NULL; i++){
       
-      var_def * var = get_variable2(vdeps[i]);
+      var_def * var = get_variable(vdeps[i]);
       ASSERT(var != NULL);
       decl dcl;
       dcl.name = var->name;
@@ -313,8 +312,8 @@ void compile_as_c(c_root_code * codes, size_t code_cnt){
   append_buffer_to_file(header,sizeof(header),"compile_out.c");
   append_buffer_to_file(data,cnt,"compile_out.c");
   TCCState * tccs = mktccs();
-  for(size_t i = 0; i < array_count(vdeps) && vdeps[i] != NULL; i++){
-    var_def * var = get_variable2(vdeps[i]);
+  for(size_t i = 0; i < array_count(vdeps) && vdeps[i].name != NULL; i++){
+    var_def * var = get_variable(vdeps[i]);
     if(var->type->kind == FUNCTION){
       int fail = tcc_add_symbol(tccs,get_c_name(var->name),var->data);
       ASSERT(!fail);
@@ -355,12 +354,14 @@ type_def * type_macro(c_block * block, c_value * value, expr e){
   UNUSED(block);
   static int typevarid = 0;
   type_def * t =_type_macro(e);
-  char * varname = fmtstr("type_%i", typevarid++);
+  char buf[10];
+  sprintf(buf, "type_%i",typevarid++);
+  symbol varname = get_symbol(buf);
   compiler_define_variable_ptr(varname,&type_def_ptr_def, t);
   value->type = C_INLINE_VALUE;
   value->raw.value = "NULL";
   value->raw.type = &type_def_ptr_def;
-  type_def * rt = _compile_expr(block, value, symbol_expr(varname));
+  type_def * rt = _compile_expr(block, value, symbol_expr(varname.name));
   //dealloc(varname);
   return rt;
 }
@@ -383,9 +384,8 @@ type_def * var_macro(c_block * block, c_value * val, expr vars, expr body){
     COMPILE_ASSERT(sexpr.exprs[i].type == EXPR);
     sub_expr var_expr = sexpr.exprs[i].sub_expr;
     COMPILE_ASSERT(var_expr.cnt == 2 && var_expr.exprs[0].type == VALUE && var_expr.exprs[0].value.type == SYMBOL);
-    value_expr var_name = var_expr.exprs[0].value;
     c_var var;
-    var.var.name = fmtstr("%.*s",var_name.strln,var_name.value);
+    var.var.name = expr_symbol(var_expr.exprs[0]);
     var.var.type = _compile_expr(block, cvals + i, var_expr.exprs[1]);
     var.value = cvals + i;
     lisp_vars[i].name = var.var.name;
@@ -420,7 +420,7 @@ char * read_symbol(expr name){
 
 type_def * defvar_macro(c_block * block, c_value * val, expr name, expr body){
   COMPILE_ASSERT(is_symbol(name));
-  char * sym = read_symbol(name);
+  symbol sym = expr_symbol(name);
 
   c_value * vr = alloc0(sizeof(c_value));
   c_value * vl = alloc0(sizeof(c_value));
@@ -442,7 +442,7 @@ type_def * defvar_macro(c_block * block, c_value * val, expr name, expr body){
 
 type_def * setf_macro(c_block * block, c_value * val, expr name, expr body){
   COMPILE_ASSERT(is_symbol(name));
-  char * sym = read_symbol(name);
+  symbol sym = expr_symbol(name);
 
   c_value * vr = alloc0(sizeof(c_value));
   c_value * vl = alloc0(sizeof(c_value));
