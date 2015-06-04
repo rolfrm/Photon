@@ -21,7 +21,7 @@ Short Term Features
 * [x] setf
 * [x] floats / doubles
 * [x] Loading lisp code
-* [ ] Proper symbols
+* [ ] Proper symbols -  one symbol - one ID. Symbols to be used for functions, variable names. This meams that vars will be symbol based instead of string based.
 * [ ] Lisp macros (tick/backtick syntax)
 * [ ] Structs
  * [ ] Defining
@@ -33,6 +33,7 @@ Short Term Features
  * [ ] -lm related
 * [ ] ffi
 * [ ] enums
+* [ ] function overloading macro
 * [ ] ...
 
 

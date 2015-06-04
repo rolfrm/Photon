@@ -5,6 +5,9 @@
 #include "lisp_types.h"
 #include "lisp_std_types.h"
 #include "lisp_compiler.h"
+
+#define COMPILE_ASSERT(expr) if(!(expr)){ERROR("Compile error");return &error_def;}
+#define COMPILE_ERROR(fmt, ...) {ERROR(fmt,##__VA_ARGS__); return &error_def;}
 	
 typedef struct{
   c_root_code * c_code;
@@ -25,8 +28,7 @@ static type_def * compile_value(c_value * val, value_expr e){
     val->symbol = fmtstr("%.*s",e.strln, e.value);
     vdef = get_variable(e.value, e.strln);
     if(vdef == NULL){
-      ERROR("Unknown variable '%s'", val->raw.value);
-      return &error_def;
+      COMPILE_ERROR("Unknown variable '%s'", val->raw.value);
     }
     return vdef->type;
   case NUMBER:
@@ -40,7 +42,6 @@ static type_def * compile_value(c_value * val, value_expr e){
   return &error_def;
 }
 
-#define COMPILE_ASSERT(expr) if(!(expr)){ERROR("Compile error");return &error_def;}
 
 type_def * _type_macro(expr typexpr);
 bool read_decl(expr dclexpr, decl * out){
@@ -130,7 +131,7 @@ static type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se
   char name[name_expr.value.strln + 1];
   sprintf(name, "%.*s", name_expr.value.strln, name_expr.value.value);
   var_def * fvar = get_variable(name_expr.value.value, name_expr.value.strln);
-  if(fvar == NULL) ERROR("unknown symbol '%s'", name);
+  if(fvar == NULL) COMPILE_ERROR("unknown symbol '%s'", name);
   if(fvar->type == &cmacro_def_def){
     cmacro_def * macro = fvar->data;
 

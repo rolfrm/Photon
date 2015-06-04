@@ -7,6 +7,20 @@
 #include "lisp_std_types.h"
 #include <ctype.h>
 
+typedef struct{
+  u64 id;
+  char * name;
+}symbol;
+
+typedef struct{
+  char * key;
+  u64 value;
+}symbol_table;
+
+symbol get_symbol(char * name){
+  
+}
+
 typedef struct _symbol_stack symbol_stack;
 struct _symbol_stack{
   var_def ** vars;
