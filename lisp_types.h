@@ -10,6 +10,12 @@ typedef enum {
   type_def_kind_cnt
 } type_def_kind;
 
+typedef struct{
+  u64 id;
+  char * name;
+}symbol;
+
+
 struct _type_def;
 typedef struct _type_def type_def;
 struct _decl;
@@ -19,15 +25,14 @@ struct _type_def{
   type_def_kind kind;
   union{
     struct _enum{
-      char ** names;
+      symbol * names;
       i64 * values;
       i64 cnt;
-      char * enum_name;
+      symbol enum_name;
     }cenum;
 
     struct _simple{
-      char * name;
-      char * cname;
+      symbol name;
     }simple;
     
     struct{
@@ -40,13 +45,13 @@ struct _type_def{
     }fcn;
 
     struct{
-      char * name; // NULL if anonymous
+      symbol name; // NULL if anonymous
       decl * members;
       i64 cnt;
     }cstruct;
 
     struct{
-      char * name; // NULL if anonymous
+      symbol name; // NULL if anonymous
       decl * members;
       i64 cnt;
     }cunion;
@@ -56,14 +61,14 @@ struct _type_def{
     }ptr;
 
     struct{
-      char * name;
+      symbol name;
       type_def * inner;
     }ctypedef;
   };
 };
 
 struct _decl{
-  char * name;
+  symbol name;
   type_def * type;
 };
 
@@ -122,7 +127,7 @@ typedef struct{
 }c_raw_value;
 
 typedef struct{
-  char * name;
+  symbol name;
   c_value * args;
   size_t arg_cnt;
   type_def * type;
@@ -133,7 +138,7 @@ struct _c_value{
   union{
     c_cast cast;
     c_raw_value raw;
-    char * symbol;
+    symbol symbol;
     c_value * value;//sub expr, deref
     c_function_call call;
     c_operator operator;
@@ -171,8 +176,11 @@ typedef struct{
 }c_root_code;
 
 void print_cdecl(decl idecl);
+symbol get_symbol(char * name);
+extern const symbol symbol_empty;
+bool symbol_cmp(symbol a, symbol b);
 
-type_def make_simple(char * name, char * cname);
+type_def make_simple(char * name);
 type_def make_ptr(type_def * def);
 type_def * get_type_def(type_def def);
 type_def * get_type_from_string(char * name);
@@ -185,12 +193,12 @@ void make_dependency_graph(type_def ** deps, type_def * def);
 
 
 // Calculates the type and variable dependencies for a c_root_code.
-void c_root_code_dep(type_def ** deps, char ** vdeps, c_root_code code);
+void c_root_code_dep(type_def ** deps, symbol* vdeps, c_root_code code);
 // Calculates the type and variable dependencies for a c code block.
-void block_dep(type_def ** deps, char ** vdeps, c_block blk);
+void block_dep(type_def ** deps, symbol * vdeps, c_block blk);
 
 
-void get_var_dependencies(char ** type_names, c_root_code * code);
+void get_var_dependencies(symbol * type_names, c_root_code * code);
 void print_def(type_def * type, bool is_decl);
 
 void print_c_code(c_root_code code);

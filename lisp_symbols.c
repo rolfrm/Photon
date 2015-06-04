@@ -7,11 +7,6 @@
 #include "lisp_std_types.h"
 #include <ctype.h>
 
-typedef struct{
-  u64 id;
-  char * name;
-}symbol;
-
 #include "uthash.h"
 
 typedef struct{
@@ -19,7 +14,7 @@ typedef struct{
   u64 value;
   UT_hash_handle hh;
 }symbol_table;
-
+const symbol symbol_empty = {NULL, 0};
 static symbol_table * symtbl = NULL; 
 u64 symbol_cnt = 0;
 
@@ -59,16 +54,13 @@ void with_symbols(var_def ** vars, size_t * vars_cnt, void (*fcn)()){
   symbolstack = oss;
 }
 
-var_def * get_variable(char * name, size_t name_len){
-  if(name_len > 1024)
-    ERROR("Excessive variable name length");
+var_def * get_variable(symbol name){
   symbol_stack * ss = symbolstack;
   while(ss != NULL){
     var_def * vars = *ss->vars;
     size_t varcnt = *ss->vars_cnt;
     for(size_t i = 0;i < varcnt; i++){
-      for(size_t j = 0; j < name_len; j++){
-	if(name[j] != vars[i].name[j])
+      if(symbol_cmp(name,vars[i].name)){
 	  goto next_item;
       }
       return vars + i;
@@ -80,10 +72,6 @@ var_def * get_variable(char * name, size_t name_len){
   return NULL;
 }
 
-var_def * get_variable2(char * name){
-  return get_variable(name,strlen(name));
-}
-
 #include "uthash.h"
 
 typedef struct {
@@ -92,7 +80,8 @@ typedef struct {
   UT_hash_handle hh;
 }symbol_lookup;
 
-char * get_c_name(char * sym){
+char * get_c_name(symbol s){
+  char * sym = s.name;
   bool first_alpha = isalpha(sym[0]) || '_' == sym[0];
   bool all_alphanum = true;
   for(size_t i = 0; sym[i];i++){
@@ -123,8 +112,8 @@ char * get_c_name(char * sym){
   }
 }
 
-cmacro_def * get_cmacro_def(char * name, size_t name_len){
-  var_def * var = get_variable(name, name_len);
+cmacro_def * get_cmacro_def(symbol s){
+  var_def * var = get_variable(s);
   if(var == NULL){
     return NULL;
   }
@@ -136,14 +125,15 @@ cmacro_def * get_cmacro_def(char * name, size_t name_len){
 }
 
 bool test_get_cname(){
-  char * n1 = get_c_name("thingy");
-  char * n2 = get_c_name("2thingy");
-  char * n3 = get_c_name("321");
-  char * n4 = get_c_name("+");
-  char * n5 = get_c_name("things-and-epic-things");
-  char * n6 = get_c_name("+");
-  char * n7 = get_c_name("+plus");
-  char * n8 = get_c_name("+plus");
+  char * get_c(char * str){return get_c_name(get_symbol(str));};
+  char * n1 = get_c("thingy");
+  char * n2 = get_c("2thingy");
+  char * n3 = get_c("321");
+  char * n4 = get_c("+");
+  char * n5 = get_c("things-and-epic-things");
+  char * n6 = get_c("+");
+  char * n7 = get_c("+plus");
+  char * n8 = get_c("+plus");
   
   logd("%s %s %s %s %s %s %s %s\n",n1, n2, n3, n4, n5, n6, n7, n8);
   TEST_ASSERT(n6 == n4);

@@ -8,6 +8,29 @@
 
 #define COMPILE_ASSERT(expr) if(!(expr)){ERROR("Compile error");return &error_def;}
 #define COMPILE_ERROR(fmt, ...) {ERROR(fmt,##__VA_ARGS__); return &error_def;}
+
+symbol expr_symbol(expr e){
+  char buf[e.value.strln + 1];
+  buf[e.value.strln] = 0;
+  memcpy(buf, e.value.value, e.value.strln);
+  return get_symbol(buf);
+}
+
+
+expr symbol_expr(char * name){
+  expr e;
+  e.type = VALUE;
+  e.value.type = SYMBOL;
+  e.value.value = name;
+  e.value.strln = strlen(name);
+  return e;
+}
+
+expr string_expr(char * name){
+  expr e = symbol_expr(name);
+  e.value.type = STRING;
+  return e;
+}
 	
 typedef struct{
   c_root_code * c_code;
@@ -41,7 +64,6 @@ static type_def * compile_value(c_value * val, value_expr e){
   }
   return &error_def;
 }
-
 
 type_def * _type_macro(expr typexpr);
 bool read_decl(expr dclexpr, decl * out){
@@ -101,20 +123,6 @@ type_def * _type_macro(expr typexpr){
   return &error_def;
 }
 
-expr symbol_expr(char * name){
-  expr e;
-  e.type = VALUE;
-  e.value.type = SYMBOL;
-  e.value.value = name;
-  e.value.strln = strlen(name);
-  return e;
-}
-
-expr string_expr(char * name){
-  expr e = symbol_expr(name);
-  e.value.type = STRING;
-  return e;
-}
 
 static type_def * _compile_expr(c_block * block, c_value * val,  expr e );
 
@@ -499,8 +507,8 @@ type_def * defun_macro(c_block * block, c_value * value, expr name, expr args, e
   COMPILE_ASSERT(name.type == VALUE && name.value.type == SYMBOL);
   COMPILE_ASSERT(args.type == EXPR && args.sub_expr.cnt > 0);
 
-  char * fcnname = fmtstr("%.*s",name.value.strln,name.value.value);
-  logd("defining function: '%s'\n", fcnname);
+  symbol fcnname = expr_symbol(name);
+  logd("defining function: '%s'\n", fcnname.name);
   c_root_code newfcn_root;
   newfcn_root.type = C_FUNCTION_DEF;
   c_fcndef * f = &newfcn_root.fcndef;
@@ -550,7 +558,7 @@ type_def * defun_macro(c_block * block, c_value * value, expr name, expr args, e
   list_add((void **) &blk->exprs, &blk->expr_cnt, &expr, sizeof(c_expr));
   compile_as_c(&newfcn_root,1);
   // ** Just return the function name ** //
-  return compile_value(value, string_expr(fcnname).value);
+  return compile_value(value, string_expr(fcnname.name).value);
 }
 
 i64 i64_add(i64 a, i64 b){
@@ -572,11 +580,11 @@ void lisp_load_compiler(compiler_state * c){
 	  type_def * type = str2type("(fcn void (a (ptr type_def)))");
 	  type_def * type2 = str2type("(fcn void (a (ptr type_def)))");
 	  type_def * type3 = str2type("(fcn void (a (ptr void)))");
-	  compiler_define_variable_ptr("print_type", type, print_type);
+	  compiler_define_variable_ptr(get_symbol("print_type"), type, print_type);
 	  ASSERT(type == type2 && type != type3);
-	  compiler_define_variable_ptr("write_line", str2type("(fcn void (a (ptr char)))"), &write_line);
-	  compiler_define_variable_ptr("i64_add", str2type("(fcn i64 (a i64) (b i64))"), &i64_add);
-	  ASSERT(NULL != get_variable2("i64_add"));
+	  compiler_define_variable_ptr(get_symbol("write_line"), str2type("(fcn void (a (ptr char)))"), &write_line);
+	  compiler_define_variable_ptr(get_symbol("i64_add"), str2type("(fcn i64 (a i64) (b i64))"), &i64_add);
+	  ASSERT(NULL != get_variable(get_symbol("i64_add")));
 	}
       }));
 }
@@ -587,7 +595,7 @@ void lisp_run_exprs(compiler_state * c, expr * exprs, size_t exprcnt){
 	for(size_t i = 0; i < exprcnt; i++){
 	  c_root_code cl = compile_lisp_to_eval(exprs[i]);
 	  compile_as_c(&cl,1);
-	  var_def * evaldef = get_variable2("eval");
+	  var_def * evaldef = get_variable(get_symbol("eval"));
 	  print_def(evaldef->type->fcn.ret,false); logd(" :: ");
 	  if(evaldef->type->fcn.ret == &void_def){
 	    logd("()\n");
@@ -658,11 +666,11 @@ bool test_lisp2c(){
 	  type_def * type = str2type("(fcn void (a (ptr type_def)))");
 	  type_def * type2 = str2type("(fcn void (a (ptr type_def)))");
 	  type_def * type3 = str2type("(fcn void (a (ptr void)))");
-	  compiler_define_variable_ptr("print_type", type, print_type);
+	  compiler_define_variable_ptr(get_symbol("print_type"), type, print_type);
 	  ASSERT(type == type2 && type != type3);
-	  compiler_define_variable_ptr("write_line", str2type("(fcn void (a (ptr char)))"), &write_line);
-	  compiler_define_variable_ptr("i64_add", str2type("(fcn i64 (a i64) (b i64))"), &i64_add);
-	  ASSERT(NULL != get_variable2("i64_add"));
+	  compiler_define_variable_ptr(get_symbol("write_line"), str2type("(fcn void (a (ptr char)))"), &write_line);
+	  compiler_define_variable_ptr(get_symbol("i64_add"), str2type("(fcn i64 (a i64) (b i64))"), &i64_add);
+	  ASSERT(NULL != get_variable(get_symbol("i64_add")));
 	}
 
 	logd("parsed %i expr(s).\n", exprcnt);
@@ -670,7 +678,7 @@ bool test_lisp2c(){
 	  logd("Iteration: %i\n",i);
 	  c_root_code cl = compile_lisp_to_eval(exprs[i]);
 	  compile_as_c(&cl,1);
-	  var_def * evaldef = get_variable2("eval");
+	  var_def * evaldef = get_variable(get_symbol("eval"));
 	  print_def(evaldef->type,false); logd(" :: ");
 	  if(evaldef->type->fcn.ret == &void_def){
 	    void (* fcn)() = evaldef->data;

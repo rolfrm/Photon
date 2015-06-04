@@ -44,7 +44,7 @@ void define_macro(char * name, int nargs, void * fcn){
   cast_def.arg_cnt = nargs;
   cast_def.fcn = fcn;;
   cast_def.name = name;
-  compiler_define_variable_ptr(name, &cmacro_def_def, clone(&cast_def,sizeof(cmacro_def)));
+  compiler_define_variable_ptr(get_symbol(name), &cmacro_def_def, clone(&cast_def,sizeof(cmacro_def)));
 }
 
 compiler_state * compiler_make(){

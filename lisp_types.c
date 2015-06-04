@@ -14,11 +14,10 @@
 #include "lisp_compiler.h"
 #include "lisp_std_types.h"
 
-type_def make_simple(char * name, char * cname){
+type_def make_simple(char * name){
   static type_def def;
   def.kind = SIMPLE;
-  def.simple.name = name;
-  def.simple.cname = cname;
+  def.simple.name = get_symbol(name);
   return def;
 }
 
@@ -33,17 +32,17 @@ void print_def(type_def * type, bool is_decl){
   type_def * inner;
   switch(type->kind){
   case SIMPLE:
-    format("%s", type->simple.name);
+    format("%s", type->simple.name.name);
     break;
   case STRUCT:
     if(is_decl){
       format("%s", type->cstruct.name);
     }else{
-      format("struct %s{\n", type->cstruct.name == NULL ? "" : type->cstruct.name);
+      format("struct %s{\n", type->cstruct.name.name == NULL ? "" : type->cstruct.name.name);
       for(i64 i = 0; i < type->cstruct.cnt; i++){	
-	if(type->cstruct.members[i].name != NULL){
+	if(type->cstruct.members[i].name.name != NULL){
 	  print_def(type->cstruct.members[i].type, true);
-	  format(" %s;\n",type->cstruct.members[i].name);
+	  format(" %s;\n",type->cstruct.members[i].name.name);
 	}else{
 	  print_def(type->cstruct.members[i].type, false);
 	  format("\n");
@@ -58,20 +57,20 @@ void print_def(type_def * type, bool is_decl){
     break;
   case ENUM:
     if(is_decl){
-      format("%s", type->cenum.enum_name);
+      format("%s", type->cenum.enum_name.name);
     }else{
-      format("%s",type->cenum.enum_name);
+      format("%s",type->cenum.enum_name.name);
     }
     break;
   case UNION:
     if(is_decl){
-      format("%s", type->cunion.name);
+      format("%s", type->cunion.name.name);
     }else{
       format("union {\n");
 
       for(i64 i = 0; i < type->cunion.cnt; i++){
 	print_def(type->cunion.members[i].type, false);
-	format(" %s;\n", type->cunion.members[i].name);
+	format(" %s;\n", type->cunion.members[i].name.name);
       }
       format("};");
     }
@@ -81,17 +80,17 @@ void print_def(type_def * type, bool is_decl){
     inner = type->ctypedef.inner;
     char struct_name[20];
 
-    if(inner->kind == STRUCT && inner->cstruct.name == NULL){
-      sprintf(struct_name, "_%s_",type->ctypedef.name);
-      inner->cstruct.name = struct_name;
-    }
+    //if(inner->kind == STRUCT && inner->cstruct.name.name == NULL){
+      //sprintf(struct_name, "_%s_",type->ctypedef.name.name);
+      //inner->cstruct.name = struct_name;
+    //}
     if(is_decl){
-      format("%s", type->ctypedef.name);
+      format("%s", type->ctypedef.name.name);
       //print_def(inner,ind,true);
     }else{
       format("typedef ");
       print_def(inner,false);
-      format("%s;\n",type->ctypedef.name);
+      format("%s;\n",type->ctypedef.name.name);
     }
     
     break;
@@ -133,14 +132,14 @@ void _make_dependency_graph(type_def ** defs, type_def * def, bool nested){
       _make_dependency_graph(defs,sdef,true);
     }	  
     
-    if(def->cunion.name != NULL && !nested) check_add();// *defs_it = def;
+    if(def->cunion.name.name != NULL && !nested) check_add();// *defs_it = def;
     break;
   case STRUCT:
     for(i64 i = 0; i < def->cstruct.cnt; i++){
       type_def * sdef = def->cstruct.members[i].type;
       _make_dependency_graph(defs,sdef,true);
     }
-    if(def->cstruct.name != NULL && !nested) check_add();;
+    if(def->cstruct.name.name != NULL && !nested) check_add();;
     break;
   case POINTER:
     //*defs_it = def;
@@ -175,15 +174,15 @@ void make_dependency_graph(type_def ** defs, type_def * def){
   _make_dependency_graph(defs,def,false);
 }
 
-void add_var_dep(char ** vdeps, char * newdep){
-  for(;*vdeps != NULL;vdeps++){
-    if(strcmp(*vdeps,newdep) == 0)
+void add_var_dep(symbol * vdeps, symbol newdep){
+  for(;vdeps->name != NULL; vdeps++){
+    if(symbol_cmp(*vdeps, newdep))
       return;
   }
   *vdeps = newdep;
 }
 
-void value_dep(type_def ** deps, char ** vdeps, c_value val){
+void value_dep(type_def ** deps, symbol * vdeps, c_value val){
   var_def * var;
   switch(val.type){
 
@@ -206,7 +205,7 @@ void value_dep(type_def ** deps, char ** vdeps, c_value val){
     value_dep(deps, vdeps, *val.value);
     break;
   case C_SYMBOL:
-    var = get_variable2(val.symbol);
+    var = get_variable(val.symbol);
     if(var == NULL){
       //ERROR("Undefined symbol '%s'",val.symbol);
       // might be a local variable.
@@ -221,7 +220,7 @@ void value_dep(type_def ** deps, char ** vdeps, c_value val){
   }
 }
 
-void expr_dep(type_def ** deps, char ** vdeps, c_expr expr){
+void expr_dep(type_def ** deps, symbol * vdeps, c_expr expr){
   switch(expr.type){
   case C_VAR:
     make_dependency_graph(deps, expr.var.var.type);
@@ -240,13 +239,13 @@ void expr_dep(type_def ** deps, char ** vdeps, c_expr expr){
   }
 }
 
-void block_dep(type_def ** deps, char ** vdeps, c_block blk){
+void block_dep(type_def ** deps, symbol * vdeps, c_block blk){
   for(size_t i = 0; i < blk.expr_cnt; i++){
     expr_dep(deps, vdeps, blk.exprs[i]);
   }
 }
 
-void c_root_code_dep(type_def ** deps, char ** vdeps, c_root_code code){
+void c_root_code_dep(type_def ** deps, symbol * vdeps, c_root_code code){
   switch(code.type){
   case C_FUNCTION_DEF:
     make_dependency_graph(deps, code.fcndef.fdecl.type);
@@ -268,7 +267,7 @@ void c_root_code_dep(type_def ** deps, char ** vdeps, c_root_code code){
   }
 }
 
-void get_var_dependencies(char ** type_names, c_root_code * code){
+void get_var_dependencies(symbol * type_names, c_root_code * code){
   UNUSED(type_names);
   UNUSED(code);
 }
@@ -414,6 +413,7 @@ typedef struct{
   char * name;
   UT_hash_handle hh;
 }type_item;
+
 static type_item * items = NULL;
 
 type_def * _get_type_def(type_def * def){
@@ -433,8 +433,8 @@ type_def * _get_type_def(type_def * def){
     free(tmpbuf);
     return item->ptr;
   }
-  item = alloc(sizeof(type_item));
-  item->ptr = alloc(sizeof(type_def));
+  item = alloc0(sizeof(type_item));
+  item->ptr = alloc0(sizeof(type_def));
   type_def * newtype = item->ptr;
   type_def * inner;
   newtype->kind = def->kind;
@@ -536,7 +536,7 @@ void write_dependencies(type_def ** deps){
   for(; *deps != NULL; deps++){
     type_def * t = *deps;
     if(t->kind == STRUCT){
-      char * name = t->cstruct.name;
+      char * name = t->cstruct.name.name;
       if(name != NULL){
 	format("struct %s;\n", name);
       }
@@ -548,7 +548,7 @@ void write_dependencies(type_def ** deps){
     if(t->kind == TYPEDEF){
       type_def * inner = t->ctypedef.inner;
       if(inner->kind == STRUCT){
-	char * name = inner->cstruct.name;
+	char * name = inner->cstruct.name.name;
 	char _namebuf[100];
 	if(name == NULL){
 	  sprintf(_namebuf, "_%s_", get_c_name(t->ctypedef.name));
@@ -560,7 +560,7 @@ void write_dependencies(type_def ** deps){
 	format("typedef enum {\n");
 	for(int j = 0; j < inner->cenum.cnt; j++){
 	  char * comma = (j !=(inner->cenum.cnt-1) ? "," : "");
-	  format("   %s = %i%s\n", inner->cenum.names[j], inner->cenum.values[j], comma);
+	  format("   %s = %i%s\n", inner->cenum.names[j].name, inner->cenum.values[j], comma);
 	}
 	format("}%s;\n", get_c_name(t->ctypedef.name));
       }
@@ -587,11 +587,11 @@ bool test_print_c_code(){
 
     c_value a_sym;
     a_sym.type = C_SYMBOL;
-    a_sym.symbol = "a";
+    a_sym.symbol = get_symbol("a");
 
     c_value cv1;
     cv1.type = C_FUNCTION_CALL;
-    cv1.call.name = "printf";
+    cv1.call.name = get_symbol("printf");
 
     cv1.call.arg_cnt = 1;
     cv1.call.args = &a_sym;
@@ -608,7 +608,7 @@ bool test_print_c_code(){
     
     c_expr var;
     decl v;
-    v.name = "a";
+    v.name = get_symbol("a");
     v.type = &char_ptr_def;
     var.type = C_VAR;
     var.var.var = v;
@@ -633,7 +633,7 @@ bool test_print_c_code(){
 
     decl fdecl;
     fdecl.type = get_type_def(ftype);
-    fdecl.name = "print_test";
+    fdecl.name = get_symbol("print_test");
     fundef.fdecl = fdecl;
     
     c_root_code c2;
