@@ -20,7 +20,7 @@ Short Term Features
 * [x] Global variables.
 * [x] setf
 * [x] floats / doubles
-* [ ] Loading lisp code
+* [x] Loading lisp code
 * [ ] Proper symbols
 * [ ] Lisp macros (tick/backtick syntax)
 * [ ] Structs

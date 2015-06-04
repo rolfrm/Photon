@@ -31,4 +31,4 @@
 (cast 0.001 f32)
 (cast 2.5 f64)
 (load "test2.lisp")
-x
+(+ x x)
