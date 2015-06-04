@@ -400,6 +400,10 @@ bool is_symbol(expr exp){
   return exp.type == VALUE && exp.value.type == SYMBOL;
 }
 
+bool is_string(expr exp){
+  return exp.type == VALUE && exp.value.type == STRING;
+}
+
 char * read_symbol(expr name){
   return fmtstr("%.*s",name.value.strln, name.value.value);
 }
@@ -441,6 +445,14 @@ type_def * setf_macro(c_block * block, c_value * val, expr name, expr body){
   val->operator.right = vr;
   val->operator.operator = '=';
   return t;
+}
+
+type_def * load_macro(c_block * block, c_value * val, expr file_name){
+  COMPILE_ASSERT(is_string(file_name));
+  char * filename = read_symbol(file_name);
+  lisp_run_script_file(get_compiler(), filename);
+  return _compile_expr(block, val, file_name);
+
 }
 
 type_def * progn_macro(c_block * block, c_value * val, expr * expressions, size_t expr_cnt){
@@ -553,6 +565,7 @@ void lisp_load_compiler(compiler_state * c){
 	define_macro("progn", -1,&progn_macro);
 	define_macro("cast", 2, &cast_macro);
 	define_macro("defvar",2, &defvar_macro);
+	define_macro("load",1, &load_macro);
 	define_macro("setf",2, &setf_macro);
 	{
 	  type_def * type = str2type("(fcn void (a (ptr type_def)))");
