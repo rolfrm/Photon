@@ -17,7 +17,8 @@ Short Term Features
 --------
 * [x] Naming symbols anything.
 * [ ] Function overloading
-* [ ] Global variables.
+* [x] Global variables.
+* [ ] setf
 * [ ] floats / doubles
 * [ ] Loading lisp code
 * [ ] Proper symbols
