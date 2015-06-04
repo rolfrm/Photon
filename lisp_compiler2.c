@@ -329,6 +329,13 @@ void compile_as_c(c_root_code * codes, size_t code_cnt){
       void * ptr = tcc_get_symbol(tccs, get_c_name(fdecl.name));
       ASSERT(ptr != NULL);
       compiler_define_variable_ptr(fdecl.name, fdecl.type, ptr);
+    }else if(r.type == C_VAR_DEF){
+      
+      decl vdecl = r.var.var;
+      logd("Defining variable: %s\n", vdecl.name);
+      void * ptr = tcc_get_symbol(tccs, get_c_name(vdecl.name));
+      ASSERT(ptr != NULL);
+      compiler_define_variable_ptr(vdecl.name, vdecl.type, ptr);
     }
   }
 
@@ -394,13 +401,15 @@ bool is_symbol(expr exp){
 }
 
 char * read_symbol(expr name){
-  return fmtstr("%*.s",name.value.strln, name.value.value);
+  return fmtstr("%.*s",name.value.strln, name.value.value);
 }
 
 
 type_def * defvar_macro(c_block * block, c_value * val, expr name, expr body){
   COMPILE_ASSERT(is_symbol(name));
+  logd("defvar macro: %.*s\n", name.value.strln, name.value.value);
   char * sym = read_symbol(name);
+
   c_value * vr = alloc0(sizeof(c_value));
   c_value * vl = alloc0(sizeof(c_value));
   vl->type = C_SYMBOL;

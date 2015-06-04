@@ -299,7 +299,7 @@ void print_value(c_value val){
   case C_OPERATOR:
     format("(");
     print_value(*val.operator.left);
-    format("%c ",val.operator);
+    format(" %c ", val.operator.operator);
     print_value(*val.operator.right);
     format(")");
     break;
