@@ -12,13 +12,32 @@ typedef struct{
   char * name;
 }symbol;
 
+#include "uthash.h"
+
 typedef struct{
   char * key;
   u64 value;
+  UT_hash_handle hh;
 }symbol_table;
 
+static symbol_table * symtbl = NULL; 
+u64 symbol_cnt = 0;
+
 symbol get_symbol(char * name){
-  
+  symbol_table * sym_item = NULL;
+  HASH_FIND_STR(symtbl, name, sym_item);
+  if(sym_item == NULL){
+    
+    sym_item = alloc0(sizeof(symbol_table));
+    sym_item->value = ++symbol_cnt;
+    sym_item->key = fmtstr("%s",name);
+    HASH_ADD_KEYPTR(hh, symtbl, sym_item->key, strlen(sym_item->key), sym_item);
+  }
+  return (symbol){sym_item->value, sym_item->key};
+}
+
+bool symbol_cmp(symbol a, symbol b){
+  return a.id == b.id;
 }
 
 typedef struct _symbol_stack symbol_stack;
@@ -104,22 +123,6 @@ char * get_c_name(char * sym){
   }
 }
 
-bool test_get_cname(){
-  char * n1 = get_c_name("thingy");
-  char * n2 = get_c_name("2thingy");
-  char * n3 = get_c_name("321");
-  char * n4 = get_c_name("+");
-  char * n5 = get_c_name("things-and-epic-things");
-  char * n6 = get_c_name("+");
-  char * n7 = get_c_name("+plus");
-  char * n8 = get_c_name("+plus");
-  
-  logd("%s %s %s %s %s %s %s %s\n",n1, n2, n3, n4, n5, n6, n7, n8);
-  TEST_ASSERT(n6 == n4);
-  TEST_ASSERT(n7 == n8);
-  return TEST_SUCCESS;
-}
-
 fcn_def * get_fcn_def(char * name, size_t name_len){
   var_def * var = get_variable(name, name_len);
   if(var == NULL){
@@ -143,3 +146,36 @@ cmacro_def * get_cmacro_def(char * name, size_t name_len){
   }
   return (cmacro_def *) var->data;
 }
+
+bool test_get_cname(){
+  char * n1 = get_c_name("thingy");
+  char * n2 = get_c_name("2thingy");
+  char * n3 = get_c_name("321");
+  char * n4 = get_c_name("+");
+  char * n5 = get_c_name("things-and-epic-things");
+  char * n6 = get_c_name("+");
+  char * n7 = get_c_name("+plus");
+  char * n8 = get_c_name("+plus");
+  
+  logd("%s %s %s %s %s %s %s %s\n",n1, n2, n3, n4, n5, n6, n7, n8);
+  TEST_ASSERT(n6 == n4);
+  TEST_ASSERT(n7 == n8);
+  return TEST_SUCCESS;
+}
+
+bool test_symbol_table(){
+  symbol s = get_symbol("test");
+  symbol s2 = get_symbol("__TEST__");
+  symbol s3 = get_symbol("test");
+  symbol s4 = get_symbol("__TEST__");
+  TEST_ASSERT(symbol_cmp(s2, s4) && symbol_cmp(s, s3) && !symbol_cmp(s, s2));
+  TEST_ASSERT(strcmp(s3.name, "test") == 0);
+  return TEST_SUCCESS;
+}
+
+bool test_symbols(){
+  TEST(test_get_cname);
+  return TEST_SUCCESS;
+}
+
+
