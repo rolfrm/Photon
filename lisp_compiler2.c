@@ -574,7 +574,7 @@ void lisp_run_exprs(compiler_state * c, expr * exprs, size_t exprcnt){
 	  c_root_code cl = compile_lisp_to_eval(exprs[i]);
 	  compile_as_c(&cl,1);
 	  var_def * evaldef = get_variable2("eval");
-	  print_def(evaldef->type,false); logd(" :: ");
+	  print_def(evaldef->type->fcn.ret,false); logd(" :: ");
 	  if(evaldef->type->fcn.ret == &void_def){
 	    logd("()\n");
 	    void (* fcn)() = evaldef->data;
@@ -587,15 +587,26 @@ void lisp_run_exprs(compiler_state * c, expr * exprs, size_t exprcnt){
 	    char * (* fcn)() = evaldef->data;
 	    char * str = fcn();
 	    logd("\"%s\"\n",str);
-	      
 	  }else if(evaldef->type->fcn.ret->kind == POINTER){
 	    void * (* fcn)() = evaldef->data;
 	    void * ptr = fcn();
-	    logd("ptr: %x\n", ptr);
+	    logd("%p\n", ptr);
 	  }else if(evaldef->type->fcn.ret == &i64_def){
 	    i64 (* fcn)() = evaldef->data;
 	    i64 v = fcn();
 	    logd("%i\n",v);
+	  }else if(evaldef->type->fcn.ret == &i32_def){
+	    i32 (* fcn)() = evaldef->data;
+	    i32 v = fcn();
+	    logd("%i\n",v);  
+	  }else if(evaldef->type->fcn.ret == &f32_def){
+	      f32 (* fcn)() = evaldef->data;
+	      f32 v = fcn();
+	      logd("%f\n",v);  
+	  }else if(evaldef->type->fcn.ret == &f64_def){
+	    f64 (* fcn)() = evaldef->data;
+	    f64 v = fcn();
+	    logd("%f\n",v);  
 	  }else{
 	    logd("\n");
 	    loge("Unable to eval function of this type\n");

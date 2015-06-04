@@ -27,3 +27,6 @@
 (+ test8 test8)
 (setf test8 100)
 (+ test8 test7)
+(cast "asd" (ptr i32))
+(cast 0.001 f32)
+(cast 2.5 f64)

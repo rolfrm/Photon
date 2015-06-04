@@ -10,8 +10,6 @@
 
 #include "lisp_std_types.h"
 
-
-
 static void r(type_def * def){
     register_type(def, def->simple.name);
 }
@@ -23,10 +21,9 @@ void r2(type_def * def){
 // Loads a all the types we need.
 // call before anything else.
 void load_defs(){
-  
+  // simple types //
   void_def = make_simple("void", "void");
   r(&void_def);
-
   void_ptr_def = make_ptr(&void_def);
   r2(&void_ptr_def);
   error_def = make_simple("error","error");
@@ -35,8 +32,15 @@ void load_defs(){
   r2(&char_def);
   i64_def = make_simple("i64", "i64");
   r2(&i64_def);
+  i32_def = make_simple("i32", "i32");
+  r2(&i32_def);
   u8_def = make_simple("u8", "u8");
   r2(&u8_def);
+  f32_def = make_simple("f32", "f32");
+  r2(&f32_def);
+  f64_def = make_simple("f64", "f64");
+  r2(&f64_def);
+  // pointers to simple types //
   char_ptr_def.kind = POINTER;
   char_ptr_def.ptr.inner = &char_def;
   r2(&char_ptr_def);
