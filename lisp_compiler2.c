@@ -33,11 +33,22 @@ expr symbol_expr2(symbol name){
   return symbol_expr(symbol_name(name));
 }
 
-
 expr string_expr(char * name){
   expr e = symbol_expr(name);
   e.value.type = STRING;
   return e;
+}
+
+bool is_symbol(expr exp){
+  return exp.type == VALUE && exp.value.type == SYMBOL;
+}
+
+bool is_string(expr exp){
+  return exp.type == VALUE && exp.value.type == STRING;
+}
+
+char * read_symbol(expr name){
+  return fmtstr("%.*s",name.value.strln, name.value.value);
 }
 	
 typedef struct{
@@ -274,33 +285,33 @@ TCCState * mktccs(){
 
 void go_write(type_def ** deps, symbol * vdeps, c_root_code * codes, size_t code_cnt){
 
-    write_dependencies(deps);
-    for(size_t i = 0; deps[i] != NULL; i++){
-      if(deps[i]->type == TYPEDEF){
-	continue;
-	print_def(deps[i]->ctypedef.inner,false);
-      }else{
-	print_def(deps[i],false);
-      }
-      format(";\n");
+  write_dependencies(deps);
+  for(size_t i = 0; deps[i] != NULL; i++){
+    if(deps[i]->type == TYPEDEF){
+      continue;
+      print_def(deps[i]->ctypedef.inner,false);
+    }else{
+      print_def(deps[i],false);
     }
-    
-    for(size_t i = 0; vdeps[i].id != 0; i++){
-      
-      var_def * var = get_variable(vdeps[i]);
-      ASSERT(var != NULL);
-      decl dcl;
-      dcl.name = var->name;
-      dcl.type = var->type;
-      format("extern ");
-      print_cdecl(dcl);format(";\n");
-    }
-  
-    for(size_t i = 0; i < code_cnt; i++){
-      c_root_code_dep(deps, vdeps, codes[i]);
-      print_c_code(codes[i]);
-    }
+    format(";\n");
   }
+    
+  for(size_t i = 0; vdeps[i].id != 0; i++){
+      
+    var_def * var = get_variable(vdeps[i]);
+    ASSERT(var != NULL);
+    decl dcl;
+    dcl.name = var->name;
+    dcl.type = var->type;
+    format("extern ");
+    print_cdecl(dcl);format(";\n");
+  }
+  
+  for(size_t i = 0; i < code_cnt; i++){
+    c_root_code_dep(deps, vdeps, codes[i]);
+    print_c_code(codes[i]);
+  }
+}
 
 
 void compile_as_c(c_root_code * codes, size_t code_cnt){
@@ -416,17 +427,6 @@ type_def * var_macro(c_block * block, c_value * val, expr vars, expr body){
   return ret_type;
 }
 
-bool is_symbol(expr exp){
-  return exp.type == VALUE && exp.value.type == SYMBOL;
-}
-
-bool is_string(expr exp){
-  return exp.type == VALUE && exp.value.type == STRING;
-}
-
-char * read_symbol(expr name){
-  return fmtstr("%.*s",name.value.strln, name.value.value);
-}
 
 
 type_def * defvar_macro(c_block * block, c_value * val, expr name, expr body){

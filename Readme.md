@@ -22,7 +22,7 @@ Short Term Features
 * [x] floats / doubles
 * [x] Loading lisp code
 * [x] Proper symbols -  one symbol - one ID. Symbols to be used for functions, variable names. This meams that vars will be symbol based instead of string based.
-* [ ] Quoting 'symbolname
+* [x] Quoting 'symbolname
 * [ ] Lisp macros (tick/backtick syntax)
 * [ ] Structs
  * [ ] Defining
@@ -35,7 +35,10 @@ Short Term Features
 * [ ] ffi
 * [ ] enums
 * [ ] function overloading macro
+* [ ] loops (while expr body) result is the output of the last item.
+* [ ] 
 * [ ] ...
+
 
 
 Long Term Features
