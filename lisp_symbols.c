@@ -18,9 +18,9 @@ typedef struct{
 const symbol symbol_empty = {0};
 symbol_table * symtbl = NULL; 
 symbol_table * symtbl_byid = NULL; 
-u64 symbol_cnt = 1;
+u32 symbol_cnt = 1;
 
-symbol get_symbol(char * name){
+symbol * get_symbol2(char * name){
   symbol_table * sym_item = NULL;
   HASH_FIND_STR(symtbl, name, sym_item);
   if(sym_item == NULL){
@@ -31,7 +31,11 @@ symbol get_symbol(char * name){
     HASH_ADD_KEYPTR(hh, symtbl, sym_item->key, strlen(sym_item->key), sym_item);
     HASH_ADD(hh2, symtbl_byid, value, sizeof(sym_item->value), sym_item);
   }
-  return (symbol){sym_item->value};
+  return (symbol *) &sym_item->value;
+}
+
+symbol get_symbol(char * name){
+  return *get_symbol2(name);
 }
 
 char * symbol_name(symbol s){

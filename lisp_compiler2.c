@@ -331,7 +331,6 @@ void compile_as_c(c_root_code * codes, size_t code_cnt){
       ASSERT(!fail);
     }else{
       char * vname = get_c_name(var->name);
-      logd("vdep: %s\n", vname);
       int fail = tcc_add_symbol(tccs,vname,&var->data);
       ASSERT(!fail);
     }
@@ -506,6 +505,7 @@ type_def * cast_macro(c_block * block, c_value * value, expr body, expr type){
 
 type_def * quote_macro(c_block * block, c_value * value, expr body, expr type){
   UNUSED(block);UNUSED(value);UNUSED(body);UNUSED(type);
+  
   return NULL;
 }
 
@@ -600,7 +600,9 @@ void lisp_load_compiler(compiler_state * c){
 	  ASSERT(type == type2 && type != type3);
 	  compiler_define_variable_ptr(get_symbol("write_line"), str2type("(fcn void (a (ptr char)))"), &write_line);
 	  compiler_define_variable_ptr(get_symbol("i64_add"), str2type("(fcn i64 (a i64) (b i64))"), &i64_add);
-	  ASSERT(NULL != get_variable(get_symbol("i64_add")));
+	  
+	  compiler_define_variable_ptr(get_symbol("get-symbol"), str2type("(fcn (ptr symbol) (a (ptr char)))"), get_symbol2);
+
 	}
       }));
 }
@@ -623,6 +625,10 @@ void lisp_run_expr(expr ex){
     char * (* fcn)() = evaldef->data;
     char * str = fcn();
     logd("\"%s\"\n",str);
+  }else if(evaldef->type->fcn.ret == str2type("(ptr symbol)")){
+    symbol * (* fcn)() = evaldef->data;
+    symbol * s = fcn();
+    logd("'%s\n", symbol_name(*s));
   }else if(evaldef->type->fcn.ret->type == POINTER){
     void * (* fcn)() = evaldef->data;
     void * ptr = fcn();
@@ -644,6 +650,7 @@ void lisp_run_expr(expr ex){
     f64 (* fcn)() = evaldef->data;
     f64 v = fcn();
     logd("%f\n",v);  
+    
   }else{
     logd("\n");
     loge("Unable to eval function of this type\n");
@@ -690,6 +697,7 @@ bool test_lisp2c(){
 	  ASSERT(type == type2 && type != type3);
 	  compiler_define_variable_ptr(get_symbol("write_line"), str2type("(fcn void (a (ptr char)))"), &write_line);
 	  compiler_define_variable_ptr(get_symbol("i64_add"), str2type("(fcn i64 (a i64) (b i64))"), &i64_add);
+
 	  ASSERT(NULL != get_variable(get_symbol("i64_add")));
 	}
 

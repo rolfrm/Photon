@@ -174,8 +174,8 @@ typedef struct{
 }c_root_code;
 
 extern const symbol symbol_empty;
-
-symbol get_symbol(char * name);
+symbol  get_symbol(char * name);
+symbol * get_symbol2(char * name);
 char * symbol_name(symbol s);
 bool symbol_cmp(symbol a, symbol b);
 

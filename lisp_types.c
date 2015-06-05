@@ -539,7 +539,6 @@ void write_dependencies(type_def ** deps){
     if(t->type == ENUM){
       ERROR("Should not happen");
     }
-    loge("%i\n", t->type);
     if(t->type == TYPEDEF){
       type_def * inner = t->ctypedef.inner;
       if(inner->type == STRUCT){

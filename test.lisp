@@ -32,3 +32,5 @@
 (cast 2.5 f64)
 (load "test2.lisp")
 (+ x x)
+(get-symbol "hello")
+;(quote hello) ;;essencially get_symbol("hello");

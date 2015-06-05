@@ -15,3 +15,7 @@ typedef char * str;
 
 typedef float f32;
 typedef double f64;
+
+typedef struct _symbol_{
+  u64 id;
+};

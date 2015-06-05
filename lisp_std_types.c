@@ -291,14 +291,14 @@ void load_defs(){
     symbol_def.type = TYPEDEF;
     symbol_def.ctypedef.name = get_symbol("symbol");
 
-    static decl members[2];
+    static decl members[1];
     static type_def inner;
     symbol_def.ctypedef.inner = &inner;
     inner.type = STRUCT;
-    members[0].type = &u64_def;
+    members[0].type = &u32_def;
     members[0].name = get_symbol("id");
-    members[1].type = &char_ptr_def;
-    members[1].name = get_symbol("name");
+    //members[1].type = &char_ptr_def;
+    //members[1].name = get_symbol("name");
     inner.cstruct.members = members;
     inner.cstruct.cnt = array_count(members);
     inner.cstruct.name = symbol_empty;
