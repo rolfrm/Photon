@@ -17,8 +17,6 @@ bool is_alphanum(char c){
   return isdigit(c) || isalpha(c);
 }
 
-
-
 bool is_whitespace(char c){
   return (bool)isspace(c) || c == '\n';
 }
@@ -83,19 +81,21 @@ char * parse_string(char * code, value_expr * string){
 char * parse_number(char * code, value_expr * string){
   int decimal_reached = 0;
   char * it = code;
-  if(!isdigit(*code)) return NULL;
+  if(*it == '-') it++; //if negative
   for(; false == is_endexpr(*it); it++){
     if(*it == '.'){
       if(decimal_reached)
 	return NULL;
       decimal_reached = 1;
-    }else if(!isdigit(*code)){
+    }else if(!isdigit(*it)){
       return NULL;
     }
   }
+  size_t l = (it - code);
+  if(l == 0) return NULL;
   string->value = code;
   string->type = NUMBER;
-  string->strln = (int)(it - code);
+  string->strln = l;
   return it;
 }
 
@@ -300,12 +300,14 @@ bool test_empty(){
 }
 
 bool test_lisp_parser(){
+
   TEST(test_empty);
   expr exprs[10];
   int exprs_count = 10;
 
-  lisp_parse("(hej (hej2 1.0312))(add (sub 1 :a 5  \"hello\") 2)\n",exprs,&exprs_count);
-  TEST_ASSERT(exprs_count == 2);
+  lisp_parse("(hej (hej2 1.0312))(add (sub 1 :a 5  \"hello\") 2) -1\n",exprs,&exprs_count);
+  TEST_ASSERT(exprs_count == 3);
+  TEST_ASSERT(exprs[2].type == VALUE && exprs[2].value.type == NUMBER && exprs[2].value.value[0] == '-');
   for(int i = 0; i < exprs_count; i++)
     delete_expr(exprs + i);
   TEST(test_infinite_bug);

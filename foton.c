@@ -24,7 +24,7 @@ void _error(const char * file, int line, const char * str, ...){
   va_start (arglist, str);
   vsprintf(buffer,str,arglist);
   va_end(arglist);
-  bool noncritical = break_on_errors;
+  bool noncritical = !break_on_errors;
   for(u32 i = 0; i < array_count(allowed_errors);i++)
     if(strstr(buffer, allowed_errors[i]) != NULL)
       noncritical = true;
