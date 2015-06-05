@@ -15,7 +15,7 @@ typedef struct{
   UT_hash_handle hh;
 }symbol_table;
 const symbol symbol_empty = {0, NULL};
-static symbol_table * symtbl = NULL; 
+symbol_table * symtbl = NULL; 
 u64 symbol_cnt = 0;
 
 symbol get_symbol(char * name){
@@ -32,7 +32,7 @@ symbol get_symbol(char * name){
 }
 
 bool symbol_cmp(symbol a, symbol b){
-  return a.id == b.id;
+  return (a.id == b.id);
 }
 
 typedef struct _symbol_stack symbol_stack;
@@ -60,8 +60,8 @@ var_def * get_variable(symbol name){
     var_def * vars = *ss->vars;
     size_t varcnt = *ss->vars_cnt;
     for(size_t i = 0;i < varcnt; i++){
-      if(symbol_cmp(name,vars[i].name)){
-	  goto next_item;
+      if(!symbol_cmp(name,vars[i].name)){
+	goto next_item;
       }
       return vars + i;
     next_item:

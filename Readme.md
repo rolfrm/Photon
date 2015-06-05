@@ -21,7 +21,8 @@ Short Term Features
 * [x] setf
 * [x] floats / doubles
 * [x] Loading lisp code
-* [ ] Proper symbols -  one symbol - one ID. Symbols to be used for functions, variable names. This meams that vars will be symbol based instead of string based.
+* [x] Proper symbols -  one symbol - one ID. Symbols to be used for functions, variable names. This meams that vars will be symbol based instead of string based.
+* [ ] Quoting 'symbolname
 * [ ] Lisp macros (tick/backtick syntax)
 * [ ] Structs
  * [ ] Defining

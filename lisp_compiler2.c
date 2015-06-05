@@ -343,9 +343,7 @@ void compile_as_c(c_root_code * codes, size_t code_cnt){
       ASSERT(ptr != NULL);
       compiler_define_variable_ptr(fdecl.name, fdecl.type, ptr);
     }else if(r.type == C_VAR_DEF){
-      
       decl vdecl = r.var.var;
-      logd("Defining variable: %s\n", vdecl.name);
       void * ptr = tcc_get_symbol(tccs, get_c_name(vdecl.name));
       ASSERT(ptr != NULL);
       compiler_define_variable_ptr(vdecl.name, vdecl.type, ptr);
@@ -466,7 +464,6 @@ type_def * load_macro(c_block * block, c_value * val, expr file_name){
   char * filename = read_symbol(file_name);
   lisp_run_script_file(get_compiler(), filename);
   return _compile_expr(block, val, file_name);
-
 }
 
 type_def * progn_macro(c_block * block, c_value * val, expr * expressions, size_t expr_cnt){
@@ -597,13 +594,8 @@ void lisp_load_compiler(compiler_state * c){
 void lisp_run_expr(expr ex){
   c_root_code cl = compile_lisp_to_eval(ex);
   compile_as_c(&cl,1);
-  logd("get symbol..\n");
   symbol s = get_symbol("eval");
-  logd("get var\n");
   var_def * evaldef = get_variable(s);
-  
-  logd("Eval def %i\n", evaldef->type->kind);
-  logd("Eval def %s\n", evaldef->name.name);
   print_def(evaldef->type->fcn.ret,false); logd(" :: ");
   if(evaldef->type->fcn.ret == &void_def){
     logd("()\n");

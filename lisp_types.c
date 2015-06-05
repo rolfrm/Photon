@@ -78,8 +78,7 @@ void print_def(type_def * type, bool is_decl){
  
  case TYPEDEF:
     inner = type->ctypedef.inner;
-    char struct_name[20];
-
+    //char struct_name[20];
     //if(inner->kind == STRUCT && inner->cstruct.name.name == NULL){
       //sprintf(struct_name, "_%s_",type->ctypedef.name.name);
       //inner->cstruct.name = struct_name;
