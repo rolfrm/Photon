@@ -287,11 +287,22 @@ void load_defs(){
     members[2].type = &void_ptr_def;
     r2(&cmacro_def_def);
   }
-  {
-    //    symbol_def.type = TYPEDEF;
-    //static decl members[2];
-    //static type_def innit;
+  { // struct symbol
+    symbol_def.type = TYPEDEF;
+    symbol_def.ctypedef.name = get_symbol("symbol");
 
+    static decl members[2];
+    static type_def inner;
+    symbol_def.ctypedef.inner = &inner;
+    inner.type = STRUCT;
+    members[0].type = &u64_def;
+    members[0].name = get_symbol("id");
+    members[1].type = &char_ptr_def;
+    members[1].name = get_symbol("name");
+    inner.cstruct.members = members;
+    inner.cstruct.cnt = array_count(members);
+    inner.cstruct.name = symbol_empty;
+    r2(&symbol_def);
   }
 }
 
