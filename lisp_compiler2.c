@@ -20,7 +20,6 @@ symbol expr_symbol(expr e){
   return vexpr_symbol(e.value);
 }
 
-
 expr symbol_expr(char * name){
   expr e;
   e.type = VALUE;
@@ -126,7 +125,6 @@ type_def * _type_macro(expr typexpr){
   }
   return &error_def;
 }
-
 
 static type_def * _compile_expr(c_block * block, c_value * val,  expr e );
 
@@ -613,13 +611,14 @@ void lisp_run_expr(expr ex){
     void * (* fcn)() = evaldef->data;
     void * ptr = fcn();
     logd("%p\n", ptr);
-  }else if(evaldef->type->fcn.ret == &i64_def){
+  }else if(evaldef->type->fcn.ret == &i64_def || evaldef->type->fcn.ret == &i32_def
+	   || evaldef->type->fcn.ret == &i16_def || evaldef->type->fcn.ret == &i8_def){
     i64 (* fcn)() = evaldef->data;
     i64 v = fcn();
     logd("%i\n",v);
-  }else if(evaldef->type->fcn.ret == &i32_def){
-    i32 (* fcn)() = evaldef->data;
-    i32 v = fcn();
+  }else if(evaldef->type->fcn.ret == &u64_def || evaldef->type->fcn.ret == &u32_def || evaldef->type->fcn.ret == &u16_def || evaldef->type->fcn.ret == &u8_def){
+    u64 (* fcn)() = evaldef->data;
+    u64 v = fcn();
     logd("%i\n",v);  
   }else if(evaldef->type->fcn.ret == &f32_def){
     f32 (* fcn)() = evaldef->data;
