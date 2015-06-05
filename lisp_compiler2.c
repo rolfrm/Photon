@@ -9,12 +9,17 @@
 #define COMPILE_ASSERT(expr) if(!(expr)){ERROR("Compile error");return &error_def;}
 #define COMPILE_ERROR(fmt, ...) {ERROR(fmt,##__VA_ARGS__); return &error_def;}
 
-symbol expr_symbol(expr e){
-  char buf[e.value.strln + 1];
-  buf[e.value.strln] = 0;
-  memcpy(buf, e.value.value, e.value.strln);
+symbol vexpr_symbol(value_expr e){
+  char buf[e.strln + 1];
+  buf[e.strln] = 0;
+  memcpy(buf, e.value, e.strln);
   return get_symbol(buf);
 }
+
+symbol expr_symbol(expr e){
+  return vexpr_symbol(e.value);
+}
+
 
 expr symbol_expr(char * name){
   expr e;
@@ -47,8 +52,8 @@ static type_def * compile_value(c_value * val, value_expr e){
   case KEYWORD:
   case SYMBOL:
     val->type = C_SYMBOL;
-    val->symbol = fmtstr("%.*s",e.strln, e.value);
-    vdef = get_variable(e.value, e.strln);
+    val->symbol = vexpr_symbol(e);
+    vdef = get_variable(val->symbol);
     if(vdef == NULL){
       COMPILE_ERROR("Unknown variable '%s'", val->raw.value);
     }
@@ -589,53 +594,61 @@ void lisp_load_compiler(compiler_state * c){
       }));
 }
 
+void lisp_run_expr(expr ex){
+  c_root_code cl = compile_lisp_to_eval(ex);
+  compile_as_c(&cl,1);
+  logd("get symbol..\n");
+  symbol s = get_symbol("eval");
+  logd("get var\n");
+  var_def * evaldef = get_variable(s);
+  
+  logd("Eval def %i\n", evaldef->type->kind);
+  logd("Eval def %s\n", evaldef->name.name);
+  print_def(evaldef->type->fcn.ret,false); logd(" :: ");
+  if(evaldef->type->fcn.ret == &void_def){
+    logd("()\n");
+    void (* fcn)() = evaldef->data;
+    fcn();
+  }else if(evaldef->type->fcn.ret == str2type("(ptr type_def)")){
+    type_def * (* fcn)() = evaldef->data;
+    fcn();
+    logd("type\n");
+  }else if(evaldef->type->fcn.ret == &char_ptr_def){
+    char * (* fcn)() = evaldef->data;
+    char * str = fcn();
+    logd("\"%s\"\n",str);
+  }else if(evaldef->type->fcn.ret->kind == POINTER){
+    void * (* fcn)() = evaldef->data;
+    void * ptr = fcn();
+    logd("%p\n", ptr);
+  }else if(evaldef->type->fcn.ret == &i64_def){
+    i64 (* fcn)() = evaldef->data;
+    i64 v = fcn();
+    logd("%i\n",v);
+  }else if(evaldef->type->fcn.ret == &i32_def){
+    i32 (* fcn)() = evaldef->data;
+    i32 v = fcn();
+    logd("%i\n",v);  
+  }else if(evaldef->type->fcn.ret == &f32_def){
+    f32 (* fcn)() = evaldef->data;
+    f32 v = fcn();
+    logd("%f\n",v);  
+  }else if(evaldef->type->fcn.ret == &f64_def){
+    f64 (* fcn)() = evaldef->data;
+    f64 v = fcn();
+    logd("%f\n",v);  
+  }else{
+    logd("\n");
+    loge("Unable to eval function of this type\n");
+  }
+}
+
 void lisp_run_exprs(compiler_state * c, expr * exprs, size_t exprcnt){
   lisp_load_compiler(c);
   with_compiler(c,lambda(void, (){
 	for(size_t i = 0; i < exprcnt; i++){
-	  c_root_code cl = compile_lisp_to_eval(exprs[i]);
-	  compile_as_c(&cl,1);
-	  var_def * evaldef = get_variable(get_symbol("eval"));
-	  print_def(evaldef->type->fcn.ret,false); logd(" :: ");
-	  if(evaldef->type->fcn.ret == &void_def){
-	    logd("()\n");
-	    void (* fcn)() = evaldef->data;
-	    fcn();
-	  }else if(evaldef->type->fcn.ret == str2type("(ptr type_def)")){
-	    type_def * (* fcn)() = evaldef->data;
-	    fcn();
-	    logd("type\n");
-	  }else if(evaldef->type->fcn.ret == &char_ptr_def){
-	    char * (* fcn)() = evaldef->data;
-	    char * str = fcn();
-	    logd("\"%s\"\n",str);
-	  }else if(evaldef->type->fcn.ret->kind == POINTER){
-	    void * (* fcn)() = evaldef->data;
-	    void * ptr = fcn();
-	    logd("%p\n", ptr);
-	  }else if(evaldef->type->fcn.ret == &i64_def){
-	    i64 (* fcn)() = evaldef->data;
-	    i64 v = fcn();
-	    logd("%i\n",v);
-	  }else if(evaldef->type->fcn.ret == &i32_def){
-	    i32 (* fcn)() = evaldef->data;
-	    i32 v = fcn();
-	    logd("%i\n",v);  
-	  }else if(evaldef->type->fcn.ret == &f32_def){
-	      f32 (* fcn)() = evaldef->data;
-	      f32 v = fcn();
-	      logd("%f\n",v);  
-	  }else if(evaldef->type->fcn.ret == &f64_def){
-	    f64 (* fcn)() = evaldef->data;
-	    f64 v = fcn();
-	    logd("%f\n",v);  
-	  }else{
-	    logd("\n");
-	    loge("Unable to eval function of this type\n");
-	  }
-	}
-      };));
-
+	  lisp_run_expr(exprs[i]);
+	}};));
 }
 
 void lisp_run_script_file(compiler_state * c, char * filepath){

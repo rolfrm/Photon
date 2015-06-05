@@ -21,11 +21,11 @@ compiler_state * get_compiler(){
 }
 
 
-void compiler_define_variable_ptr(char * name, type_def * t, void * ptr){
+void compiler_define_variable_ptr(symbol name, type_def * t, void * ptr){
   // check if reassign can be done.
 
   for(size_t i = 0; i < lisp_state->var_cnt; i++){
-    if(strcmp(name,lisp_state->vars[i].name) == 0){
+    if(symbol_cmp(name,lisp_state->vars[i].name)){
 	lisp_state->vars[i].type = t;
 	lisp_state->vars[i].data = ptr;
 	return;

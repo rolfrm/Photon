@@ -14,7 +14,7 @@ typedef struct{
   u64 value;
   UT_hash_handle hh;
 }symbol_table;
-const symbol symbol_empty = {NULL, 0};
+const symbol symbol_empty = {0, NULL};
 static symbol_table * symtbl = NULL; 
 u64 symbol_cnt = 0;
 

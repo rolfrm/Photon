@@ -36,7 +36,7 @@ void print_def(type_def * type, bool is_decl){
     break;
   case STRUCT:
     if(is_decl){
-      format("%s", type->cstruct.name);
+      format("%s", type->cstruct.name.name);
     }else{
       format("struct %s{\n", type->cstruct.name.name == NULL ? "" : type->cstruct.name.name);
       for(i64 i = 0; i < type->cstruct.cnt; i++){	
@@ -96,7 +96,7 @@ void print_def(type_def * type, bool is_decl){
     break;
   case FUNCTION:
     // this is an error.
-    print_cdecl((decl){"_", type});
+    print_cdecl((decl){get_symbol("_"), type});
     break;
   default:
     ERROR("not implemented %i", type->kind);
