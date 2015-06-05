@@ -503,10 +503,20 @@ type_def * cast_macro(c_block * block, c_value * value, expr body, expr type){
   return cast_to;
 }
 
-type_def * quote_macro(c_block * block, c_value * value, expr body, expr type){
-  UNUSED(block);UNUSED(value);UNUSED(body);UNUSED(type);
-  
-  return NULL;
+type_def * quote_macro(c_block * block, c_value * value, expr name){
+  TEST_ASSERT(is_symbol(name));
+  expr nexpr[2];
+  nexpr[1] = name;
+  nexpr[1].value.type = STRING;
+  nexpr[0].value.type = SYMBOL;
+  char * fcn= "get-symbol";
+  nexpr[0].value.value = fcn;
+  nexpr[0].value.strln = strlen(fcn); 
+  expr pexpr;
+  pexpr.type = EXPR;
+  pexpr.sub_expr.exprs = nexpr;
+  pexpr.sub_expr.cnt = array_count(nexpr);
+  return _compile_expr(block, value, pexpr); 
 }
 
 type_def * defun_macro(c_block * block, c_value * value, expr name, expr args, expr body){
@@ -581,6 +591,14 @@ i64 i64_add(i64 a, i64 b){
   return a + b;
 }
 
+double double_add(double a, double b){ return a + b;}
+double double_sub(double a, double b){ return a - b;}
+double double_div(double a, double b){ return a / b;}
+double double_mul(double a, double b){ return a * b;}
+void defun(char * name, type_def * t, void * fcn){
+  compiler_define_variable_ptr(get_symbol(name), t, fcn);
+}
+
 void lisp_load_compiler(compiler_state * c){
   with_compiler(c, lambda(void, (){
 	load_defs();
@@ -591,6 +609,7 @@ void lisp_load_compiler(compiler_state * c){
 	define_macro("cast", 2, &cast_macro);
 	define_macro("defvar",2, &defvar_macro);
 	define_macro("load",1, &load_macro);
+	define_macro("quote",1, &quote_macro);
 	define_macro("setf",2, &setf_macro);
 	{
 	  type_def * type = str2type("(fcn void (a (ptr type_def)))");
@@ -599,10 +618,14 @@ void lisp_load_compiler(compiler_state * c){
 	  compiler_define_variable_ptr(get_symbol("print_type"), type, print_type);
 	  ASSERT(type == type2 && type != type3);
 	  compiler_define_variable_ptr(get_symbol("write_line"), str2type("(fcn void (a (ptr char)))"), &write_line);
-	  compiler_define_variable_ptr(get_symbol("i64_add"), str2type("(fcn i64 (a i64) (b i64))"), &i64_add);
+	  compiler_define_variable_ptr(get_symbol("i64+"), str2type("(fcn i64 (a i64) (b i64))"), &i64_add);
 	  
 	  compiler_define_variable_ptr(get_symbol("get-symbol"), str2type("(fcn (ptr symbol) (a (ptr char)))"), get_symbol2);
-
+	  type_def * d2t =  str2type("(fcn f64 (a f64) (b f64))");
+	  defun("f+", d2t, double_add);
+	  defun("f-", d2t, double_sub);
+	  defun("f/", d2t, double_div);
+	  defun("f*", d2t, double_mul);
 	}
       }));
 }

@@ -295,7 +295,7 @@ void load_defs(){
     static type_def inner;
     symbol_def.ctypedef.inner = &inner;
     inner.type = STRUCT;
-    members[0].type = &u32_def;
+    members[0].type = &u64_def;
     members[0].name = get_symbol("id");
     //members[1].type = &char_ptr_def;
     //members[1].name = get_symbol("name");

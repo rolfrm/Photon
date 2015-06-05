@@ -3,7 +3,7 @@
 ;(write_line "hello world!")
 
 (defun + (i64 (a i64) (b i64))
-  (i64_add a b))
+  (i64+ a b))
 
 ;(defun + ((ptr char) (a (ptr char)) (b (ptr char)))
 ;  b)
@@ -33,4 +33,6 @@
 (load "test2.lisp")
 (+ x x)
 (get-symbol "hello")
-;(quote hello) ;;essencially get_symbol("hello");
+(quote hello) ;;essencially get_symbol("hello");
+(defvar a (cast 1 f64))
+(f/ a (f+ (f+ a (f+ a a)) a))
