@@ -55,7 +55,7 @@ int main(int argc, char *argv[] ){
   if(argc == 2 && strcmp(argv[1],"--test") == 0){
     log("Running tests...\n");
     TEST(test_lisp_parser);
-    //TEST(test_lisp2c);
+    TEST(test_lisp2c);
     TEST(test_symbols);
     return 0;
   }

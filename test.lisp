@@ -36,3 +36,10 @@
 (quote hello) ;;essencially get_symbol("hello");
 (defvar a (cast 1 f64))
 (f/ a (f+ (f+ a (f+ a a)) a))
+;; (defcmacro overload (void (sym expr) (fcn expr))
+;;   (progn
+;;     (assert (is-symbol fcn))
+;;     (assert (is-symbol sym))
+;;     (register-overload (get-symbol sym) (get-function (get-symbol fcn)))))
+;; (overload + f+)
+;; (overload + i64+)

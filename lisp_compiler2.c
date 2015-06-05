@@ -114,6 +114,7 @@ type_def * _type_macro(expr typexpr){
       out.type = FUNCTION;
       COMPILE_ASSERT(sexp.cnt > 1);
       type_def * ret = _type_macro(sexp.exprs[1]);
+    
       COMPILE_ASSERT(&error_def != ret);
       decl args[sexp.cnt - 2];
       for(size_t i = 0; i < sexp.cnt - 2; i++){
@@ -129,6 +130,39 @@ type_def * _type_macro(expr typexpr){
       out.type = POINTER;
       out.ptr.inner = _type_macro(sexp.exprs[1]);
       return get_type_def(out);
+    }else if (strncmp(vkind.value, "struct",vkind.strln) == 0){
+      COMPILE_ASSERT(sexp.cnt >= 2);
+      symbol name = symbol_empty;
+      bool is_anon = sexp.exprs[1].type == EXPR;
+      if(!is_anon){
+	COMPILE_ASSERT(sexp.exprs[1].value.type == SYMBOL);
+	name = vexpr_symbol(sexp.exprs[1].value);
+      }
+      size_t memcnt = sexp.cnt - 1 - (is_anon ? 0 : 1);
+      expr * sub = sexp.exprs + 1 + (is_anon ? 0 : 1);
+      decl members[memcnt];
+      for(size_t i = 0 ; i < memcnt; i++){
+	COMPILE_ASSERT(sub->type == EXPR && sub->sub_expr.cnt == 2);
+	sub_expr sx = sub->sub_expr;
+	COMPILE_ASSERT(sx.exprs[0].type == VALUE && sx.exprs[0].value.type == SYMBOL);
+	members[i].name = vexpr_symbol(sx.exprs[0].value);
+	members[i].type = _type_macro(sx.exprs[1]);
+      }
+      type_def out;
+      out.type = STRUCT;
+      out.cstruct.members = clone(members,sizeof(members));
+      out.cstruct.cnt = memcnt;
+      out.cstruct.name = name;
+      get_type_def(out);
+      return clone(&out,sizeof(type_def));
+    }else if (strncmp(vkind.value, "alias", vkind.strln) == 0){
+      COMPILE_ASSERT(sexp.cnt == 3);
+      COMPILE_ASSERT(is_symbol(sexp.exprs[2]));
+      type_def out;
+      out.type = TYPEDEF;
+      out.ctypedef.name = vexpr_symbol(sexp.exprs[2].value);
+      out.ctypedef.inner = _type_macro(sexp.exprs[1]);
+      return get_type_def(out);
     }
   }else{
     value_expr vkind = typexpr.value;
@@ -136,13 +170,14 @@ type_def * _type_macro(expr typexpr){
     strncpy(tname,vkind.value,vkind.strln);
     tname[vkind.strln] = 0;
     type_def * td = get_type_from_string(tname);
+    
     COMPILE_ASSERT(td != NULL);
     return td;
   }
   return &error_def;
 }
-
-static type_def * _compile_expr(c_block * block, c_value * val,  expr e );
+  
+  static type_def * _compile_expr(c_block * block, c_value * val,  expr e );
 
 static type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se){
   UNUSED(value);
@@ -312,7 +347,6 @@ void go_write(type_def ** deps, symbol * vdeps, c_root_code * codes, size_t code
     print_c_code(codes[i]);
   }
 }
-
 
 void compile_as_c(c_root_code * codes, size_t code_cnt){
   type_def * deps[100];
@@ -602,15 +636,15 @@ void defun(char * name, type_def * t, void * fcn){
 void lisp_load_compiler(compiler_state * c){
   with_compiler(c, lambda(void, (){
 	load_defs();
-	define_macro("type",1,&type_macro);
-	define_macro("defun",3,&defun_macro);
-	define_macro("var",2,&var_macro);
-	define_macro("progn", -1,&progn_macro);
+	define_macro("type", 1, &type_macro);
+	define_macro("defun", 3, &defun_macro);
+	define_macro("var", 2, &var_macro);
+	define_macro("progn", -1, &progn_macro);
 	define_macro("cast", 2, &cast_macro);
-	define_macro("defvar",2, &defvar_macro);
-	define_macro("load",1, &load_macro);
-	define_macro("quote",1, &quote_macro);
-	define_macro("setf",2, &setf_macro);
+	define_macro("defvar", 2, &defvar_macro);
+	define_macro("load", 1, &load_macro);
+	define_macro("quote", 1, &quote_macro);
+	define_macro("setf", 2, &setf_macro);
 	{
 	  type_def * type = str2type("(fcn void (a (ptr type_def)))");
 	  type_def * type2 = str2type("(fcn void (a (ptr type_def)))");
@@ -694,8 +728,23 @@ void lisp_run_script_file(compiler_state * c, char * filepath){
   expr * exprs = lisp_parse_all(test_code, &exprcnt);
   lisp_run_exprs(c, exprs, exprcnt);
 }
-	  
+
 bool test_lisp2c(){
+  load_defs();
+  compiler_state * c = compiler_make();
+  lisp_load_compiler(c);
+  bool ret = TEST_SUCCESS;
+  with_compiler(c,lambda(void, (){
+	type_def * d = str2type("(alias (ptr type_def) td)");
+	print_def(d,false);
+	//type_def * d2 = str2type("(struct _vec2 (x f32) (y f32))");
+	type_def * d2 = str2type("(alias (struct _vec2 (x f32) (y f32)) vec2)");
+	print_def(d2,false);
+	type_def * d3 = str2type("(ptr vec2)");
+	print_def(d3,false);	
+      }));
+  return ret;
+
   char * test_code = "(defun printhello ()(print_string \"hello\\n\"))";
   test_code = "(type (ptr (ptr (ptr (ptr (ptr (ptr (ptr char))))))))";
   test_code = "(var ((x \"hello sailor!\")) x)";
@@ -703,26 +752,10 @@ bool test_lisp2c(){
   //test_code = "(defun add2 (i64 (a i64)) (var ((b(i64_add a a)) (add2 (add2 (add2 5)))";
   size_t exprcnt;
   expr * exprs = lisp_parse_all(test_code, &exprcnt);
-  load_defs();
-
-  compiler_state * c = compiler_make();
+  
   with_compiler(c,lambda(void, (){
 	load_defs();
-	define_macro("type",1,&type_macro);
-	define_macro("defun",3,&defun_macro);
-	define_macro("var",2,&var_macro);
-	define_macro("progn", -1,&progn_macro);
-	{
-	  type_def * type = str2type("(fcn void (a (ptr type_def)))");
-	  type_def * type2 = str2type("(fcn void (a (ptr type_def)))");
-	  type_def * type3 = str2type("(fcn void (a (ptr void)))");
-	  compiler_define_variable_ptr(get_symbol("print_type"), type, print_type);
-	  ASSERT(type == type2 && type != type3);
-	  compiler_define_variable_ptr(get_symbol("write_line"), str2type("(fcn void (a (ptr char)))"), &write_line);
-	  compiler_define_variable_ptr(get_symbol("i64_add"), str2type("(fcn i64 (a i64) (b i64))"), &i64_add);
-
-	  ASSERT(NULL != get_variable(get_symbol("i64_add")));
-	}
+	ASSERT(NULL != get_variable(get_symbol("i64_add")));
 
 	logd("parsed %i expr(s).\n", exprcnt);
 	for(size_t i = 0; i < exprcnt; i++){
@@ -760,3 +793,4 @@ bool test_lisp2c(){
       };));
   return TEST_SUCCESS;
 }
+
