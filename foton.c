@@ -24,14 +24,15 @@ void _error(const char * file, int line, const char * str, ...){
   va_start (arglist, str);
   vsprintf(buffer,str,arglist);
   va_end(arglist);
-  bool noncritical = !break_on_errors;
+  bool noncritical = false;
   for(u32 i = 0; i < array_count(allowed_errors);i++)
     if(strstr(buffer, allowed_errors[i]) != NULL)
       noncritical = true;
   if(!noncritical)
     faulty = true;
-  if(noncritical) return; //skip noncritical errors
+  
   loge("** ERROR at %s:%i **\n",file,line);
+  if(noncritical && !break_on_errors) return; //skip noncritical errors
   loge("%s", buffer);
   printf("\n");
   printf("** **\n");

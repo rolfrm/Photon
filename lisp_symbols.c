@@ -13,9 +13,11 @@ typedef struct{
   char * key;
   u64 value;
   UT_hash_handle hh;
+  UT_hash_handle hh2;
 }symbol_table;
-const symbol symbol_empty = {0, NULL};
+const symbol symbol_empty = {0};
 symbol_table * symtbl = NULL; 
+symbol_table * symtbl_byid = NULL; 
 u64 symbol_cnt = 0;
 
 symbol get_symbol(char * name){
@@ -25,12 +27,20 @@ symbol get_symbol(char * name){
     
     sym_item = alloc0(sizeof(symbol_table));
     sym_item->value = ++symbol_cnt;
-    sym_item->key = fmtstr("%s",name);
+    sym_item->key = fmtstr("%s", name);
     HASH_ADD_KEYPTR(hh, symtbl, sym_item->key, strlen(sym_item->key), sym_item);
+    HASH_ADD(hh2, symtbl_byid, value, sizeof(sym_item->value), sym_item);
   }
-  return (symbol){sym_item->value, sym_item->key};
+  return (symbol){sym_item->value};
 }
 
+char * symbol_name(symbol s){
+  symbol_table * sym_item = NULL;
+  HASH_FIND(hh2, symtbl_byid, &s.id,sizeof(s.id), sym_item);
+  if(sym_item == NULL)
+    return NULL;
+  return sym_item->key;
+}
 bool symbol_cmp(symbol a, symbol b){
   return (a.id == b.id);
 }
@@ -81,7 +91,7 @@ typedef struct {
 }symbol_lookup;
 
 char * get_c_name(symbol s){
-  char * sym = s.name;
+  char * sym = symbol_name(s);
   bool first_alpha = isalpha(sym[0]) || '_' == sym[0];
   bool all_alphanum = true;
   for(size_t i = 0; sym[i];i++){
@@ -147,12 +157,14 @@ bool test_symbol_table(){
   symbol s3 = get_symbol("test");
   symbol s4 = get_symbol("__TEST__");
   TEST_ASSERT(symbol_cmp(s2, s4) && symbol_cmp(s, s3) && !symbol_cmp(s, s2));
-  TEST_ASSERT(strcmp(s3.name, "test") == 0);
+  TEST_ASSERT(strcmp(symbol_name(s3), "test") == 0);
+  TEST_ASSERT(strcmp(symbol_name(s4), "__TEST__") == 0);
   return TEST_SUCCESS;
 }
 
 bool test_symbols(){
   TEST(test_get_cname);
+  TEST(test_symbol_table);
   return TEST_SUCCESS;
 }
 

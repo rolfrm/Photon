@@ -29,6 +29,11 @@ expr symbol_expr(char * name){
   return e;
 }
 
+expr symbol_expr2(symbol name){
+  return symbol_expr(symbol_name(name));
+}
+
+
 expr string_expr(char * name){
   expr e = symbol_expr(name);
   e.value.type = STRING;
@@ -141,7 +146,7 @@ static type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se
   symbol name = expr_symbol(name_expr);
 
   var_def * fvar = get_variable(name);
-  if(fvar == NULL) COMPILE_ERROR("unknown symbol '%s'", name.name);
+  if(fvar == NULL) COMPILE_ERROR("unknown symbol '%s'", symbol_name(name));
   if(fvar->type == &cmacro_def_def){
     cmacro_def * macro = fvar->data;
 
@@ -268,16 +273,7 @@ TCCState * mktccs(){
   return tccs;
 }
 
-void compile_as_c(c_root_code * codes, size_t code_cnt){
-  type_def * deps[100];
-  symbol vdeps[100];
-  memset(deps, 0, sizeof(deps));
-  memset(vdeps, 0, sizeof(vdeps));
-  for(size_t i = 0; i < code_cnt; i++){
-    c_root_code_dep(deps, vdeps, codes[i]);
-  }
-  
-  void go_write(){
+void go_write(type_def ** deps, symbol * vdeps, c_root_code * codes, size_t code_cnt){
 
     write_dependencies(deps);
     for(size_t i = 0; i < array_count(deps) && deps[i] != NULL; i++){
@@ -290,7 +286,7 @@ void compile_as_c(c_root_code * codes, size_t code_cnt){
       format(";\n");
     }
     
-    for(size_t i = 0; i < array_count(vdeps) && vdeps[i].name != NULL; i++){
+    for(size_t i = 0; i < array_count(vdeps) && vdeps[i].id != 0; i++){
       
       var_def * var = get_variable(vdeps[i]);
       ASSERT(var != NULL);
@@ -306,16 +302,27 @@ void compile_as_c(c_root_code * codes, size_t code_cnt){
       print_c_code(codes[i]);
     }
   }
-  char * data;
-  size_t cnt;
+
+
+void compile_as_c(c_root_code * codes, size_t code_cnt){
+  type_def * deps[100];
+  symbol vdeps[100];
+  memset(deps, 0, sizeof(deps));
+  memset(vdeps, 0, sizeof(vdeps));
+  for(size_t i = 0; i < code_cnt; i++){
+    c_root_code_dep(deps, vdeps, codes[i]);
+  }
+
+  char * data = NULL;
+  size_t cnt = 0;
   FILE * f = open_memstream(&data, &cnt);
-  with_format_out(f, lambda( void, (){go_write();}));
+  with_format_out(f, lambda( void, (){ go_write(deps, vdeps, codes, code_cnt);}));
   fclose(f);
   char header[] = "***********\n";
   append_buffer_to_file(header,sizeof(header),"compile_out.c");
   append_buffer_to_file(data,cnt,"compile_out.c");
   TCCState * tccs = mktccs();
-  for(size_t i = 0; i < array_count(vdeps) && vdeps[i].name != NULL; i++){
+  for(size_t i = 0; i < array_count(vdeps) && vdeps[i].id != 0; i++){
     var_def * var = get_variable(vdeps[i]);
     if(var->type->type == FUNCTION){
       int fail = tcc_add_symbol(tccs,get_c_name(var->name),var->data);
@@ -325,6 +332,7 @@ void compile_as_c(c_root_code * codes, size_t code_cnt){
       ASSERT(!fail);
     }
   }
+  
   int fail = tcc_compile_string(tccs, data);
   free(data);
   ASSERT(!fail);
@@ -362,8 +370,7 @@ type_def * type_macro(c_block * block, c_value * value, expr e){
   value->type = C_INLINE_VALUE;
   value->raw.value = "NULL";
   value->raw.type = &type_def_ptr_def;
-  type_def * rt = _compile_expr(block, value, symbol_expr(varname.name));
-  //dealloc(varname);
+  type_def * rt = _compile_expr(block, value, symbol_expr2(varname));
   return rt;
 }
 
@@ -493,6 +500,11 @@ type_def * cast_macro(c_block * block, c_value * value, expr body, expr type){
   return cast_to;
 }
 
+type_def * quote_macro(c_block * block, c_value * value, expr body, expr type){
+  UNUSED(block);UNUSED(value);UNUSED(body);UNUSED(type);
+  return NULL;
+}
+
 type_def * defun_macro(c_block * block, c_value * value, expr name, expr args, expr body){
 
   // This function is rather complicated.
@@ -508,7 +520,7 @@ type_def * defun_macro(c_block * block, c_value * value, expr name, expr args, e
   COMPILE_ASSERT(args.type == EXPR && args.sub_expr.cnt > 0);
 
   symbol fcnname = expr_symbol(name);
-  logd("defining function: '%s'\n", fcnname.name);
+  logd("defining function: '%s'\n", symbol_name(fcnname));
   c_root_code newfcn_root;
   newfcn_root.type = C_FUNCTION_DEF;
   c_fcndef * f = &newfcn_root.fcndef;
@@ -558,7 +570,7 @@ type_def * defun_macro(c_block * block, c_value * value, expr name, expr args, e
   list_add((void **) &blk->exprs, &blk->expr_cnt, &expr, sizeof(c_expr));
   compile_as_c(&newfcn_root,1);
   // ** Just return the function name ** //
-  return compile_value(value, string_expr(fcnname.name).value);
+  return compile_value(value, string_expr(symbol_name(fcnname)).value);
 }
 
 i64 i64_add(i64 a, i64 b){

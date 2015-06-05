@@ -12,7 +12,6 @@ typedef enum {
 
 typedef struct{
   u64 id;
-  char * name;
 }symbol;
 
 struct _type_def;
@@ -174,10 +173,13 @@ typedef struct{
   };
 }c_root_code;
 
-void print_cdecl(decl idecl);
-symbol get_symbol(char * name);
 extern const symbol symbol_empty;
+
+symbol get_symbol(char * name);
+char * symbol_name(symbol s);
 bool symbol_cmp(symbol a, symbol b);
+
+void print_cdecl(decl idecl);
 
 type_def make_simple(char * name);
 type_def make_ptr(type_def * def);

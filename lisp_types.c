@@ -32,17 +32,17 @@ void print_def(type_def * type, bool is_decl){
   type_def * inner;
   switch(type->type){
   case SIMPLE:
-    format("%s", type->simple.name.name);
+    format("%s", symbol_name(type->simple.name));
     break;
   case STRUCT:
     if(is_decl){
-      format("%s", type->cstruct.name.name);
+      format("%s", symbol_name(type->cstruct.name));
     }else{
-      format("struct %s{\n", type->cstruct.name.name == NULL ? "" : type->cstruct.name.name);
+      format("struct %s{\n", type->cstruct.name.id == 0 ? "" : symbol_name(type->cstruct.name));
       for(i64 i = 0; i < type->cstruct.cnt; i++){	
-	if(type->cstruct.members[i].name.name != NULL){
+	if(type->cstruct.members[i].name.id != 0){
 	  print_def(type->cstruct.members[i].type, true);
-	  format(" %s;\n",type->cstruct.members[i].name.name);
+	  format(" %s;\n",symbol_name(type->cstruct.members[i].name));
 	}else{
 	  print_def(type->cstruct.members[i].type, false);
 	  format("\n");
@@ -57,20 +57,20 @@ void print_def(type_def * type, bool is_decl){
     break;
   case ENUM:
     if(is_decl){
-      format("%s", type->cenum.enum_name.name);
+      format("%s", symbol_name(type->cenum.enum_name));
     }else{
-      format("%s",type->cenum.enum_name.name);
+      format("%s",symbol_name(type->cenum.enum_name));
     }
     break;
   case UNION:
     if(is_decl){
-      format("%s", type->cunion.name.name);
+      format("%s", symbol_name(type->cunion.name));
     }else{
       format("union {\n");
 
       for(i64 i = 0; i < type->cunion.cnt; i++){
 	print_def(type->cunion.members[i].type, false);
-	format(" %s;\n", type->cunion.members[i].name.name);
+	format(" %s;\n", symbol_name(type->cunion.members[i].name));
       }
       format("};");
     }
@@ -84,12 +84,12 @@ void print_def(type_def * type, bool is_decl){
       //inner->cstruct.name = struct_name;
     //}
     if(is_decl){
-      format("%s", type->ctypedef.name.name);
+      format("%s", symbol_name(type->ctypedef.name));
       //print_def(inner,ind,true);
     }else{
       format("typedef ");
       print_def(inner,false);
-      format("%s;\n",type->ctypedef.name.name);
+      format("%s;\n",symbol_name(type->ctypedef.name));
     }
     
     break;
@@ -131,14 +131,14 @@ void _make_dependency_graph(type_def ** defs, type_def * def, bool nested){
       _make_dependency_graph(defs,sdef,true);
     }	  
     
-    if(def->cunion.name.name != NULL && !nested) check_add();// *defs_it = def;
+    if(def->cunion.name.id != 0 && !nested) check_add();// *defs_it = def;
     break;
   case STRUCT:
     for(i64 i = 0; i < def->cstruct.cnt; i++){
       type_def * sdef = def->cstruct.members[i].type;
       _make_dependency_graph(defs,sdef,true);
     }
-    if(def->cstruct.name.name != NULL && !nested) check_add();;
+    if(!symbol_cmp(def->cstruct.name, symbol_empty) && !nested) check_add();;
     break;
   case POINTER:
     //*defs_it = def;
@@ -174,7 +174,7 @@ void make_dependency_graph(type_def ** defs, type_def * def){
 }
 
 void add_var_dep(symbol * vdeps, symbol newdep){
-  for(;vdeps->name != NULL; vdeps++){
+  for(;symbol_cmp(*vdeps, symbol_empty); vdeps++){
     if(symbol_cmp(*vdeps, newdep))
       return;
   }
@@ -535,7 +535,7 @@ void write_dependencies(type_def ** deps){
   for(; *deps != NULL; deps++){
     type_def * t = *deps;
     if(t->type == STRUCT){
-      char * name = t->cstruct.name.name;
+      char * name = symbol_name(t->cstruct.name);
       if(name != NULL){
 	format("struct %s;\n", name);
       }
@@ -547,7 +547,7 @@ void write_dependencies(type_def ** deps){
     if(t->type == TYPEDEF){
       type_def * inner = t->ctypedef.inner;
       if(inner->type == STRUCT){
-	char * name = inner->cstruct.name.name;
+	char * name = symbol_name(inner->cstruct.name);
 	char _namebuf[100];
 	if(name == NULL){
 	  sprintf(_namebuf, "_%s_", get_c_name(t->ctypedef.name));
@@ -559,7 +559,7 @@ void write_dependencies(type_def ** deps){
 	format("typedef enum {\n");
 	for(int j = 0; j < inner->cenum.cnt; j++){
 	  char * comma = (j !=(inner->cenum.cnt-1) ? "," : "");
-	  format("   %s = %i%s\n", inner->cenum.names[j].name, inner->cenum.values[j], comma);
+	  format("   %s = %i%s\n", symbol_name(inner->cenum.names[j]), inner->cenum.values[j], comma);
 	}
 	format("}%s;\n", get_c_name(t->ctypedef.name));
       }

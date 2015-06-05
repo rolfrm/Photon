@@ -11,7 +11,7 @@
 #include "lisp_std_types.h"
 
 static void r(type_def * def){
-    register_type(def, def->simple.name.name);
+  register_type(def, symbol_name(def->simple.name));
 }
 
 void r2(type_def * def){
