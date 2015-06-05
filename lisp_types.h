@@ -15,14 +15,13 @@ typedef struct{
   char * name;
 }symbol;
 
-
 struct _type_def;
 typedef struct _type_def type_def;
 struct _decl;
 typedef struct _decl decl;
 
 struct _type_def{
-  type_def_kind kind;
+  type_def_kind type;
   union{
     struct _enum{
       symbol * names;

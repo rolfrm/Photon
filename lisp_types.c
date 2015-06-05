@@ -16,21 +16,21 @@
 
 type_def make_simple(char * name){
   static type_def def;
-  def.kind = SIMPLE;
+  def.type = SIMPLE;
   def.simple.name = get_symbol(name);
   return def;
 }
 
 type_def make_ptr(type_def * def){
   type_def out;
-  out.kind = POINTER;
+  out.type = POINTER;
   out.ptr.inner = def;
   return out;
 }
 
 void print_def(type_def * type, bool is_decl){
   type_def * inner;
-  switch(type->kind){
+  switch(type->type){
   case SIMPLE:
     format("%s", type->simple.name.name);
     break;
@@ -79,7 +79,7 @@ void print_def(type_def * type, bool is_decl){
  case TYPEDEF:
     inner = type->ctypedef.inner;
     //char struct_name[20];
-    //if(inner->kind == STRUCT && inner->cstruct.name.name == NULL){
+    //if(inner->type == STRUCT && inner->cstruct.name.name == NULL){
       //sprintf(struct_name, "_%s_",type->ctypedef.name.name);
       //inner->cstruct.name = struct_name;
     //}
@@ -98,7 +98,7 @@ void print_def(type_def * type, bool is_decl){
     print_cdecl((decl){get_symbol("_"), type});
     break;
   default:
-    ERROR("not implemented %i", type->kind);
+    ERROR("not implemented %i", type->type);
   }
 }
 
@@ -124,7 +124,7 @@ void _make_dependency_graph(type_def ** defs, type_def * def, bool nested){
     return true;
   }
   if(check() == false) return;
-  switch(def->kind){
+  switch(def->type){
   case UNION:
     for(i64 i = 0; i < def->cunion.cnt; i++){
       type_def * sdef = def->cunion.members[i].type;
@@ -162,7 +162,7 @@ void _make_dependency_graph(type_def ** defs, type_def * def, bool nested){
   case SIMPLE:
     break;
   default:
-    ERROR("Unknown type: %i",def->kind);
+    ERROR("Unknown type: %i",def->type);
     break;
   }
 }
@@ -417,7 +417,7 @@ static type_item * items = NULL;
 
 type_def * _get_type_def(type_def * def){
 
-  if(def->kind == STRUCT)
+  if(def->type == STRUCT)
     return def;
 
   char * tmpbuf = NULL;
@@ -436,8 +436,8 @@ type_def * _get_type_def(type_def * def){
   item->ptr = alloc0(sizeof(type_def));
   type_def * newtype = item->ptr;
   type_def * inner;
-  newtype->kind = def->kind;
-  switch(def->kind){
+  newtype->type = def->type;
+  switch(def->type){
   case TYPEDEF:
     inner = _get_type_def(def->ctypedef.inner);
     newtype->ctypedef.inner = inner;
@@ -461,7 +461,7 @@ type_def * _get_type_def(type_def * def){
     return newtype;
   default:
     print_def(def,true);
-    ERROR("Cannot get type %i", def->kind);
+    ERROR("Cannot get type %i", def->type);
   }
   return NULL;
 }
@@ -503,7 +503,7 @@ void print_cdecl(decl idecl){
   void inner_print(decl idecl){
     
     type_def * def = idecl.type;
-    switch(def->kind){
+    switch(def->type){
     case TYPEDEF:
     case STRUCT:
     case SIMPLE:
@@ -523,7 +523,7 @@ void print_cdecl(decl idecl){
       format(")");
       break;
     default:
-      ERROR("Not supported: '%i'\n", def->kind);
+      ERROR("Not supported: '%i'\n", def->type);
     }
   }
 
@@ -534,19 +534,19 @@ void write_dependencies(type_def ** deps){
   format("#include \"cstd_header.h\"\n");
   for(; *deps != NULL; deps++){
     type_def * t = *deps;
-    if(t->kind == STRUCT){
+    if(t->type == STRUCT){
       char * name = t->cstruct.name.name;
       if(name != NULL){
 	format("struct %s;\n", name);
       }
     }
-    if(t->kind == ENUM){
+    if(t->type == ENUM){
       ERROR("Should not happen");
     }
-    loge("%i\n", t->kind);
-    if(t->kind == TYPEDEF){
+    loge("%i\n", t->type);
+    if(t->type == TYPEDEF){
       type_def * inner = t->ctypedef.inner;
-      if(inner->kind == STRUCT){
+      if(inner->type == STRUCT){
 	char * name = inner->cstruct.name.name;
 	char _namebuf[100];
 	if(name == NULL){
@@ -555,7 +555,7 @@ void write_dependencies(type_def ** deps){
 	}	
 	format("typedef struct %s %s;\n", name, get_c_name(t->ctypedef.name));
       }
-      if(inner->kind == ENUM){
+      if(inner->type == ENUM){
 	format("typedef enum {\n");
 	for(int j = 0; j < inner->cenum.cnt; j++){
 	  char * comma = (j !=(inner->cenum.cnt-1) ? "," : "");
@@ -601,7 +601,7 @@ bool test_print_c_code(){
     
     c_fcndef fundef;
     type_def ftype;
-    ftype.kind = FUNCTION;
+    ftype.type = FUNCTION;
     ftype.fcn.cnt = 0;
     ftype.fcn.ret = &char_ptr_def;
     

@@ -95,7 +95,7 @@ type_def * _type_macro(expr typexpr){
 
     if(strncmp(vkind.value,"fcn",vkind.strln) == 0){
       type_def out;
-      out.kind = FUNCTION;
+      out.type = FUNCTION;
       COMPILE_ASSERT(sexp.cnt > 1);
       type_def * ret = _type_macro(sexp.exprs[1]);
       COMPILE_ASSERT(&error_def != ret);
@@ -110,7 +110,7 @@ type_def * _type_macro(expr typexpr){
     }else if (strncmp(vkind.value,"ptr",vkind.strln) == 0){
       COMPILE_ASSERT(sexp.cnt == 2);
       type_def out;
-      out.kind = POINTER;
+      out.type = POINTER;
       out.ptr.inner = _type_macro(sexp.exprs[1]);
       return get_type_def(out);
     }
@@ -165,7 +165,7 @@ static type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se
     default:
       ERROR("Number of macro arguments not supported: %i", argcnt);
     }
-  }else if(fvar->type->kind == FUNCTION){
+  }else if(fvar->type->type == FUNCTION){
     type_def * td = fvar->type;
     COMPILE_ASSERT(td->fcn.cnt == argcnt);
 
@@ -225,7 +225,7 @@ c_root_code compile_lisp_to_eval(expr exp){
   c_value val;
   type_def * t = _compile_expr(&f->block, &val, exp);
   type_def td;
-  td.kind = FUNCTION;
+  td.type = FUNCTION;
   td.fcn.ret = t;
   td.fcn.args = NULL;
   td.fcn.cnt = 0;
@@ -281,7 +281,7 @@ void compile_as_c(c_root_code * codes, size_t code_cnt){
 
     write_dependencies(deps);
     for(size_t i = 0; i < array_count(deps) && deps[i] != NULL; i++){
-      if(deps[i]->kind == TYPEDEF){
+      if(deps[i]->type == TYPEDEF){
 	continue;
 	print_def(deps[i]->ctypedef.inner,false);
       }else{
@@ -317,7 +317,7 @@ void compile_as_c(c_root_code * codes, size_t code_cnt){
   TCCState * tccs = mktccs();
   for(size_t i = 0; i < array_count(vdeps) && vdeps[i].name != NULL; i++){
     var_def * var = get_variable(vdeps[i]);
-    if(var->type->kind == FUNCTION){
+    if(var->type->type == FUNCTION){
       int fail = tcc_add_symbol(tccs,get_c_name(var->name),var->data);
       ASSERT(!fail);
     }else{
@@ -607,7 +607,7 @@ void lisp_run_expr(expr ex){
     char * (* fcn)() = evaldef->data;
     char * str = fcn();
     logd("\"%s\"\n",str);
-  }else if(evaldef->type->fcn.ret->kind == POINTER){
+  }else if(evaldef->type->fcn.ret->type == POINTER){
     void * (* fcn)() = evaldef->data;
     void * ptr = fcn();
     logd("%p\n", ptr);
@@ -696,7 +696,7 @@ bool test_lisp2c(){
 	    char * str = fcn();
 	    logd("\"%s\"\n",str);
 	      
-	  }else if(evaldef->type->fcn.ret->kind == POINTER){
+	  }else if(evaldef->type->fcn.ret->type == POINTER){
 	    void * (* fcn)() = evaldef->data;
 	    void * ptr = fcn();
 	    logd("ptr: %x\n", ptr);

@@ -51,27 +51,27 @@ void load_defs(){
   f64_def = make_simple("f64");
   r2(&f64_def);
   // pointers to simple types //
-  char_ptr_def.kind = POINTER;
+  char_ptr_def.type = POINTER;
   char_ptr_def.ptr.inner = &char_def;
   r2(&char_ptr_def);
-  char_ptr_ptr_def.kind = POINTER;
+  char_ptr_ptr_def.type = POINTER;
   char_ptr_ptr_def.ptr.inner = &char_ptr_def;
   r2(&char_ptr_ptr_def);
-  i64_ptr_def.kind = POINTER;
+  i64_ptr_def.type = POINTER;
   i64_ptr_def.ptr.inner = &i64_def;  
   r2(&i64_ptr_def);
-  type_def_def.kind = TYPEDEF;
+  type_def_def.type = TYPEDEF;
   type_def_def.ctypedef.name = get_symbol("type_def");
-  type_def_ptr_def.kind = POINTER;
+  type_def_ptr_def.type = POINTER;
   type_def_ptr_def.ptr.inner = &type_def_def;  
 
 
-  decl_ptr_def.kind = POINTER;
+  decl_ptr_def.type = POINTER;
   decl_ptr_def.ptr.inner = &decl_def;
   
   { // kind enum
     static type_def type_def_kind_def_inner;
-    type_def_kind_def.kind = TYPEDEF;
+    type_def_kind_def.type = TYPEDEF;
     type_def_kind_def.ctypedef.inner = &type_def_kind_def_inner;
     type_def_kind_def.ctypedef.name = get_symbol("type_def_kind");
     static char * kindnames[] = {"SIMPLE", "FUNCTION", "POINTER", "STRUCT", "UNION", "ENUM"};
@@ -79,7 +79,7 @@ void load_defs(){
     for(size_t i = 0; i < array_count(kindnames); i++)
       kindnames2[i] = get_symbol(kindnames[i]);
     static i64 kindvalues[] = {SIMPLE, FUNCTION, POINTER, STRUCT, UNION, ENUM};
-    type_def_kind_def_inner.kind = ENUM;
+    type_def_kind_def_inner.type = ENUM;
     type_def_kind_def_inner.cenum.cnt = array_count(kindnames);
     type_def_kind_def_inner.cenum.names = kindnames2;
     type_def_kind_def_inner.cenum.values = kindvalues;
@@ -91,7 +91,7 @@ void load_defs(){
     type_def_def.ctypedef.inner = &itype_def_def;
     
     static decl members[2];
-    itype_def_def.kind = STRUCT;
+    itype_def_def.type = STRUCT;
     itype_def_def.cstruct.members = members;
     itype_def_def.cstruct.cnt = array_count(members);
     itype_def_def.cstruct.name = get_symbol("_type_def");
@@ -101,7 +101,7 @@ void load_defs(){
     {
       static type_def type_def_union;
       static decl umembers[7];
-      type_def_union.kind = UNION;    
+      type_def_union.type = UNION;    
       type_def_union.cunion.name = symbol_empty;
       type_def_union.cunion.cnt = array_count(umembers);
       type_def_union.cunion.members = umembers;
@@ -125,7 +125,7 @@ void load_defs(){
 	  cenum_members[3].name = get_symbol("enum_name");
 	  cenum_members[3].type = &char_ptr_def;
 	  
-	  cenum_def.kind = STRUCT;
+	  cenum_def.type = STRUCT;
 	  cenum_def.cstruct.members = cenum_members;
 	  cenum_def.cstruct.name = get_symbol("_enum");
 	  cenum_def.cstruct.cnt = array_count(cenum_members);
@@ -137,7 +137,7 @@ void load_defs(){
 	{//simple
 	  static type_def simple_def;
 	  static decl members[2];
-	  simple_def.kind = STRUCT;
+	  simple_def.type = STRUCT;
 	  simple_def.cstruct.name=get_symbol("_simple");
 	  simple_def.cstruct.members = members;
 	  simple_def.cstruct.cnt = array_count(members);
@@ -153,7 +153,7 @@ void load_defs(){
 	{//fcn
 	  static type_def fcn_def;
 	  static decl members[3];
-	  fcn_def.kind = STRUCT;
+	  fcn_def.type = STRUCT;
 	  fcn_def.cstruct.cnt = array_count(members);
 	  fcn_def.cstruct.members = members;
 	  fcn_def.cstruct.name = get_symbol("_fcn");
@@ -178,7 +178,7 @@ void load_defs(){
 	  cstruct_members[2].type = &i64_def;
 	  static type_def cstruct_def;
 	  static type_def cunion_def;
-	  cstruct_def.kind = STRUCT;
+	  cstruct_def.type = STRUCT;
 	  cstruct_def.cstruct.name = get_symbol("_cstruct");
 	  cstruct_def.cstruct.members= cstruct_members;
 	  cstruct_def.cstruct.cnt = array_count(cstruct_members);
@@ -198,7 +198,7 @@ void load_defs(){
 	  members[0].name = get_symbol("inner");
 	  members[0].type = &type_def_ptr_def;
 	  static type_def ptr_def;
-	  ptr_def.kind = STRUCT;
+	  ptr_def.type = STRUCT;
 	  ptr_def.cstruct.members = members;
 	  ptr_def.cstruct.cnt = 1;
 	  ptr_def.cstruct.name = get_symbol("_ptr");
@@ -213,7 +213,7 @@ void load_defs(){
 	  members[1].name = get_symbol("inner");
 	  members[1].type = &type_def_ptr_def;
 	  static type_def ctypedef_def;
-	  ctypedef_def.kind = STRUCT;
+	  ctypedef_def.type = STRUCT;
 	  ctypedef_def.cstruct.name = get_symbol("_ctypedef");
 	  ctypedef_def.cstruct.members = members;
 	  ctypedef_def.cstruct.cnt = array_count(members);
@@ -233,12 +233,12 @@ void load_defs(){
     members[1].name = get_symbol("type");
     members[1].type = &type_def_def;
      
-    dclinner.kind = STRUCT;
+    dclinner.type = STRUCT;
     dclinner.cstruct.name = get_symbol("_decl");
     dclinner.cstruct.members = members;
     dclinner.cstruct.cnt = array_count(members);
     
-    decl_def.kind = TYPEDEF;
+    decl_def.type = TYPEDEF;
     decl_def.ctypedef.name = get_symbol("decl");
     decl_def.ctypedef.inner = &dclinner;
   }
@@ -248,12 +248,12 @@ void load_defs(){
   r2(&decl_ptr_def);
 
   { // fcn_def
-    fcn_def_def.kind = TYPEDEF;
+    fcn_def_def.type = TYPEDEF;
     static decl members[4];
     static type_def inner;
     fcn_def_def.ctypedef.name = get_symbol("fcn_def");
     fcn_def_def.ctypedef.inner = &inner;
-    inner.kind = STRUCT;
+    inner.type = STRUCT;
     inner.cstruct.members = members;
     inner.cstruct.cnt = array_count(members);
     inner.cstruct.name = get_symbol("_fcn_def");
@@ -270,12 +270,12 @@ void load_defs(){
   }
   
   { // cmacrodef_def
-    cmacro_def_def.kind = TYPEDEF;
+    cmacro_def_def.type = TYPEDEF;
     static decl members[3];
     static type_def inner;
     cmacro_def_def.ctypedef.name = get_symbol("cmacro_def");
     cmacro_def_def.ctypedef.inner = &inner;
-    inner.kind = STRUCT;
+    inner.type = STRUCT;
     inner.cstruct.members = members;
     inner.cstruct.cnt = array_count(members);
     inner.cstruct.name = get_symbol("_cmacro_def");
@@ -286,6 +286,12 @@ void load_defs(){
     members[2].name = get_symbol("fcn");
     members[2].type = &void_ptr_def;
     r2(&cmacro_def_def);
+  }
+  {
+    //    symbol_def.type = TYPEDEF;
+    //static decl members[2];
+    //static type_def innit;
+
   }
 }
 
