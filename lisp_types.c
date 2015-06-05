@@ -174,7 +174,7 @@ void make_dependency_graph(type_def ** defs, type_def * def){
 }
 
 void add_var_dep(symbol * vdeps, symbol newdep){
-  for(;symbol_cmp(*vdeps, symbol_empty); vdeps++){
+  for(;!symbol_cmp(*vdeps, symbol_empty); vdeps++){
     if(symbol_cmp(*vdeps, newdep))
       return;
   }
@@ -266,10 +266,6 @@ void c_root_code_dep(type_def ** deps, symbol * vdeps, c_root_code code){
   }
 }
 
-void get_var_dependencies(symbol * type_names, c_root_code * code){
-  UNUSED(type_names);
-  UNUSED(code);
-}
 
 void print_value(c_value val){
   switch(val.type){

@@ -18,7 +18,7 @@ typedef struct{
 const symbol symbol_empty = {0};
 symbol_table * symtbl = NULL; 
 symbol_table * symtbl_byid = NULL; 
-u64 symbol_cnt = 0;
+u64 symbol_cnt = 1;
 
 symbol get_symbol(char * name){
   symbol_table * sym_item = NULL;

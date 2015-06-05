@@ -192,7 +192,6 @@ static type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se
     value->call = call;
     value->call.arg_cnt = argcnt;
     
-
     return td->fcn.ret;
   }else{
     ERROR("Not supported..\n");
@@ -276,7 +275,7 @@ TCCState * mktccs(){
 void go_write(type_def ** deps, symbol * vdeps, c_root_code * codes, size_t code_cnt){
 
     write_dependencies(deps);
-    for(size_t i = 0; i < array_count(deps) && deps[i] != NULL; i++){
+    for(size_t i = 0; deps[i] != NULL; i++){
       if(deps[i]->type == TYPEDEF){
 	continue;
 	print_def(deps[i]->ctypedef.inner,false);
@@ -286,7 +285,7 @@ void go_write(type_def ** deps, symbol * vdeps, c_root_code * codes, size_t code
       format(";\n");
     }
     
-    for(size_t i = 0; i < array_count(vdeps) && vdeps[i].id != 0; i++){
+    for(size_t i = 0; vdeps[i].id != 0; i++){
       
       var_def * var = get_variable(vdeps[i]);
       ASSERT(var != NULL);
@@ -312,23 +311,28 @@ void compile_as_c(c_root_code * codes, size_t code_cnt){
   for(size_t i = 0; i < code_cnt; i++){
     c_root_code_dep(deps, vdeps, codes[i]);
   }
-
   char * data = NULL;
   size_t cnt = 0;
   FILE * f = open_memstream(&data, &cnt);
-  with_format_out(f, lambda( void, (){ go_write(deps, vdeps, codes, code_cnt);}));
+  push_format_out(f);
+  go_write(deps, vdeps, codes, code_cnt);
+  pop_format_out();
   fclose(f);
+
   char header[] = "***********\n";
   append_buffer_to_file(header,sizeof(header),"compile_out.c");
   append_buffer_to_file(data,cnt,"compile_out.c");
   TCCState * tccs = mktccs();
   for(size_t i = 0; i < array_count(vdeps) && vdeps[i].id != 0; i++){
+
     var_def * var = get_variable(vdeps[i]);
     if(var->type->type == FUNCTION){
       int fail = tcc_add_symbol(tccs,get_c_name(var->name),var->data);
       ASSERT(!fail);
     }else{
-      int fail = tcc_add_symbol(tccs,get_c_name(var->name),&var->data);
+      char * vname = get_c_name(var->name);
+      logd("vdep: %s\n", vname);
+      int fail = tcc_add_symbol(tccs,vname,&var->data);
       ASSERT(!fail);
     }
   }
