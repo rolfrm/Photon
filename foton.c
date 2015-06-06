@@ -45,6 +45,7 @@ bool test_lisp_parser();
 bool test_lisp2c();
 bool test_get_cname();
 bool test_symbols();
+bool test_type_pool();
 int main(int argc, char *argv[] ){
   if(argc == 1 || (argc == 2 && strcmp(argv[1],"--repl") == 0)){
     break_on_errors = false;
@@ -55,8 +56,10 @@ int main(int argc, char *argv[] ){
   if(argc == 2 && strcmp(argv[1],"--test") == 0){
     log("Running tests...\n");
     TEST(test_lisp_parser);
+    TEST(test_type_pool);
     TEST(test_lisp2c);
     TEST(test_symbols);
+
     return 0;
   }
 

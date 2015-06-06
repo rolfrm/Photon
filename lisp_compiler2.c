@@ -47,6 +47,11 @@ bool is_string(expr exp){
   return exp.type == VALUE && exp.value.type == STRING;
 }
 
+bool is_keyword(expr exp){
+  return exp.type == VALUE && exp.value.type == KEYWORD;
+}
+
+
 char * read_symbol(expr name){
   return fmtstr("%.*s",name.value.strln, name.value.value);
 }
@@ -462,21 +467,30 @@ type_def * var_macro(c_block * block, c_value * val, expr vars, expr body){
   return ret_type;
 }
 
-
-
-type_def * defvar_macro(c_block * block, c_value * val, expr name, expr body){
+type_def * defvar_macro(c_block * block, c_value * val, expr * exprs, size_t cnt){
+  COMPILE_ASSERT(cnt == 2 || cnt == 3);
+  expr name = exprs[0];
   COMPILE_ASSERT(is_symbol(name));
   symbol sym = expr_symbol(name);
+  type_def * t;
+ 
+  if(is_keyword(exprs[1]) && cnt == 3){
+    t = _type_macro(exprs[2]);
+    val->type = C_SYMBOL;
+    val->symbol = sym;
+  }else{
+    expr body = exprs[1];
+    c_value * vr = alloc0(sizeof(c_value));
+    c_value * vl = alloc0(sizeof(c_value));
+    vl->type = C_SYMBOL;
+    vl->symbol = sym;
+    t = _compile_expr(block, vr, body);
+    val->type = C_OPERATOR;
+    val->operator.left = vl;
+    val->operator.right = vr;
+    val->operator.operator = '=';
+  }
 
-  c_value * vr = alloc0(sizeof(c_value));
-  c_value * vl = alloc0(sizeof(c_value));
-  vl->type = C_SYMBOL;
-  vl->symbol = sym;
-  type_def * t = _compile_expr(block, vr, body);
-  val->type = C_OPERATOR;
-  val->operator.left = vl;
-  val->operator.right = vr;
-  val->operator.operator = '=';
   c_root_code var_root;
   var_root.type = C_VAR_DEF;
   var_root.var.var.name = sym;
@@ -642,7 +656,7 @@ void lisp_load_compiler(compiler_state * c){
 	define_macro("var", 2, &var_macro);
 	define_macro("progn", -1, &progn_macro);
 	define_macro("cast", 2, &cast_macro);
-	define_macro("defvar", 2, &defvar_macro);
+	define_macro("defvar", -1, &defvar_macro);
 	define_macro("load", 1, &load_macro);
 	define_macro("quote", 1, &quote_macro);
 	define_macro("setf", 2, &setf_macro);
@@ -713,8 +727,9 @@ void lisp_run_expr(expr ex){
   }else if(evaldef->type->fcn.ret == &error_def){
     
   }else{
-    logd("\n");
-    loge("Unable to eval function of this type\n");
+    void * (* fcn)() = evaldef->data;
+    void * v = fcn();
+    logd("%p\n", v);
   }
 }
 

@@ -204,5 +204,7 @@ void print_def(type_def * type, bool is_decl);
 
 void print_c_code(c_root_code code);
 
+type_def * str2type(char * str);
+
 // test
 bool test_print_c_code();

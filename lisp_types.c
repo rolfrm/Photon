@@ -89,7 +89,7 @@ void print_def(type_def * type, bool is_decl){
     }else{
       format("typedef ");
       print_def(inner,false);
-      format("%s;\n",symbol_name(type->ctypedef.name));
+      format(" %s;\n",symbol_name(type->ctypedef.name));
     }
     
     break;
