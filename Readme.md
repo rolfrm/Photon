@@ -13,22 +13,23 @@ To test the compiler.
 4. ./photon test.lisp
 5. ./photon \#to start the REPL
 
-Short Term Features
+V1 Release Checklist
 --------
 * [x] Naming symbols anything.
-* [ ] Function overloading
 * [x] Global variables.
 * [x] setf
 * [x] floats / doubles
 * [x] Loading lisp code
 * [x] Proper symbols -  one symbol - one ID. Symbols to be used for functions, variable names. This meams that vars will be symbol based instead of string based.
 * [x] Quoting 'symbolname
-* [ ] Lisp macros (tick/backtick syntax)
+* [ ] c-macros
+* [ ] Opaque types
 * [ ] Structs
  * [ ] Defining
  * [ ] member access
 * [ ] Arrays / pointers
 * [ ] sizeof macro.
+* [ ] Lisp macros (tick/backtick syntax)
 * [ ] Standard library
  * [ ] -ldl related
  * [ ] -lm related
@@ -41,10 +42,11 @@ Short Term Features
 
 
 
-Long Term Features
+Vn Features
 ---------
 * [ ] Packages / Modules
 * [ ] libgccjit backend.
 * [ ] offloading compiled code into a c-compatible static or dynamic link library and header file.
 * [ ] Front end optimizations like tail call optimizations, function inlining and constant propagation. Note: pure functions can be evaluated during constant propagation.
 * [ ] Bignums
+* [ ] SSE support

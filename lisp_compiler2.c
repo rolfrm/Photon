@@ -70,7 +70,7 @@ static type_def * compile_value(c_value * val, value_expr e){
     val->symbol = vexpr_symbol(e);
     vdef = get_variable(val->symbol);
     if(vdef == NULL){
-      COMPILE_ERROR("Unknown variable '%s'", val->raw.value);
+      COMPILE_ERROR("Unknown variable '%s'", symbol_name(val->symbol));
     }
     return vdef->type;
   case NUMBER:
@@ -124,6 +124,7 @@ type_def * _type_macro(expr typexpr){
       out.fcn.args = clone(args, sizeof(args));
       out.fcn.cnt = array_count(args);
       return get_type_def(out);
+
     }else if (strncmp(vkind.value,"ptr",vkind.strln) == 0){
       COMPILE_ASSERT(sexp.cnt == 2);
       type_def out;
@@ -666,6 +667,8 @@ void lisp_load_compiler(compiler_state * c){
 
 void lisp_run_expr(expr ex){
   c_root_code cl = compile_lisp_to_eval(ex);
+  if(cl.fcndef.fdecl.type->fcn.ret == &error_def)
+    return;
   compile_as_c(&cl,1);
   symbol s = get_symbol("eval");
   var_def * evaldef = get_variable(s);
@@ -686,7 +689,7 @@ void lisp_run_expr(expr ex){
     symbol * (* fcn)() = evaldef->data;
     symbol * s = fcn();
     logd("'%s\n", symbol_name(*s));
-  }else if(evaldef->type->fcn.ret->type == POINTER){
+  }else if(evaldef->type->fcn.ret->type == POINTER || evaldef->type->fcn.ret->type == FUNCTION){
     void * (* fcn)() = evaldef->data;
     void * ptr = fcn();
     logd("%p\n", ptr);
@@ -707,6 +710,7 @@ void lisp_run_expr(expr ex){
     f64 (* fcn)() = evaldef->data;
     f64 v = fcn();
     logd("%f\n",v);  
+  }else if(evaldef->type->fcn.ret == &error_def){
     
   }else{
     logd("\n");
@@ -737,60 +741,13 @@ bool test_lisp2c(){
   with_compiler(c,lambda(void, (){
 	type_def * d = str2type("(alias (ptr type_def) td)");
 	print_def(d,false);
-	//type_def * d2 = str2type("(struct _vec2 (x f32) (y f32))");
 	type_def * d2 = str2type("(alias (struct _vec2 (x f32) (y f32)) vec2)");
 	print_def(d2,false);
 	type_def * d3 = str2type("(ptr vec2)");
 	print_def(d3,false);	
+	type_def * d4 = str2type("(alias (struct _a) a)");
+	print_def(d4, false);
       }));
   return ret;
-
-  char * test_code = "(defun printhello ()(print_string \"hello\\n\"))";
-  test_code = "(type (ptr (ptr (ptr (ptr (ptr (ptr (ptr char))))))))";
-  test_code = "(var ((x \"hello sailor!\")) x)";
-  test_code = "(progn (write_line \"hello\") (write_line \"world!\") (var ((x \"asd\")) x))";
-  //test_code = "(defun add2 (i64 (a i64)) (var ((b(i64_add a a)) (add2 (add2 (add2 5)))";
-  size_t exprcnt;
-  expr * exprs = lisp_parse_all(test_code, &exprcnt);
-  
-  with_compiler(c,lambda(void, (){
-	load_defs();
-	ASSERT(NULL != get_variable(get_symbol("i64_add")));
-
-	logd("parsed %i expr(s).\n", exprcnt);
-	for(size_t i = 0; i < exprcnt; i++){
-	  logd("Iteration: %i\n",i);
-	  c_root_code cl = compile_lisp_to_eval(exprs[i]);
-	  compile_as_c(&cl,1);
-	  var_def * evaldef = get_variable(get_symbol("eval"));
-	  print_def(evaldef->type,false); logd(" :: ");
-	  if(evaldef->type->fcn.ret == &void_def){
-	    void (* fcn)() = evaldef->data;
-	    fcn();
-	  }else if(evaldef->type->fcn.ret == str2type("(ptr type_def)")){
-	    type_def * (* fcn)() = evaldef->data;
-	    fcn();
-	    logd("type\n");
-	  }else if(evaldef->type->fcn.ret == &char_ptr_def){
-	    char * (* fcn)() = evaldef->data;
-	    char * str = fcn();
-	    logd("\"%s\"\n",str);
-	      
-	  }else if(evaldef->type->fcn.ret->type == POINTER){
-	    void * (* fcn)() = evaldef->data;
-	    void * ptr = fcn();
-	    logd("ptr: %x\n", ptr);
-	  }else if(evaldef->type->fcn.ret == &i64_def){
-	    i64 (* fcn)() = evaldef->data;
-	    i64 v = fcn();
-	    logd("%i\n",v);
-	  }else{
-	    logd("\n");
-	    loge("Unable to eval function of this type\n");
-	  }
-	}
-
-      };));
-  return TEST_SUCCESS;
 }
 
