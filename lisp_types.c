@@ -14,6 +14,53 @@
 #include "lisp_compiler.h"
 #include "lisp_std_types.h"
 
+size_t get_sub_type_cnt(type_def * t){
+  switch(t->type){
+  case ENUM:
+  case SIMPLE:
+    return 0;
+    break;
+  case POINTER:
+    return 1;
+    break;
+  case UNION:
+  case STRUCT:
+    return t->cstruct.cnt;
+    break;
+  case TYPEDEF:
+    return 1;
+    break;
+  default:
+    ERROR("Unsupported type");
+    break;
+  }
+  return 0;
+}
+	  
+void get_sub_types(type_def * t, type_def ** out_types){
+  switch(t->type){
+  case ENUM:
+  case SIMPLE:
+    break;
+  case POINTER:
+    *out_types = t->ptr.inner;
+    break;
+  case UNION:
+  case STRUCT:
+    for(i64 i = 0; i < t->cstruct.cnt; i++){
+      out_types[i] = t->cstruct.members[i].type;
+    }
+    break;
+  case TYPEDEF:
+    *out_types = t->ctypedef.inner;
+    break;
+  default:
+    ERROR("Unsupported type");
+    break;
+  }
+}
+
+
 type_def make_simple(char * name){
   static type_def def;
   def.type = SIMPLE;
