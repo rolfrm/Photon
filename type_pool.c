@@ -27,7 +27,40 @@ static bool compare_pointer(type_def * a, type_def * b){
 }
 
 static bool compare_struct(type_def * a, type_def * b){
-   return a->cstruct.name.id == b->cstruct.name.id;
+  return a->cstruct.name.id == b->cstruct.name.id;
+}
+
+static bool compare_enum(type_def * a, type_def * b){
+  return a->cenum.name.id == b->cenum.name.id;
+}
+
+static bool compare_typedef(type_def * a, type_def * b){
+  return a->ctypedef.name.id ==  b->ctypedef.name.id;
+}
+
+type_def ** get_sub_types(type_def * t, size_t * cnt){
+  switch(lookup.type){
+  case ENUM:
+  case SIMPLE:
+    *cnt = 0;
+    return NULL
+    break;
+  case POINTER:
+    return t->ptr.inner;
+    *cnt = 1;
+    break;
+  case UNION:
+  case STRUCT:
+    cmp = compare_struct;
+    break;
+  case TYPEDEF:
+    cmp = compare_typedef;
+    break;
+  default:
+    ERROR("Unsupported type");
+    break;
+  }
+  
 }
 
 type_def * type_pool_get(type_def lookup){
@@ -42,8 +75,15 @@ type_def * type_pool_get(type_def lookup){
   case POINTER:
     cmp = compare_pointer;
     break;
+  case UNION:
   case STRUCT:
     cmp = compare_struct;
+    break;
+  case ENUM:
+    cmp = compare_enum;
+    break;
+  case TYPEDEF:
+    cmp = compare_typedef;
     break;
   default:
     ERROR("Unsupported type");
@@ -65,11 +105,37 @@ type_def * type_pool_get(type_def lookup){
   return found;
 }
 
+void load_type(type_def td){
+  
+  switch(td.type){
+  case SIMPLE:
+    cmp = compare_simple;
+    break;
+  case POINTER:
+    cmp = compare_pointer;
+    break;
+  case UNION:
+  case STRUCT:
+    cmp = compare_struct;
+    break;
+  case ENUM:
+    cmp = compare_enum;
+    break;
+  case TYPEDEF:
+    cmp = compare_typedef;
+    break;
+  default:
+    ERROR("Unsupported type");
+    break;
+  }
+}
+
 bool test_type_pool(){
   //type_def * td = str2type("(ptr i64)");
   type_def d;
   d.type = SIMPLE;
   d.simple.name = get_symbol("i64");
+  d.simple.size = sizeof(i64);
   type_def * td = type_pool_get(d);
   TEST_ASSERT(td != NULL);
   TEST_ASSERT(td == type_pool_get(d));

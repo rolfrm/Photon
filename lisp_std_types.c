@@ -122,7 +122,7 @@ void load_defs(){
 	  cenum_members[1].type = &i64_ptr_def;
 	  cenum_members[2].name = get_symbol("cnt");
 	  cenum_members[2].type = &i64_def;
-	  cenum_members[3].name = get_symbol("enum_name");
+	  cenum_members[3].name = get_symbol("name");
 	  cenum_members[3].type = &char_ptr_def;
 	  
 	  cenum_def.type = STRUCT;

@@ -26,11 +26,12 @@ struct _type_def{
       symbol * names;
       i64 * values;
       i64 cnt;
-      symbol enum_name;
+      symbol name;
     }cenum;
 
     struct _simple{
       symbol name;
+      size_t size;
     }simple;
     
     struct{

@@ -57,9 +57,9 @@ void print_def(type_def * type, bool is_decl){
     break;
   case ENUM:
     if(is_decl){
-      format("%s", symbol_name(type->cenum.enum_name));
+      format("%s", symbol_name(type->cenum.name));
     }else{
-      format("%s",symbol_name(type->cenum.enum_name));
+      format("%s",symbol_name(type->cenum.name));
     }
     break;
   case UNION:
