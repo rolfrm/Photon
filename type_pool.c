@@ -46,11 +46,12 @@ type_def ** get_sub_types(type_def * t, size_t * cnt){
     return NULL
     break;
   case POINTER:
-    return t->ptr.inner;
+    return &t->ptr.inner;
     *cnt = 1;
     break;
   case UNION:
   case STRUCT:
+    return
     cmp = compare_struct;
     break;
   case TYPEDEF:
