@@ -50,13 +50,13 @@ struct _type_def{
     }fcn;
     
     struct{
-      symbol name; // NULL if anonymous
+      symbol name; // can be empty
       decl * members;
       i64 cnt;
     }cstruct;
 
     struct{
-      symbol name; // NULL if anonymous
+      symbol name; // can be empty
       decl * members;
       i64 cnt;
     }cunion;
@@ -92,10 +92,10 @@ void print_cdecl(decl idecl);
 
 type_def make_simple(char * name);
 type_def make_ptr(type_def * def);
-type_def * get_type_def(type_def def);
+/*type_def * get_type_def(type_def def);
 type_def * get_type_from_string(char * name);
 void register_type(type_def * type, char * name);
-
+*/
 // simple function to calculate type dependencies.
 // writes the dependencies of a type in defs
 // descending order, so least dependent comes first.

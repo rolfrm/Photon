@@ -9,13 +9,13 @@
 #include "lisp_types.h"
 
 #include "lisp_std_types.h"
-
+#include "type_pool.h"
 static void r(type_def * def){
-  register_type(def, symbol_name(def->simple.name));
+  type_pool_reg_static(def);
 }
 
 void r2(type_def * def){
-  register_type(def, NULL);
+  type_pool_reg_static(def);
 }
 
 // Loads a all the types we need.
@@ -60,12 +60,28 @@ void load_defs(){
   i64_ptr_def.type = POINTER;
   i64_ptr_def.ptr.inner = &i64_def;  
   r2(&i64_ptr_def);
+
+  { // struct symbol
+    symbol_def.type = TYPEDEF;
+    symbol_def.ctypedef.name = get_symbol("symbol");
+    
+    static decl members[1];
+    static type_def inner;
+    symbol_def.ctypedef.inner = &inner;
+    inner.type = STRUCT;
+    members[0].type = &u64_def;
+    members[0].name = get_symbol("id");
+    inner.cstruct.members = members;
+    inner.cstruct.cnt = array_count(members);
+    inner.cstruct.name = symbol_empty;
+    r2(&symbol_def);
+  }
+
+
   type_def_def.type = TYPEDEF;
   type_def_def.ctypedef.name = get_symbol("type_def");
   type_def_ptr_def.type = POINTER;
   type_def_ptr_def.ptr.inner = &type_def_def;  
-
-
   decl_ptr_def.type = POINTER;
   decl_ptr_def.ptr.inner = &decl_def;
   
@@ -105,7 +121,6 @@ void load_defs(){
       type_def_union.cunion.name = symbol_empty;
       type_def_union.cunion.cnt = array_count(umembers);
       type_def_union.cunion.members = umembers;
-      //      r2(&type_def_union);
       
       members[1].type = &type_def_union;
 
@@ -129,7 +144,6 @@ void load_defs(){
 	  cenum_def.cstruct.members = cenum_members;
 	  cenum_def.cstruct.name = get_symbol("_enum");
 	  cenum_def.cstruct.cnt = array_count(cenum_members);
-	  r2(&cenum_def);
 	  umembers[0].type = &cenum_def;
 	  umembers[0].name = get_symbol("cenum");
 	}
@@ -142,12 +156,11 @@ void load_defs(){
 	  simple_def.cstruct.members = members;
 	  simple_def.cstruct.cnt = array_count(members);
 	  members[0].name = get_symbol("name");
-	  members[0].type = &char_ptr_def;
+	  members[0].type = &symbol_def;
 	  members[1].name = get_symbol("cname");
-	  members[1].type = &char_ptr_def;
+	  members[1].type = &symbol_def;
 	  umembers[1].type = &simple_def;
 	  umembers[1].name = get_symbol("simple");
-	  r2(&simple_def);
 	}
 	
 	{//fcn
@@ -165,13 +178,12 @@ void load_defs(){
 	  members[2].type = &i64_def;
 	  umembers[2].type = &fcn_def;
 	  umembers[2].name = get_symbol("fcn");
-	  r2(&fcn_def);
 	}
 	
 	{//cstruct/cunion
 	  static decl cstruct_members[3];
 	  cstruct_members[0].name = get_symbol("name");
-	  cstruct_members[0].type = &char_ptr_def;
+	  cstruct_members[0].type = &symbol_def;
 	  cstruct_members[1].name = get_symbol("members");
 	  cstruct_members[1].type = &decl_ptr_def;
 	  cstruct_members[2].name = get_symbol("cnt");
@@ -189,8 +201,6 @@ void load_defs(){
 	  umembers[3].name = get_symbol("cstruct");
 	  umembers[4].type = &cunion_def;
 	  umembers[4].name = get_symbol("cunion");
-	  r2(&cstruct_def);
-	  r2(&cunion_def);
 	}
 	
 	{//ptr
@@ -204,12 +214,11 @@ void load_defs(){
 	  ptr_def.cstruct.name = get_symbol("_ptr");
 	  umembers[5].type = &ptr_def;
 	  umembers[5].name = get_symbol("ptr");
-	  r2(&ptr_def);
 	}
 	{// typedef
 	  static decl members[2];
 	  members[0].name = get_symbol("name");
-	  members[0].type = &char_ptr_def;
+	  members[0].type = &symbol_def;
 	  members[1].name = get_symbol("inner");
 	  members[1].type = &type_def_ptr_def;
 	  static type_def ctypedef_def;
@@ -217,11 +226,9 @@ void load_defs(){
 	  ctypedef_def.cstruct.name = get_symbol("_ctypedef");
 	  ctypedef_def.cstruct.members = members;
 	  ctypedef_def.cstruct.cnt = array_count(members);
-	  r2(&ctypedef_def);
 	  umembers[6].type = &ctypedef_def;
 	  umembers[6].name = get_symbol("ctypedef");
-	}
-	
+	}	
       }
     }
   }
@@ -242,6 +249,7 @@ void load_defs(){
     decl_def.ctypedef.name = get_symbol("decl");
     decl_def.ctypedef.inner = &dclinner;
   }
+
   r2(&type_def_def);
   r2(&decl_def);
   r2(&type_def_ptr_def);
@@ -287,22 +295,6 @@ void load_defs(){
     members[2].type = &void_ptr_def;
     r2(&cmacro_def_def);
   }
-  { // struct symbol
-    symbol_def.type = TYPEDEF;
-    symbol_def.ctypedef.name = get_symbol("symbol");
 
-    static decl members[1];
-    static type_def inner;
-    symbol_def.ctypedef.inner = &inner;
-    inner.type = STRUCT;
-    members[0].type = &u64_def;
-    members[0].name = get_symbol("id");
-    //members[1].type = &char_ptr_def;
-    //members[1].name = get_symbol("name");
-    inner.cstruct.members = members;
-    inner.cstruct.cnt = array_count(members);
-    inner.cstruct.name = symbol_empty;
-    r2(&symbol_def);
-  }
 }
 

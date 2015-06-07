@@ -13,7 +13,7 @@
 #include "lisp_parser.h"
 #include "lisp_compiler.h"
 #include "lisp_std_types.h"
-
+#include "type_pool.h"
 size_t get_sub_type_cnt(type_def * t){
   switch(t->type){
   case ENUM:
@@ -448,7 +448,7 @@ void print_c_code(c_root_code code){
   }
 }
 
-#include "uthash.h"
+/*#include "uthash.h"
 
 typedef struct{
   type_def * ptr;
@@ -514,7 +514,7 @@ type_def * get_type_def(type_def def){
   if(result == NULL)
     ERROR("Unable to resolve type");
   return result;
-}
+  }
 
 type_def * get_type_from_string(char * str){
   type_item * item = NULL;
@@ -522,7 +522,7 @@ type_def * get_type_from_string(char * str){
   if(item != NULL)
     return item->ptr;
   return NULL;
-}
+  }
 
 void register_type(type_def * ptr, char * name){
   if(name == NULL){
@@ -540,7 +540,7 @@ void register_type(type_def * ptr, char * name){
   newitem->name = name;
   //logd("Register: '%s' %i\n", name, ptr);
   HASH_ADD_KEYPTR(hh, items, name, strlen(name), newitem);
-}
+  }*/
 
 void print_cdecl(decl idecl){
   void inner_print(decl idecl){
@@ -673,7 +673,7 @@ bool test_print_c_code(){
     fundef.block.expr_cnt = 1;
 
     decl fdecl;
-    fdecl.type = get_type_def(ftype);
+    fdecl.type = type_pool_get(&ftype);
     fdecl.name = get_symbol("print_test");
     fundef.fdecl = fdecl;
     

@@ -1,7 +1,7 @@
 ;; The following code compiles
 ;"hello world!"
 ;(write_line "hello world!")
-
+(write_line "hello world!")
 (defun + (i64 (a i64) (b i64))
   (i64+ a b))
 

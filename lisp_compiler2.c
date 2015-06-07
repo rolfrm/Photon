@@ -5,8 +5,9 @@
 #include "lisp_types.h"
 #include "lisp_std_types.h"
 #include "lisp_compiler.h"
+#include "type_pool.h"
 
-#define COMPILE_ASSERT(expr) if(!(expr)){ERROR("Compile error");return &error_def;}
+#define COMPILE_ASSERT(expr) if(!(expr)){ERROR("Compile error '" #expr "'");return &error_def;}
 #define COMPILE_ERROR(fmt, ...) {ERROR(fmt,##__VA_ARGS__); return &error_def;}
 
 symbol vexpr_symbol(value_expr e){
@@ -68,7 +69,7 @@ static type_def * compile_value(c_value * val, value_expr e){
   case STRING:
     val->raw.value = fmtstr("\"%.*s\"",e.strln,e.value);
     val->raw.type = &char_ptr_def;
-    return &char_ptr_def;
+    return type_pool_get(&char_ptr_def);
   case KEYWORD:
   case SYMBOL:
     val->type = C_SYMBOL;
@@ -77,11 +78,11 @@ static type_def * compile_value(c_value * val, value_expr e){
     if(vdef == NULL){
       COMPILE_ERROR("Unknown variable '%s'", symbol_name(val->symbol));
     }
-    return vdef->type;
+    return type_pool_get(vdef->type);
   case NUMBER:
     val->raw.value = fmtstr("%.*s",e.strln,e.value);
     val->raw.type = &i64_def;
-    return &i64_def;
+    return type_pool_get(&i64_def);
     break;
   default:
     break;
@@ -128,14 +129,14 @@ type_def * _type_macro(expr typexpr){
       out.fcn.ret = ret;
       out.fcn.args = clone(args, sizeof(args));
       out.fcn.cnt = array_count(args);
-      return get_type_def(out);
+      return type_pool_get(&out);
 
     }else if (strncmp(vkind.value,"ptr",vkind.strln) == 0){
       COMPILE_ASSERT(sexp.cnt == 2);
       type_def out;
       out.type = POINTER;
       out.ptr.inner = _type_macro(sexp.exprs[1]);
-      return get_type_def(out);
+      return type_pool_get(&out);
     }else if (strncmp(vkind.value, "struct",vkind.strln) == 0){
       COMPILE_ASSERT(sexp.cnt >= 2);
       symbol name = symbol_empty;
@@ -159,7 +160,7 @@ type_def * _type_macro(expr typexpr){
       out.cstruct.members = clone(members,sizeof(members));
       out.cstruct.cnt = memcnt;
       out.cstruct.name = name;
-      get_type_def(out);
+      type_pool_get(&out);
       return clone(&out,sizeof(type_def));
     }else if (strncmp(vkind.value, "alias", vkind.strln) == 0){
       COMPILE_ASSERT(sexp.cnt == 3);
@@ -168,22 +169,18 @@ type_def * _type_macro(expr typexpr){
       out.type = TYPEDEF;
       out.ctypedef.name = vexpr_symbol(sexp.exprs[2].value);
       out.ctypedef.inner = _type_macro(sexp.exprs[1]);
-      return get_type_def(out);
+      return type_pool_get(&out);
     }
   }else{
-    value_expr vkind = typexpr.value;
-    char tname[vkind.strln + 1];
-    strncpy(tname,vkind.value,vkind.strln);
-    tname[vkind.strln] = 0;
-    type_def * td = get_type_from_string(tname);
-    
+    type_def * td = type_pool_simple(expr_symbol(typexpr));
+    td = type_pool_get(td);
     COMPILE_ASSERT(td != NULL);
     return td;
   }
   return &error_def;
 }
   
-  static type_def * _compile_expr(c_block * block, c_value * val,  expr e );
+static type_def * _compile_expr(c_block * block, c_value * val,  expr e );
 
 static type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se){
   UNUSED(value);
@@ -199,7 +196,7 @@ static type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se
 
   var_def * fvar = get_variable(name);
   if(fvar == NULL) COMPILE_ERROR("unknown symbol '%s'", symbol_name(name));
-  if(fvar->type == &cmacro_def_def){
+  if(fvar->type == type_pool_get(&cmacro_def_def)){
     cmacro_def * macro = fvar->data;
 
     if(macro->arg_cnt != argcnt && macro->arg_cnt != -1)
@@ -230,7 +227,11 @@ static type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se
     type_def * farg_types[argcnt];
     for(i64 i = 0; i < argcnt; i++){
       farg_types[i] = _compile_expr(block, fargs + i, args[i]);
-      if(farg_types[i] != td->fcn.args[i].type){
+      if(type_pool_get(farg_types[i]) != type_pool_get(td->fcn.args[i].type)){
+	logd("Type 1:\n");
+	print_def(farg_types[i],true);
+	logd("\nType 2:\n");
+	print_def(td->fcn.args[i].type,true);
 	ERROR("Non matching types");
       }
     }
@@ -246,7 +247,7 @@ static type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se
     
     return td->fcn.ret;
   }else{
-    ERROR("Not supported..\n");
+    ERROR("Not supported.. %i\n", fvar->type->type);
   }
   type_def * sub_types[se->cnt];
   UNUSED(sub_types);
@@ -287,11 +288,11 @@ c_root_code compile_lisp_to_eval(expr exp){
   td.fcn.cnt = 0;
 
   f->fdecl.name = get_symbol("eval");
-  f->fdecl.type = get_type_def(td);
+  f->fdecl.type = type_pool_get(&td);
 
   c_expr expr;
   expr.type = C_VALUE;
-  if(t != &void_def) expr.type = C_RETURN;
+  if(t != type_pool_get(&void_def)) expr.type = C_RETURN;
   expr.value = val;
   list_add((void **) &f->block.exprs, &f->block.expr_cnt, &expr, sizeof(c_expr));
 
@@ -687,49 +688,45 @@ void lisp_run_expr(expr ex){
   symbol s = get_symbol("eval");
   var_def * evaldef = get_variable(s);
   print_def(evaldef->type->fcn.ret,false); logd(" :: ");
-  if(evaldef->type->fcn.ret == &void_def){
+  type_def * ret = evaldef->type->fcn.ret;
+  if(ret == &void_def){
     logd("()\n");
     void (* fcn)() = evaldef->data;
     fcn();
-  }else if(evaldef->type->fcn.ret == str2type("(ptr type_def)")){
+  }else if(ret == str2type("(ptr type_def)")){
     type_def * (* fcn)() = evaldef->data;
     fcn();
     logd("type\n");
-  }else if(evaldef->type->fcn.ret == &char_ptr_def){
+  }else if(ret == &char_ptr_def){
     char * (* fcn)() = evaldef->data;
     char * str = fcn();
     logd("\"%s\"\n",str);
-  }else if(evaldef->type->fcn.ret == str2type("(ptr symbol)")){
+  }else if(ret == str2type("(ptr symbol)")){
     symbol * (* fcn)() = evaldef->data;
     symbol * s = fcn();
     logd("'%s\n", symbol_name(*s));
-  }else if(evaldef->type->fcn.ret->type == POINTER || evaldef->type->fcn.ret->type == FUNCTION){
+  }else if(ret->type == POINTER || ret->type == FUNCTION){
     void * (* fcn)() = evaldef->data;
     void * ptr = fcn();
     logd("%p\n", ptr);
-  }else if(evaldef->type->fcn.ret == &i64_def || evaldef->type->fcn.ret == &i32_def
-	   || evaldef->type->fcn.ret == &i16_def || evaldef->type->fcn.ret == &i8_def){
-    i64 (* fcn)() = evaldef->data;
-    i64 v = fcn();
-    logd("%i\n",v);
-  }else if(evaldef->type->fcn.ret == &u64_def || evaldef->type->fcn.ret == &u32_def || evaldef->type->fcn.ret == &u16_def || evaldef->type->fcn.ret == &u8_def){
-    u64 (* fcn)() = evaldef->data;
-    u64 v = fcn();
-    logd("%i\n",v);  
-  }else if(evaldef->type->fcn.ret == &f32_def){
+  }else if(ret == &f32_def){
     f32 (* fcn)() = evaldef->data;
     f32 v = fcn();
     logd("%f\n",v);  
-  }else if(evaldef->type->fcn.ret == &f64_def){
+  }else if(ret == &f64_def){
     f64 (* fcn)() = evaldef->data;
     f64 v = fcn();
     logd("%f\n",v);  
-  }else if(evaldef->type->fcn.ret == &error_def){
+  }else if(ret->type == SIMPLE){
+    i64 (* fcn)() = evaldef->data;
+    i64 v = fcn();
+    logd("%i\n",v);
+  }else if(ret == &error_def){
     
   }else{
     void * (* fcn)() = evaldef->data;
     void * v = fcn();
-    logd("%p\n", v);
+    logd("try %p\n", v);
   }
 }
 

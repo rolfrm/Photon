@@ -5,7 +5,7 @@
 #include "lisp_types.h"
 #include "lisp_compiler.h"
 #include "lisp_std_types.h"
-
+#include "type_pool.h"
 //static __thread comp_state * compstate = NULL;
 static __thread compiler_state * lisp_state = NULL;
 
@@ -23,11 +23,11 @@ compiler_state * get_compiler(){
 
 void compiler_define_variable_ptr(symbol name, type_def * t, void * ptr){
   // check if reassign can be done.
-
+  t = type_pool_get(t);
   for(size_t i = 0; i < lisp_state->var_cnt; i++){
     if(symbol_cmp(name, lisp_state->vars[i].name)){
 
-	lisp_state->vars[i].type = t;
+      lisp_state->vars[i].type = t;
 	lisp_state->vars[i].data = ptr;
 	return;
     }
