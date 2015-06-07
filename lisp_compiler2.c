@@ -52,7 +52,6 @@ bool is_keyword(expr exp){
   return exp.type == VALUE && exp.value.type == KEYWORD;
 }
 
-
 char * read_symbol(expr name){
   return fmtstr("%.*s",name.value.strln, name.value.value);
 }
@@ -228,10 +227,11 @@ static type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se
     for(i64 i = 0; i < argcnt; i++){
       farg_types[i] = _compile_expr(block, fargs + i, args[i]);
       if(type_pool_get(farg_types[i]) != type_pool_get(td->fcn.args[i].type)){
-	logd("Type 1:\n");
+	logd("ERROR: got '");
 	print_def(farg_types[i],true);
-	logd("\nType 2:\n");
+	logd("' expected '");
 	print_def(td->fcn.args[i].type,true);
+	logd("'\n");
 	ERROR("Non matching types");
       }
     }
