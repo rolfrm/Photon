@@ -73,7 +73,7 @@ void load_defs(){
     members[0].name = get_symbol("id");
     inner.cstruct.members = members;
     inner.cstruct.cnt = array_count(members);
-    inner.cstruct.name = symbol_empty;
+    inner.cstruct.name = get_symbol("_symbol_");
     r2(&symbol_def);
   }
 

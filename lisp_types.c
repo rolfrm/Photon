@@ -588,15 +588,6 @@ void write_dependencies(type_def ** deps){
     }
     if(t->type == TYPEDEF){
       type_def * inner = t->ctypedef.inner;
-      if(inner->type == STRUCT){
-	char * name = symbol_name(inner->cstruct.name);
-	char _namebuf[100];
-	if(name == NULL){
-	  sprintf(_namebuf, "_%s_", get_c_name(t->ctypedef.name));
-	  name = _namebuf;
-	}	
-	format("typedef struct %s %s;\n", name, get_c_name(t->ctypedef.name));
-      }
       if(inner->type == ENUM){
 	format("typedef enum {\n");
 	for(int j = 0; j < inner->cenum.cnt; j++){
@@ -604,6 +595,14 @@ void write_dependencies(type_def ** deps){
 	  format("   %s = %i%s\n", symbol_name(inner->cenum.names[j]), inner->cenum.values[j], comma);
 	}
 	format("}%s;\n", get_c_name(t->ctypedef.name));
+      
+      }else{
+	decl dcl;
+	dcl.name = t->ctypedef.name;
+	dcl.type = t->ctypedef.inner;
+	format("typedef ");
+	print_cdecl(dcl);
+	format(";\n");
       }
     }
   }
