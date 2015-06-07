@@ -22,8 +22,8 @@ V1 Release Checklist
 * [x] Loading lisp code
 * [x] Proper symbols -  one symbol - one ID. Symbols to be used for functions, variable names. This meams that vars will be symbol based instead of string based.
 * [x] Quoting 'symbolname
+* [x] Opaque types
 * [ ] c-macros
-* [ ] Opaque types
 * [ ] Structs
  * [ ] Defining
  * [ ] member access

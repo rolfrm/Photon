@@ -48,7 +48,7 @@ static bool compare_function(type_def * a, type_def * b){
   }
   return isSame;
 }
-	  
+
 type_def * _type_pool_get(type_def * lookup, bool is_static){
   type_def *** kind_array = known_types + lookup->type;
   size_t * cnt = known_types_cnt + lookup->type;
@@ -62,6 +62,7 @@ type_def * _type_pool_get(type_def * lookup, bool is_static){
     break;
   case UNION:
   case STRUCT:
+  case OPAQUE_STRUCT:
     cmp = compare_struct;
     break;
   case ENUM:
@@ -73,7 +74,7 @@ type_def * _type_pool_get(type_def * lookup, bool is_static){
   case FUNCTION:
     cmp = compare_function;
     break;
-  default:
+  case type_def_kind_cnt:
     ERROR("Unsupported type");
     break;
   }
@@ -101,6 +102,7 @@ type_def * _type_pool_get(type_def * lookup, bool is_static){
     type_def * (* do_lookup)(type_def *) = lambda(type_def *, (type_def * a){return _type_pool_get(a, is_static);});
 
     switch(lookup->type){
+    case OPAQUE_STRUCT:
     case SIMPLE:
     case ENUM:
       break;
@@ -127,7 +129,7 @@ type_def * _type_pool_get(type_def * lookup, bool is_static){
 	found->fcn.args[i].type = do_lookup(found->fcn.args[i].type);
       }
       break;
-    default:
+    case type_def_kind_cnt:
       ERROR("Unsupported type");
       break;
     }
@@ -138,6 +140,13 @@ type_def * _type_pool_get(type_def * lookup, bool is_static){
 
 type_def * type_pool_get(type_def * lookup){
   return _type_pool_get(lookup, false);
+}
+
+type_def * get_opaque(type_def * t){
+  ASSERT(t->type == STRUCT);
+  type_def d = *t;
+  d.type = OPAQUE_STRUCT;
+  return type_pool_get(&d);
 }
 
 void type_pool_reg_static(type_def * lookup){
@@ -159,6 +168,7 @@ type_def * type_pool_simple(symbol s){
       for(size_t i = 0; i < c; i++)
 	if(td[i]->ctypedef.name.id == s.id) return td[i];
       break;
+    case OPAQUE_STRUCT:
     case STRUCT:
     case UNION:
       for(size_t i = 0; i < c; i++)
@@ -168,7 +178,9 @@ type_def * type_pool_simple(symbol s){
       for(size_t i = 0; i < c; i++)
 	if(td[i]->cenum.name.id == s.id) return td[i];
       break;
-    default:
+    case POINTER:
+    case FUNCTION:
+    case type_def_kind_cnt:
       ERROR("Unsupported type");
       break;
     }

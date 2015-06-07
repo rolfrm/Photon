@@ -16,6 +16,7 @@
 #include "type_pool.h"
 size_t get_sub_type_cnt(type_def * t){
   switch(t->type){
+  case OPAQUE_STRUCT:
   case ENUM:
   case SIMPLE:
     return 0;
@@ -30,7 +31,9 @@ size_t get_sub_type_cnt(type_def * t){
   case TYPEDEF:
     return 1;
     break;
-  default:
+  case FUNCTION:
+    return 1 + t->fcn.cnt;
+  case type_def_kind_cnt:
     ERROR("Unsupported type");
     break;
   }
@@ -39,6 +42,7 @@ size_t get_sub_type_cnt(type_def * t){
 	  
 void get_sub_types(type_def * t, type_def ** out_types){
   switch(t->type){
+  case OPAQUE_STRUCT:
   case ENUM:
   case SIMPLE:
     break;
@@ -54,7 +58,12 @@ void get_sub_types(type_def * t, type_def ** out_types){
   case TYPEDEF:
     *out_types = t->ctypedef.inner;
     break;
-  default:
+  case FUNCTION:
+    *out_types++ = t->fcn.ret;
+    for(int i = 0; i < t->fcn.cnt; i++){
+      *out_types++ = t->fcn.args[i].type;
+    }
+  case type_def_kind_cnt:
     ERROR("Unsupported type");
     break;
   }
@@ -80,6 +89,10 @@ void print_def(type_def * type, bool is_decl){
   switch(type->type){
   case SIMPLE:
     format("%s", symbol_name(type->simple.name));
+    break;
+  case OPAQUE_STRUCT:
+    if(!is_decl) format("struct ");
+    format("%s", symbol_name(type->cstruct.name));
     break;
   case STRUCT:
     if(is_decl){
@@ -125,14 +138,8 @@ void print_def(type_def * type, bool is_decl){
  
  case TYPEDEF:
     inner = type->ctypedef.inner;
-    //char struct_name[20];
-    //if(inner->type == STRUCT && inner->cstruct.name.name == NULL){
-      //sprintf(struct_name, "_%s_",type->ctypedef.name.name);
-      //inner->cstruct.name = struct_name;
-    //}
     if(is_decl){
       format("%s", symbol_name(type->ctypedef.name));
-      //print_def(inner,ind,true);
     }else{
       format("typedef ");
       print_def(inner,false);
@@ -144,7 +151,7 @@ void print_def(type_def * type, bool is_decl){
     // this is an error.
     print_cdecl((decl){get_symbol("_"), type});
     break;
-  default:
+  case type_def_kind_cnt:
     ERROR("not implemented %i", type->type);
   }
 }
@@ -170,6 +177,7 @@ void _make_dependency_graph(type_def ** defs, type_def * def, bool nested){
     *defs_it = def;
     return true;
   }
+  type_def * inner;
   if(check() == false) return;
   switch(def->type){
   case UNION:
@@ -190,11 +198,16 @@ void _make_dependency_graph(type_def ** defs, type_def * def, bool nested){
   case POINTER:
     //*defs_it = def;
     //def = def->ptr.inner;
-    _make_dependency_graph(defs,def->ptr.inner,nested);
+    _make_dependency_graph(defs,def->ptr.inner,true);
     break;
   case TYPEDEF:
+    //if(nested) break;
+    inner = def->ctypedef.inner; 
+    if(inner->type == STRUCT){
+      inner = get_opaque(inner);
+    }
+    _make_dependency_graph(defs,inner, nested);
     check_add();    
-    _make_dependency_graph(defs,def->ctypedef.inner, nested);
     break;
     
   case FUNCTION:
@@ -203,12 +216,13 @@ void _make_dependency_graph(type_def ** defs, type_def * def, bool nested){
     for(int i = 0; i < def->fcn.cnt; i++)
       _make_dependency_graph(defs, def->fcn.args[i].type,nested);
     break;
+  case OPAQUE_STRUCT:
   case ENUM:
-
+    check_add();
     break;
   case SIMPLE:
     break;
-  default:
+  case type_def_kind_cnt:
     ERROR("Unknown type: %i",def->type);
     break;
   }
@@ -448,100 +462,6 @@ void print_c_code(c_root_code code){
   }
 }
 
-/*#include "uthash.h"
-
-typedef struct{
-  type_def * ptr;
-  char * name;
-  UT_hash_handle hh;
-}type_item;
-
-static type_item * items = NULL;
-
-type_def * _get_type_def(type_def * def){
-
-  if(def->type == STRUCT)
-    return def;
-
-  char * tmpbuf = NULL;
-  size_t tmpbuf_size = 0;
-  FILE * str = open_memstream(&tmpbuf,&tmpbuf_size);
-  with_format_out(str, lambda(void, (){print_def(def, true);}));
-  fclose(str);
-
-  type_item * item = NULL;
-  HASH_FIND_STR(items, tmpbuf, item);
-  if(item != NULL){
-    free(tmpbuf);
-    return item->ptr;
-  }
-  item = alloc0(sizeof(type_item));
-  item->ptr = alloc0(sizeof(type_def));
-  type_def * newtype = item->ptr;
-  type_def * inner;
-  newtype->type = def->type;
-  switch(def->type){
-  case TYPEDEF:
-    inner = _get_type_def(def->ctypedef.inner);
-    newtype->ctypedef.inner = inner;
-    newtype->ctypedef.name = def->ctypedef.name;
-    register_type(newtype, NULL);
-    return newtype;
-  case POINTER:
-    inner = _get_type_def(def->ptr.inner);
-    newtype->ptr.inner = inner;
-    register_type(newtype, NULL);
-    return newtype;
-  case FUNCTION:
-    newtype->fcn.cnt = def->fcn.cnt;
-    newtype->fcn.ret = _get_type_def(def->fcn.ret);
-    newtype->fcn.args = alloc(sizeof(decl) * def->fcn.cnt);
-    for(i64 i = 0; i < newtype->fcn.cnt; i++){
-      newtype->fcn.args[i].name = def->fcn.args[i].name;
-      newtype->fcn.args[i].type = _get_type_def(def->fcn.args[i].type);
-    }
-    register_type(newtype, NULL);
-    return newtype;
-  default:
-    print_def(def,true);
-    ERROR("Cannot get type %i", def->type);
-  }
-  return NULL;
-}
-
-type_def * get_type_def(type_def def){
-  type_def * result = _get_type_def(&def);
-  if(result == NULL)
-    ERROR("Unable to resolve type");
-  return result;
-  }
-
-type_def * get_type_from_string(char * str){
-  type_item * item = NULL;
-  HASH_FIND_STR(items, str, item);
-  if(item != NULL)
-    return item->ptr;
-  return NULL;
-  }
-
-void register_type(type_def * ptr, char * name){
-  if(name == NULL){
-    char * tmpbuf = NULL;
-    size_t tmpbuf_size = 0;
-    FILE * str = open_memstream(&tmpbuf,&tmpbuf_size);
-    with_format_out(str, lambda(void, (){print_def(ptr, true);}));
-    fclose(str);
-    name = tmpbuf;
-  }
-  if((strlen(name) == 0 )|| strstr("(null)", name) != NULL)
-    ERROR("type name cannot be empty got: '%s'",name);
-  type_item * newitem = alloc0(sizeof(type_item));
-  newitem->ptr = ptr;
-  newitem->name = name;
-  //logd("Register: '%s' %i\n", name, ptr);
-  HASH_ADD_KEYPTR(hh, items, name, strlen(name), newitem);
-  }*/
-
 void print_cdecl(decl idecl){
   void inner_print(decl idecl){
     
@@ -577,7 +497,7 @@ void write_dependencies(type_def ** deps){
   format("#include \"cstd_header.h\"\n");
   for(; *deps != NULL; deps++){
     type_def * t = *deps;
-    if(t->type == STRUCT){
+    if(t->type == STRUCT || t->type == OPAQUE_STRUCT){
       char * name = symbol_name(t->cstruct.name);
       if(name != NULL){
 	format("struct %s;\n", name);
@@ -600,7 +520,7 @@ void write_dependencies(type_def ** deps){
 	decl dcl;
 	dcl.name = t->ctypedef.name;
 	dcl.type = t->ctypedef.inner;
-	format("typedef ");
+	format("typedef struct ");
 	print_cdecl(dcl);
 	format(";\n");
       }

@@ -7,6 +7,7 @@ typedef enum {
   UNION = 4,
   ENUM = 5,
   TYPEDEF = 6,
+  OPAQUE_STRUCT,
   type_def_kind_cnt
 } type_def_kind;
 
@@ -59,6 +60,7 @@ struct _type_def{
       symbol name; // can be empty
       decl * members;
       i64 cnt;
+      i8 opaque;
     }cunion;
 
     struct{
