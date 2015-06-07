@@ -1,6 +1,8 @@
 # Photon
 ---------
-A C based Lisp compiler / language. The design goal is to be fast and lightweight as C, while as powerfull and flexible as Lisp. The language very closely maps to the c type system and compiles any code written into c. The c code is then compiled by a c-compiler to produce efficient code. Currently the compiler used is TCC, which compiles to slow C.
+A C based Lisp compiler / language. The design goal is to be fast and lightweight as C, while as powerfull and flexible as Lisp. The language very closely maps to the c type system and compiles any code written into c. The c code is then compiled by a compiler to produce efficient(-ish) code. Currently the compiler used is TCC, which generates relatively slow assembly code.
+
+Check out the file [test.lisp](test.lisp) to see the current functionality.
 
 Only works on 64bit Linux at the moment.
 

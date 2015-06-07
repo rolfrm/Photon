@@ -1,20 +1,24 @@
-;; The following code compiles
-;"hello world!"
-;(write_line "hello world!")
+;; The following code runs / compiles
+
+;; Constants
+1 
+"hello world!"
+
+;; Function calls
 (write_line "hello world!")
+(i64+ 10 10)
+
+;; Defining functions
+(defun add (f64 (a f64) (b f64)) (f+ a b))
+(add (cast 45 f64) (cast 67 f64))
+
+;; Variables and functions can be named any unicode thing, except things starting with '('/')'
+;; and they cannot contain whitespace either
 (defun + (i64 (a i64) (b i64))
   (i64+ a b))
+(+ 1 5)
 
-;(defun + ((ptr char) (a (ptr char)) (b (ptr char)))
-;  b)
-
-;(defun plus (i64 (a i64) (b i64))
-;  (i64_add a b))
-
-;(defun +plus2 (i64 (a i64)) (+ 2 a))
-(write_line "print +")
-(+ 10 10)
-;(+ "asd" "dsa")
+;; Defining / using variables
 (defvar test1 1)
 (defvar test2 (+ test1 1))
 (defvar test3 (+ test1 test2))
@@ -25,17 +29,33 @@
 (defvar test8 (+ test7 test6))
 
 (+ test8 test8)
-(setf test8 100)
+(setf test8 100) ; Setting a variable
 (+ test8 test7)
+
+;; Types
+(type f64) ; returns the type of f64 (double).
+(type (ptr f64)) ; a pointer to an f64. (double *)
+
+(type (fcn (ptr f64))) ;a function that returns a pointer t an f64 and takes no args.
+
+(print_type (type (fcn f64 (a f64) (b f64)))) ; a function that returns a f64 and takes two f64s. 
+(type (struct _vec2 (x f32) (y f32))) ; this actually defines a struct named _vec2.
+(type (alias (ptr _vec2) vec2)) ; defines vec2 as a _vec2 struct.
+(defvar xy :type vec2)
+
+;; Casting variables to different type
 (cast "asd" (ptr i32))
-(cast 0.001 f32)
+(cast 0.001 f32) ; Currently the only valid way of creating a float
 (cast 2.5 f64)
-(load "test2.lisp")
-(+ x x)
-(get-symbol "hello")
-(quote hello) ;;essencially get_symbol("hello");
-(defvar a (cast 1 f64))
-(f/ a (f+ (f+ a (f+ a a)) a))
+
+;; everything is symbol based
+(quote hello) ; creats a symbol named 'hello'
+(get-symbol "hello") ; creates a symbol from a string.
+
+;; files can be loaded and executed
+(load "test2.lisp") 
+
+
 ;; (defcmacro overload (void (sym expr) (fcn expr))
 ;;   (progn
 ;;     (assert (is-symbol fcn))
@@ -43,8 +63,7 @@
 ;;     (register-overload (get-symbol sym) (get-function (get-symbol fcn)))))
 ;; (overload + f+)
 ;; (overload + i64+)
-(print_type (type type_def))
-(cast (type (struct _vec2 (x f32) (y f32))) (ptr i64))
-(cast (type (alias (ptr _vec2) vec2)) (ptr i64))
-(defvar xy :type vec2)
+
+
+
 
