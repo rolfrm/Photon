@@ -43,3 +43,7 @@
 ;;     (register-overload (get-symbol sym) (get-function (get-symbol fcn)))))
 ;; (overload + f+)
 ;; (overload + i64+)
+(cast (type (struct _vec2 (x f32) (y f32))) (ptr i64))
+(cast (type (alias (struct _vec2 (x f32) (y f32)) vec2)) (ptr i64))
+(defvar xy :type vec2)
+

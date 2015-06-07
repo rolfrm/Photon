@@ -159,8 +159,7 @@ type_def * _type_macro(expr typexpr){
       out.cstruct.members = clone(members,sizeof(members));
       out.cstruct.cnt = memcnt;
       out.cstruct.name = name;
-      type_pool_get(&out);
-      return clone(&out,sizeof(type_def));
+      return type_pool_get(&out);
     }else if (strncmp(vkind.value, "alias", vkind.strln) == 0){
       COMPILE_ASSERT(sexp.cnt == 3);
       COMPILE_ASSERT(is_symbol(sexp.exprs[2]));
@@ -475,11 +474,13 @@ type_def * defvar_macro(c_block * block, c_value * val, expr * exprs, size_t cnt
   symbol sym = expr_symbol(name);
   type_def * t;
  
-  if(is_keyword(exprs[1]) && cnt == 3){
+  if(is_keyword(exprs[1]) && expr_symbol(exprs[1]).id == get_symbol("type").id && cnt == 3){
+    
     t = _type_macro(exprs[2]);
     val->type = C_SYMBOL;
     val->symbol = sym;
   }else{
+    COMPILE_ASSERT(cnt == 2);
     expr body = exprs[1];
     c_value * vr = alloc0(sizeof(c_value));
     c_value * vl = alloc0(sizeof(c_value));

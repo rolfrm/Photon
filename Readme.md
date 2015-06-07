@@ -1,6 +1,6 @@
 # Photon
 ---------
-A c based Lisp compiler / language. It should be fast and lightweight, hence the name "Photon". Additionally, the language should be as minimal and flexible as possible. The language very closely maps to the c type system and compiles any code written into c. The c code is then compiled by a c-compiler to produce efficient code.
+A C based Lisp compiler / language. The design goal is to be fast and lightweight as C, while as powerfull and flexible as Lisp. The language very closely maps to the c type system and compiles any code written into c. The c code is then compiled by a c-compiler to produce efficient code. Currently the compiler used is TCC, which compiles to slow C.
 
 Only works on 64bit Linux at the moment.
 
@@ -46,7 +46,12 @@ Vn Features
 ---------
 * [ ] Packages / Modules
 * [ ] libgccjit backend.
+* [ ] (or) Use user selected compiler backend. Fallback to tcc if necessesary.
 * [ ] offloading compiled code into a c-compatible static or dynamic link library and header file.
 * [ ] Front end optimizations like tail call optimizations, function inlining and constant propagation. Note: pure functions can be evaluated during constant propagation.
 * [ ] Bignums
 * [ ] SSE support
+
+License
+------
+See [License file](License.txt). 
