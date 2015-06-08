@@ -467,8 +467,11 @@ void print_cdecl(decl idecl){
     
     type_def * def = idecl.type;
     switch(def->type){
+    case ENUM:
+    case UNION:
     case TYPEDEF:
     case STRUCT:
+    case OPAQUE_STRUCT:
     case SIMPLE:
     case POINTER:
       print_def(def,true);
@@ -485,7 +488,7 @@ void print_cdecl(decl idecl){
       }
       format(")");
       break;
-    default:
+    case type_def_kind_cnt:
       ERROR("Not supported: '%i'\n", def->type);
     }
   }

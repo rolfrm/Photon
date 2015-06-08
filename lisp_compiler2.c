@@ -556,7 +556,6 @@ type_def * defcmacro_macro(c_block * block, c_value * val, expr e_name, expr arg
   COMPILE_ASSERT(is_symbol(e_name));
   COMPILE_ASSERT(args.type == EXPR);
 
-  
   static type_def * exprtd = NULL;
   if(!exprtd){
     exprtd = str2type("(alias (opaque-struct _expr) expr)");
@@ -600,8 +599,10 @@ type_def * defcmacro_macro(c_block * block, c_value * val, expr e_name, expr arg
   decl *fdecl = &f->fdecl;
   fdecl->name = name;
   fdecl->type = fcnt;
+
   compile_as_c(&newfcn_root,1);
-  return compile_value(val, e_name.value);
+  logd(" --- --- \n");
+  return compile_value(val, string_expr(symbol_name(name)).value);
 }
 
 type_def * cast_macro(c_block * block, c_value * value, expr body, expr type){
@@ -692,7 +693,6 @@ type_def * defun_macro(c_block * block, c_value * value, expr name, expr args, e
   }
   expr.value = val;
 
-  
   list_add((void **) &blk->exprs, &blk->expr_cnt, &expr, sizeof(c_expr));
   compile_as_c(&newfcn_root,1);
   // ** Just return the function name ** //
@@ -713,7 +713,11 @@ void defun(char * name, type_def * t, void * fcn){
 
 void lisp_load_compiler(compiler_state * c){
   with_compiler(c, lambda(void, (){
+	
+	// Types
 	load_defs();
+
+	// Macros
 	define_macro("type", 1, &type_macro);
 	define_macro("defun", 3, &defun_macro);
 	define_macro("var", 2, &var_macro);
@@ -724,22 +728,24 @@ void lisp_load_compiler(compiler_state * c){
 	define_macro("quote", 1, &quote_macro);
 	define_macro("setf", 2, &setf_macro);
 	define_macro("defcmacro", 3, &defcmacro_macro);
-	{
-	  type_def * type = str2type("(fcn void (a (ptr type_def)))");
-	  type_def * type2 = str2type("(fcn void (a (ptr type_def)))");
-	  type_def * type3 = str2type("(fcn void (a (ptr void)))");
-	  compiler_define_variable_ptr(get_symbol("print_type"), type, print_type);
-	  ASSERT(type == type2 && type != type3);
-	  compiler_define_variable_ptr(get_symbol("write_line"), str2type("(fcn void (a (ptr char)))"), &write_line);
-	  compiler_define_variable_ptr(get_symbol("i64+"), str2type("(fcn i64 (a i64) (b i64))"), &i64_add);
-	  
-	  compiler_define_variable_ptr(get_symbol("get-symbol"), str2type("(fcn (ptr symbol) (a (ptr char)))"), get_symbol2);
-	  type_def * d2t =  str2type("(fcn f64 (a f64) (b f64))");
-	  defun("f+", d2t, double_add);
-	  defun("f-", d2t, double_sub);
-	  defun("f/", d2t, double_div);
-	  defun("f*", d2t, double_mul);
-	}
+
+	// Functions
+	type_def * type = str2type("(fcn void (a (ptr type_def)))");
+	compiler_define_variable_ptr(get_symbol("print_type"), type, print_type);
+	compiler_define_variable_ptr(get_symbol("write_line"), 
+				     str2type("(fcn void (a (ptr char)))"), &write_line);
+	compiler_define_variable_ptr(get_symbol("i64+"), 
+				     str2type("(fcn i64 (a i64) (b i64))"), &i64_add);
+	
+	compiler_define_variable_ptr(get_symbol("get-symbol"), 
+				     str2type("(fcn (ptr symbol) (a (ptr char)))"), get_symbol2);
+	
+	type_def * d2t =  str2type("(fcn f64 (a f64) (b f64))");
+	defun("f+", d2t, double_add);
+	defun("f-", d2t, double_sub);
+	defun("f/", d2t, double_div);
+	defun("f*", d2t, double_mul);
+	
       }));
 }
 
@@ -819,6 +825,11 @@ bool test_lisp2c(){
   lisp_load_compiler(c);
   bool ret = TEST_SUCCESS;
   with_compiler(c,lambda(void, (){
+	type_def * type = str2type("(fcn void (a (ptr type_def)))");
+	type_def * type2 = str2type("(fcn void (a (ptr type_def)))");
+	type_def * type3 = str2type("(fcn void (a (ptr void)))");
+	ASSERT(type == type2 && type != type3);
+	
 	type_def * d = str2type("(alias (ptr type_def) td)");
 	print_def(d,false);
 	type_def * d2 = str2type("(alias (struct _vec2 (x f32) (y f32)) vec2)");
