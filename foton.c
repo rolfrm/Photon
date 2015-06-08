@@ -65,7 +65,9 @@ int main(int argc, char *argv[] ){
 
   if(argc == 2){
     compiler_state * c = compiler_make();
-    lisp_run_script_file(c,argv[1]);
+    with_compiler(c, lambda(void, (){
+	  lisp_run_script_file(argv[1]);
+	}));
     return 0;
   }
 

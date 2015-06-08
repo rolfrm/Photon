@@ -40,7 +40,7 @@ compiler_state * compiler_make();
 void lisp_load_compiler(compiler_state * c);
 void * compiler_define_variable(symbol sym, type_def * t);
 void lisp_run_exprs(compiler_state * c, expr * exprs, size_t exprcnt);
-
+void lisp_run_script_string(char * code);
 // defines a variable pointer.
 void compiler_define_variable_ptr(symbol sym, type_def * t, void * ptr);
 void define_macro(char * name, int nargs, void * fcn);
@@ -58,7 +58,7 @@ void compiler_set_state(compiler_state * ls);
 void write_dependencies(type_def ** deps);
 void with_compiler(compiler_state * c, void (* fcn)());
 
-void lisp_run_script_file(compiler_state * c, char * filepath);
+void lisp_run_script_file(char * filepath);
 
 char * get_c_name(symbol s);
 // symbols

@@ -527,8 +527,14 @@ void write_dependencies(type_def ** deps){
     }
   }
 }
-
-
+type_def * function_type(type_def * ret,size_t cnt, decl * decls){
+  type_def td;
+  td.type = FUNCTION;
+  td.fcn.ret = ret;
+  td.fcn.cnt = cnt;
+  td.fcn.args = decls;
+  return type_pool_get(&td);
+}
 
 // test //
 bool test_print_c_code(){

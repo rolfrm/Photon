@@ -160,6 +160,14 @@ type_def * _type_macro(expr typexpr){
       out.cstruct.cnt = memcnt;
       out.cstruct.name = name;
       return type_pool_get(&out);
+    }else if(strncmp(vkind.value, "opaque-struct", vkind.strln) == 0){
+      COMPILE_ASSERT(sexp.cnt == 2);
+      type_def out;
+      out.type = OPAQUE_STRUCT;
+      out.cstruct.members = NULL;
+      out.cstruct.cnt = 0;
+      out.cstruct.name = vexpr_symbol(sexp.exprs[1].value);
+      return type_pool_get(&out);
     }else if (strncmp(vkind.value, "alias", vkind.strln) == 0){
       COMPILE_ASSERT(sexp.cnt == 3);
       COMPILE_ASSERT(is_symbol(sexp.exprs[2]));
@@ -521,7 +529,7 @@ type_def * setf_macro(c_block * block, c_value * val, expr name, expr body){
 type_def * load_macro(c_block * block, c_value * val, expr file_name){
   COMPILE_ASSERT(is_string(file_name));
   char * filename = read_symbol(file_name);
-  lisp_run_script_file(get_compiler(), filename);
+  lisp_run_script_file(filename);
   return _compile_expr(block, val, file_name);
 }
 
@@ -541,6 +549,59 @@ type_def * progn_macro(c_block * block, c_value * val, expr * expressions, size_
     list_add((void **) &block->exprs, &block->expr_cnt,&expr,sizeof(c_expr));
   }
   return &void_def;
+}
+
+type_def * defcmacro_macro(c_block * block, c_value * val, expr e_name, expr args, expr body){
+  UNUSED(block);
+  COMPILE_ASSERT(is_symbol(e_name));
+  COMPILE_ASSERT(args.type == EXPR);
+
+  
+  static type_def * exprtd = NULL;
+  if(!exprtd){
+    exprtd = str2type("(alias (opaque-struct _expr) expr)");
+  }
+  
+  size_t argcnt = args.sub_expr.cnt;
+  expr * sexprs = args.sub_expr.exprs;
+  symbol name = expr_symbol(e_name);
+  logd("defining function: '%s'\n", symbol_name(name));
+  var_def _vars[argcnt];
+  for(size_t i = 0; i < argcnt; i++){
+    COMPILE_ASSERT(is_symbol(sexprs[i]));
+    _vars[i].type = exprtd;
+    _vars[i].name = expr_symbol(sexprs[i]);
+    _vars[i].data = NULL;
+  }
+
+  c_root_code newfcn_root;
+  newfcn_root.type = C_FUNCTION_DEF;
+  c_fcndef * f = &newfcn_root.fcndef;
+  c_block * blk = &f->block;
+  c_value _val;
+  var_def * __vars = _vars;
+  with_symbols(&__vars, &argcnt, lambda(void, (){
+	type_def * td = _compile_expr(blk, &_val, body);
+	ASSERT(td == exprtd);
+      }));
+  c_expr expr;
+  expr.value = _val;
+  expr.type = C_VALUE;
+  blk->exprs = &expr;
+  blk->expr_cnt = 1;
+  
+  decl argsdecl[argcnt];
+  for(size_t i = 0; i < argcnt; i++){
+    argsdecl[i].type = exprtd;
+    argsdecl[i].name = _vars[i].name;
+  }
+  type_def * fcnt = function_type(exprtd, argcnt, argsdecl);
+
+  decl *fdecl = &f->fdecl;
+  fdecl->name = name;
+  fdecl->type = fcnt;
+  compile_as_c(&newfcn_root,1);
+  return compile_value(val, e_name.value);
 }
 
 type_def * cast_macro(c_block * block, c_value * value, expr body, expr type){
@@ -581,7 +642,7 @@ type_def * defun_macro(c_block * block, c_value * value, expr name, expr args, e
   // it then registers the new function as a variable and returns the name of it.
 
   UNUSED(block);
-  COMPILE_ASSERT(name.type == VALUE && name.value.type == SYMBOL);
+  COMPILE_ASSERT(is_symbol(name));
   COMPILE_ASSERT(args.type == EXPR && args.sub_expr.cnt > 0);
 
   symbol fcnname = expr_symbol(name);
@@ -662,6 +723,7 @@ void lisp_load_compiler(compiler_state * c){
 	define_macro("load", 1, &load_macro);
 	define_macro("quote", 1, &quote_macro);
 	define_macro("setf", 2, &setf_macro);
+	define_macro("defcmacro", 3, &defcmacro_macro);
 	{
 	  type_def * type = str2type("(fcn void (a (ptr type_def)))");
 	  type_def * type2 = str2type("(fcn void (a (ptr type_def)))");
@@ -739,11 +801,16 @@ void lisp_run_exprs(compiler_state * c, expr * exprs, size_t exprcnt){
 	}};));
 }
 
-void lisp_run_script_file(compiler_state * c, char * filepath){
-  char * test_code = read_file_to_string(filepath);
+void lisp_run_script_file(char * filepath){
+  char * code = read_file_to_string(filepath);
+  lisp_run_script_string(code);
+  dealloc(code);
+}
+
+void lisp_run_script_string(char * code){
   size_t exprcnt;
-  expr * exprs = lisp_parse_all(test_code, &exprcnt);
-  lisp_run_exprs(c, exprs, exprcnt);
+  expr * exprs = lisp_parse_all(code, &exprcnt);
+  lisp_run_exprs(get_compiler(), exprs, exprcnt);
 }
 
 bool test_lisp2c(){

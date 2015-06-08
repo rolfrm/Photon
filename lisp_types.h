@@ -90,6 +90,8 @@ symbol * get_symbol2(char * name);
 char * symbol_name(symbol s);
 bool symbol_cmp(symbol a, symbol b);
 
+type_def * function_type(type_def * ret,size_t cnt, decl * decls);
+
 void print_cdecl(decl idecl);
 
 type_def make_simple(char * name);

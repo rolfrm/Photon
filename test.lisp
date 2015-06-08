@@ -64,6 +64,7 @@
 ;; (overload + f+)
 ;; (overload + i64+)
 
-
+(defcmacro one_expr (expr1)
+  expr1)
 
 
