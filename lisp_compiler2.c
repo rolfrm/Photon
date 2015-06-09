@@ -551,6 +551,38 @@ type_def * progn_macro(c_block * block, c_value * val, expr * expressions, size_
   return &void_def;
 }
 
+type_def * expand_macro(c_block * block, c_value * val, expr * exprs, size_t cnt){
+  COMPILE_ASSERT(cnt > 0);
+  COMPILE_ASSERT(is_symbol(exprs[0]));
+  
+  static type_def * exprtd = NULL;
+  if(!exprtd){
+    exprtd = str2type("(alias (opaque-struct _expr) expr)");
+  }
+
+  symbol name = expr_symbol(exprs[0]);
+  var_def * fcn_var = get_variable(name);
+  COMPILE_ASSERT(fcn_var != NULL);
+  type_def * fcn_type = fcn_var->type;
+  COMPILE_ASSERT(fcn_type->type == FUNCTION && fcn_type->fcn.ret == exprtd);
+  size_t argcnt = fcn_type->fcn.cnt;
+  COMPILE_ASSERT(cnt == argcnt + 1);
+  void * d = fcn_var->data;
+  expr * result;
+  switch(argcnt){
+  case 0:
+    result = ((expr * (*)())d)();
+    break;
+  case 1:
+    result = ((expr * (*)(expr *))d)(exprs + 1);
+    break;
+  default:
+    ERROR("Not supported");
+  }
+  return _compile_expr(block, val, *result);
+
+}
+
 type_def * defcmacro_macro(c_block * block, c_value * val, expr e_name, expr args, expr body){
   UNUSED(block);
   COMPILE_ASSERT(is_symbol(e_name));
@@ -718,16 +750,17 @@ void lisp_load_compiler(compiler_state * c){
 	load_defs();
 
 	// Macros
-	define_macro("type", 1, &type_macro);
-	define_macro("defun", 3, &defun_macro);
-	define_macro("var", 2, &var_macro);
-	define_macro("progn", -1, &progn_macro);
-	define_macro("cast", 2, &cast_macro);
-	define_macro("defvar", -1, &defvar_macro);
-	define_macro("load", 1, &load_macro);
-	define_macro("quote", 1, &quote_macro);
-	define_macro("setf", 2, &setf_macro);
-	define_macro("defcmacro", 3, &defcmacro_macro);
+	define_macro("type", 1, type_macro);
+	define_macro("defun", 3, defun_macro);
+	define_macro("var", 2, var_macro);
+	define_macro("progn", -1, progn_macro);
+	define_macro("cast", 2, cast_macro);
+	define_macro("defvar", -1, defvar_macro);
+	define_macro("load", 1, load_macro);
+	define_macro("quote", 1, quote_macro);
+	define_macro("setf", 2, setf_macro);
+	define_macro("defcmacro", 3, defcmacro_macro);
+	define_macro("expand",-1,expand_macro);
 
 	// Functions
 	type_def * type = str2type("(fcn void (a (ptr type_def)))");
