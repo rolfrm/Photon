@@ -28,8 +28,8 @@ void compiler_define_variable_ptr(symbol name, type_def * t, void * ptr){
     if(symbol_cmp(name, lisp_state->vars[i].name)){
 
       lisp_state->vars[i].type = t;
-	lisp_state->vars[i].data = ptr;
-	return;
+      lisp_state->vars[i].data = ptr;
+      return;
     }
   }
   

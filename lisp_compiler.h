@@ -38,7 +38,6 @@ typedef struct{
 compiler_state * get_compiler();
 compiler_state * compiler_make();
 void lisp_load_compiler(compiler_state * c);
-void * compiler_define_variable(symbol sym, type_def * t);
 void lisp_run_exprs(compiler_state * c, expr * exprs, size_t exprcnt);
 void lisp_run_script_string(char * code);
 // defines a variable pointer.
