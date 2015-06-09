@@ -53,7 +53,7 @@
 (get-symbol "hello") ; creates a symbol from a string.
 
 ;; files can be loaded and executed
-(load "test2.lisp") 
+(load "test2.lisp")
 
 
 ;; (defcmacro overload (void (sym expr) (fcn expr))
@@ -64,7 +64,10 @@
 ;; (overload + f+)
 ;; (overload + i64+)
 
-(defcmacro one_expr (expr1)
+(defcmacro one_expr (expr1) expr1)
+(expand one_expr (write_line "??"))
+(expand one_expr (f+ (cast 1.0 f64) (cast 2.5 f64)))
+(defcmacro two-expr (expr1 expr2)
   expr1)
-
+(expand two-expr (write_line "???") (write_line "????"))
 

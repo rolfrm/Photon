@@ -551,14 +551,19 @@ type_def * progn_macro(c_block * block, c_value * val, expr * expressions, size_
   return &void_def;
 }
 
+type_def * opaque_expr(){
+  static type_def * exprtd = NULL;
+  if(!exprtd){
+    exprtd = str2type("(ptr (alias (opaque-struct _expr) expr))");
+  }
+  return exprtd;
+}
+
 type_def * expand_macro(c_block * block, c_value * val, expr * exprs, size_t cnt){
   COMPILE_ASSERT(cnt > 0);
   COMPILE_ASSERT(is_symbol(exprs[0]));
   
-  static type_def * exprtd = NULL;
-  if(!exprtd){
-    exprtd = str2type("(alias (opaque-struct _expr) expr)");
-  }
+  type_def * exprtd = opaque_expr();
 
   symbol name = expr_symbol(exprs[0]);
   var_def * fcn_var = get_variable(name);
@@ -576,23 +581,63 @@ type_def * expand_macro(c_block * block, c_value * val, expr * exprs, size_t cnt
   case 1:
     result = ((expr * (*)(expr *))d)(exprs + 1);
     break;
+  case 2:
+    result = ((expr * (*)(expr *, expr *))d)(exprs + 1, exprs + 2);
+    break;
+  case 3:
+    result = ((expr * (*)(expr *, expr *, expr *))d)(exprs + 1, exprs + 2, exprs + 3);
+    break;
+  case 4:
+    result = ((expr * (*)(expr *, expr *, expr *, expr *))d)(exprs + 1, exprs + 2, exprs + 3, exprs + 4);
+    break;
   default:
     ERROR("Not supported");
   }
   return _compile_expr(block, val, *result);
-
 }
+/*
+expr walk_expr(expr body){
+  if(body.type == VALUE){
+    return body;
+  }else{
+    sub_expr exp = body.sub_expr;
+    if(exp.cnt > 0 && is_symbol(exp.exprs[0]) && expr_symbol(exp.exprs[0]).id == get_symbol("unexpr")){
+      // special case not handled yet.
+    }
+    expr sub[exp.cnt];
+    for(size_t i = 0; i < exp.cnt; i++){
+      sub[i] = walk_expr(exp.exprs[i]);
+    }
+    expr nexpr;
+    nexpr.type = EXPR;
+    nexpr.sub_expr.exprs = clone(sub,sizeof(sub));
+    nexpr.sub_expr.cnt = exp.cnt;
+    return nexpr;
+  }
+  
+}
+
+// expr turns makes a expr tree literal
+type_def * expr_macro(c_block * block, c_value * val, expr body){
+  expr newbody = walk_expr(body);
+
+  return _
+}
+type_def * unexpr_macro(c_block * block, c_value * val, expr body)
+
+  type_def * exprtd = opaque_expr();
+
+  }*/
+
+
 
 type_def * defcmacro_macro(c_block * block, c_value * val, expr e_name, expr args, expr body){
   UNUSED(block);
   COMPILE_ASSERT(is_symbol(e_name));
   COMPILE_ASSERT(args.type == EXPR);
 
-  static type_def * exprtd = NULL;
-  if(!exprtd){
-    exprtd = str2type("(alias (opaque-struct _expr) expr)");
-  }
-  
+  type_def * exprtd = opaque_expr();
+
   size_t argcnt = args.sub_expr.cnt;
   expr * sexprs = args.sub_expr.exprs;
   symbol name = expr_symbol(e_name);
@@ -617,7 +662,7 @@ type_def * defcmacro_macro(c_block * block, c_value * val, expr e_name, expr arg
       }));
   c_expr expr;
   expr.value = _val;
-  expr.type = C_VALUE;
+  expr.type = C_RETURN;
   blk->exprs = &expr;
   blk->expr_cnt = 1;
   
@@ -633,7 +678,6 @@ type_def * defcmacro_macro(c_block * block, c_value * val, expr e_name, expr arg
   fdecl->type = fcnt;
 
   compile_as_c(&newfcn_root,1);
-  logd(" --- --- \n");
   return compile_value(val, string_expr(symbol_name(name)).value);
 }
 
