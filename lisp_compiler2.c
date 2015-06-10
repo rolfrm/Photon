@@ -607,9 +607,8 @@ expr walk_expr(expr body){
   if(exp.cnt > 0 && is_symbol(exp.exprs[0]) 
      && expr_symbol(exp.exprs[0]).id == get_symbol("unexpr").id){
     ASSERT(exp.cnt == 2);
-    logd("result exp:\n");
+    // it breaks here..
     expr * exp2 = lisp_compile_and_run_expr(exp.exprs[1]);
-    logd("result exp:\n");
     return *exp2;
     // special case not handled yet.
   }

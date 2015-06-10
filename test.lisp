@@ -76,7 +76,9 @@
 (expand no-expr)
 
 (defcmacro fun-expr (expr1)
-  (expr (write_line (unexpr (expr "hello")))))
+  (expr (write_line (unexpr expr1))))
 
-(expand fun-expr 1)
+;(expr (unexpr (expr (unexpr "hello?")))))
+
+;(expand fun-expr "hello")
 
