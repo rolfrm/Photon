@@ -392,7 +392,7 @@ void compile_as_c(c_root_code * codes, size_t code_cnt){
       ASSERT(!fail);
     }else{
       char * vname = get_c_name(var->name);
-      int fail = tcc_add_symbol(tccs,vname,var->data);
+      int fail = tcc_add_symbol(tccs,vname,&var->data);
       void * ptr = tcc_get_symbol(tccs,vname);
       logd("PTR: %p\n",*((void **)ptr));
       ASSERT(!fail);
@@ -634,7 +634,7 @@ type_def * expr_macro(c_block * block, c_value * val, expr body){
   sprintf(buf,"V_1_%i",expr_idx++);
   symbol tmp = get_symbol(buf);
   expr * ex = clone(&newbody, sizeof(expr));
-  compiler_define_variable_ptr(tmp, exprtd, clone(&ex,sizeof(expr *)));
+  compiler_define_variable_ptr(tmp, exprtd, ex);
   
   expr e;
   e.type = VALUE;
@@ -936,8 +936,9 @@ void lisp_run_script_string(char * code){
   expr * exprs = lisp_parse_all(code, &exprcnt);
   lisp_run_exprs(get_compiler(), exprs, exprcnt);
 }
-
+bool test_tcc();
 bool test_lisp2c(){
+  TEST(test_tcc);
   load_defs();
   compiler_state * c = compiler_make();
   lisp_load_compiler(c);
@@ -960,3 +961,20 @@ bool test_lisp2c(){
   return ret;
 }
 
+bool test_tcc(){
+  char * code = "extern int * item; int * eval(){ return item;}";
+  TCCState * tccs = mktccs();
+  int _data2 = 123;
+  int * data1 = clone(&_data2,sizeof(int));;
+  int fail = tcc_add_symbol(tccs,"item",&data1);
+  ASSERT(!fail);
+  fail = tcc_compile_string(tccs, code);
+  ASSERT(!fail);
+  int size = tcc_relocate(tccs, NULL);
+  fail = tcc_relocate(tccs, alloc(size));
+  ASSERT(!fail);
+  int * (* eval)() = tcc_get_symbol(tccs, "eval");
+  tcc_delete(tccs);
+  TEST_ASSERT(data1 == eval());
+  return TEST_SUCCESS;
+}
