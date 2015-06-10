@@ -68,9 +68,15 @@
 (expand one_expr (write_line "??"))
 (defcmacro two-expr (expr1 expr2)
   expr1)
-(expr 1.0)
+(expr 1)
 (expr (write_line "???"))
 (defcmacro no-expr ()
    (expr (progn (write_line "???") (write_line "!!!")))) 
 (expand no-expr)
 (expand no-expr)
+
+(defcmacro fun-expr (expr1)
+  (expr (write_line (unexpr (expr "hello")))))
+
+(expand fun-expr 1)
+

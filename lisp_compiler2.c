@@ -379,8 +379,8 @@ void compile_as_c(c_root_code * codes, size_t code_cnt){
   pop_format_out();
   fclose(f);
 
-  char header[] = "***********\n";
-  append_buffer_to_file(header,sizeof(header),"compile_out.c");
+  char header[] = "//***********\n";
+  append_buffer_to_file(header,sizeof(header) - 1,"compile_out.c");
   append_buffer_to_file(data,cnt,"compile_out.c");
   TCCState * tccs = mktccs();
   for(size_t i = 0; i < array_count(vdeps) && vdeps[i].id != 0; i++){
@@ -606,6 +606,11 @@ expr walk_expr(expr body){
   sub_expr exp = body.sub_expr;
   if(exp.cnt > 0 && is_symbol(exp.exprs[0]) 
      && expr_symbol(exp.exprs[0]).id == get_symbol("unexpr").id){
+    ASSERT(exp.cnt == 2);
+    logd("result exp:\n");
+    expr * exp2 = lisp_compile_and_run_expr(exp.exprs[1]);
+    logd("result exp:\n");
+    return *exp2;
     // special case not handled yet.
   }
   expr sub[exp.cnt];
@@ -622,12 +627,14 @@ expr walk_expr(expr body){
 // expr turns makes a expr tree literal
 type_def * expr_macro(c_block * block, c_value * val, expr body){
   UNUSED(block);
-  expr newbody = walk_expr(body);
   type_def * exprtd = opaque_expr();
   char buf[30];
   static int expr_idx = 0;
   sprintf(buf,"_tmp_symbol_%i",expr_idx++);
+  
+
   symbol tmp = get_symbol(buf);
+  expr newbody = walk_expr(body);
   expr * ex = clone(&newbody, sizeof(expr));
   compiler_define_variable_ptr(tmp, exprtd, clone(&ex,sizeof(expr *)));
   
@@ -638,12 +645,6 @@ type_def * expr_macro(c_block * block, c_value * val, expr body){
   e.value.type = SYMBOL;
   return _compile_expr(block, val, e);
 }
-/*
-type_def * unexpr_macro(c_block * block, c_value * val, expr body)
-
-  type_def * exprtd = opaque_expr();
-
-  }*/
 
 type_def * defcmacro_macro(c_block * block, c_value * val, expr e_name, expr args, expr body){
   UNUSED(block);
@@ -670,7 +671,9 @@ type_def * defcmacro_macro(c_block * block, c_value * val, expr e_name, expr arg
   c_block * blk = &f->block;
   c_value _val;
   var_def * __vars = _vars;
+  
   with_symbols(&__vars, &argcnt, lambda(void, (){
+	// this should happen at macro run time not macro compile time.
 	type_def * td = _compile_expr(blk, &_val, body);
 	if(td != exprtd){
 	  logd("got '"); print_def(td,false); logd("' expected '");
@@ -844,14 +847,26 @@ void lisp_load_compiler(compiler_state * c){
       }));
 }
 
-void lisp_run_expr(expr ex){
+var_def * lisp_compile_expr(expr ex){
   c_root_code cl = compile_lisp_to_eval(ex);
   if(cl.fcndef.fdecl.type->fcn.ret == &error_def)
-    return;
+    return NULL;
   compile_as_c(&cl,1);
   symbol s = get_symbol("eval");
-  var_def * evaldef = get_variable(s);
+  return get_variable(s);
+}
 
+void * lisp_compile_and_run_expr(expr ex){
+  var_def * var = lisp_compile_expr(ex);
+  void * (*fcn)() = var->data;
+  return fcn();
+}
+
+
+void lisp_run_expr(expr ex){
+
+  var_def * evaldef = lisp_compile_expr(ex);
+  ASSERT(evaldef != NULL);
   print_def(evaldef->type->fcn.ret,false); logd(" :: ");
   type_def * ret = evaldef->type->fcn.ret;
   if(ret == &void_def){
@@ -903,6 +918,8 @@ void lisp_run_exprs(compiler_state * c, expr * exprs, size_t exprcnt){
 	  lisp_run_expr(exprs[i]);
 	}};));
 }
+
+
 
 void lisp_run_script_file(char * filepath){
   char * code = read_file_to_string(filepath);
