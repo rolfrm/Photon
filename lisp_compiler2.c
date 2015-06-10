@@ -386,15 +386,12 @@ void compile_as_c(c_root_code * codes, size_t code_cnt){
   for(size_t i = 0; i < array_count(vdeps) && vdeps[i].id != 0; i++){
 
     var_def * var = get_variable(vdeps[i]);
-    logd("VNAME : |%s| %p\n",get_c_name(var->name) , var->data);
     if(var->type->type == FUNCTION){
       int fail = tcc_add_symbol(tccs,get_c_name(var->name),var->data);
       ASSERT(!fail);
     }else{
       char * vname = get_c_name(var->name);
-      int fail = tcc_add_symbol(tccs,vname,&var->data);
-      void * ptr = tcc_get_symbol(tccs,vname);
-      logd("PTR: %p\n",*((void **)ptr));
+      int fail = tcc_add_symbol(tccs,vname,var->data);
       ASSERT(!fail);
     }
   }
@@ -434,7 +431,7 @@ type_def * type_macro(c_block * block, c_value * value, expr e){
   char buf[10];
   sprintf(buf, "type_%i",typevarid++);
   symbol varname = get_symbol(buf);
-  compiler_define_variable_ptr(varname, &type_def_ptr_def, t);
+  compiler_define_variable_ptr(varname, &type_def_ptr_def, clone(&t,sizeof(type_def *)));
   value->type = C_INLINE_VALUE;
   value->raw.value = "NULL";
   value->raw.type = &type_def_ptr_def;
@@ -598,9 +595,7 @@ type_def * expand_macro(c_block * block, c_value * val, expr * exprs, size_t cnt
     break;
   default:
     ERROR("Not supported");
-  }
-  logd(":::::: %p %p\n", d, result);
-  
+  }  
   return _compile_expr(block, val, *result);
 }
 
@@ -631,10 +626,10 @@ type_def * expr_macro(c_block * block, c_value * val, expr body){
   type_def * exprtd = opaque_expr();
   char buf[30];
   static int expr_idx = 0;
-  sprintf(buf,"V_1_%i",expr_idx++);
+  sprintf(buf,"_tmp_symbol_%i",expr_idx++);
   symbol tmp = get_symbol(buf);
   expr * ex = clone(&newbody, sizeof(expr));
-  compiler_define_variable_ptr(tmp, exprtd, ex);
+  compiler_define_variable_ptr(tmp, exprtd, clone(&ex,sizeof(expr *)));
   
   expr e;
   e.type = VALUE;
@@ -650,16 +645,6 @@ type_def * unexpr_macro(c_block * block, c_value * val, expr body)
 
   }*/
 
-expr * other_test(){
-  static expr somexpr;
-  somexpr.type = VALUE;
-  somexpr.value.value = "123";
-  somexpr.value.strln = 3;
-  somexpr.value.type = NUMBER;
-  logd("gets here..\n");
-  return &somexpr;
-}
-
 type_def * defcmacro_macro(c_block * block, c_value * val, expr e_name, expr args, expr body){
   UNUSED(block);
   COMPILE_ASSERT(is_symbol(e_name));
@@ -670,7 +655,7 @@ type_def * defcmacro_macro(c_block * block, c_value * val, expr e_name, expr arg
   size_t argcnt = args.sub_expr.cnt;
   expr * sexprs = args.sub_expr.exprs;
   symbol name = expr_symbol(e_name);
-  logd("defining function: '%s'\n", symbol_name(name));
+  logd("defining macro: '%s'\n", symbol_name(name));
   var_def _vars[argcnt];
   for(size_t i = 0; i < argcnt; i++){
     COMPILE_ASSERT(is_symbol(sexprs[i]));
@@ -850,10 +835,6 @@ void lisp_load_compiler(compiler_state * c){
 	
 	compiler_define_variable_ptr(get_symbol("get-symbol"), 
 				     str2type("(fcn (ptr symbol) (a (ptr char)))"), get_symbol2);
-	type_pool_get(opaque_expr());
-	str2type("(fcn (ptr expr))");
-	compiler_define_variable_ptr(get_symbol("other_test"), 
-				     str2type("(fcn (ptr expr))"), other_test);
 	type_def * d2t =  str2type("(fcn f64 (a f64) (b f64))");
 	defun("f+", d2t, double_add);
 	defun("f-", d2t, double_sub);
@@ -894,8 +875,6 @@ void lisp_run_expr(expr ex){
     void * (* fcn)() = evaldef->data;
     void * ptr = fcn();
     logd("%p\n", ptr);
-    //var_def * v2 = get_variable(get_symbol("V_1_0"));
-    //logd("V2: %p %p\n", v2->data, ptr);
   }else if(ret == &f32_def){
     f32 (* fcn)() = evaldef->data;
     f32 v = fcn();
