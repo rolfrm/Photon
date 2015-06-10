@@ -622,7 +622,10 @@ expr walk_expr(expr body){
   nexpr.sub_expr.cnt = exp.cnt;
   return nexpr;
 }
-
+expr * walk_expr2(expr * body){
+  expr r = walk_expr(*body);
+  return clone(&r, sizeof(r));
+}
 // expr turns makes a expr tree literal
 type_def * expr_macro(c_block * block, c_value * val, expr body){
   UNUSED(block);
@@ -837,6 +840,9 @@ void lisp_load_compiler(compiler_state * c){
 	
 	compiler_define_variable_ptr(get_symbol("get-symbol"), 
 				     str2type("(fcn (ptr symbol) (a (ptr char)))"), get_symbol2);
+	opaque_expr();
+	compiler_define_variable_ptr(get_symbol("walk-expr"), 
+				     str2type("(fcn (ptr expr) (a (ptr expr)))"), walk_expr2);
 	type_def * d2t =  str2type("(fcn f64 (a f64) (b f64))");
 	defun("f+", d2t, double_add);
 	defun("f-", d2t, double_sub);
