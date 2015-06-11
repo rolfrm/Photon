@@ -1,5 +1,5 @@
 OPT = -g
-SOURCES =  foton.c ../iron/linmath.c ../iron/utils.c lisp_types.c lisp_std_types.c ../iron/mem.c ../iron/fileio.c ../iron/array.c ../iron/math.c ../iron/time.c ../iron/hashtable.c ../iron/log.c  lisp_symbols.c lisp_compiler2.c lisp_compiler.c lisp_parser.c repl.c type_pool.c
+SOURCES =  foton.c ../iron/linmath.c ../iron/utils.c lisp_types.c lisp_std_types.c ../iron/mem.c ../iron/fileio.c ../iron/array.c ../iron/math.c ../iron/time.c ../iron/hashtable.c ../iron/log.c  lisp_symbols.c lisp_compiler2.c lisp_compiler.c lisp_parser.c repl.c type_pool.c builtin_macros.c expr_utils.c
 CC = gcc
 TARGET = foton
 OBJECTS =$(SOURCES:.c=.o) 
