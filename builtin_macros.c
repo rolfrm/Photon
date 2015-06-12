@@ -278,6 +278,7 @@ type_def * defcmacro_macro(c_block * block, c_value * val, expr e_name, expr arg
   for(size_t i = 0; i < argcnt; i++){
     argsdecl[i].type = exprtd;
     argsdecl[i].name = _vars[i].name;
+    logd("SYM NAME: %s\n", symbol_name(_vars[i].name));
   }
   type_def * fcnt = function_type(exprtd, argcnt, argsdecl);
 

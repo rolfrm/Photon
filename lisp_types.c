@@ -84,72 +84,138 @@ type_def make_ptr(type_def * def){
   return out;
 }
 
-void print_def(type_def * type, bool is_decl){
-  type_def * inner;
+void print_min_type(type_def * type){
   switch(type->type){
   case SIMPLE:
     format("%s", symbol_name(type->simple.name));
     break;
   case OPAQUE_STRUCT:
-    if(!is_decl) format("struct ");
-    format("%s", symbol_name(type->cstruct.name));
+    format("struct %s", symbol_name(type->cstruct.name));
     break;
   case STRUCT:
-    if(is_decl){
-      format("%s", symbol_name(type->cstruct.name));
-    }else{
-      format("struct %s{\n", type->cstruct.name.id == 0 ? "" : symbol_name(type->cstruct.name));
-      for(i64 i = 0; i < type->cstruct.cnt; i++){	
-	if(type->cstruct.members[i].name.id != 0){
-	  print_def(type->cstruct.members[i].type, true);
-	  format(" %s;\n",symbol_name(type->cstruct.members[i].name));
-	}else{
-	  print_def(type->cstruct.members[i].type, false);
-	  format("\n");
-	}
+    format("struct %s{\n", type->cstruct.name.id == 0 ? "" : symbol_name(type->cstruct.name));
+    for(i64 i = 0; i < type->cstruct.cnt; i++){	
+      if(type->cstruct.members[i].name.id != 0){
+	print_def(type->cstruct.members[i].type, true);
+	format(" %s;\n",symbol_name(type->cstruct.members[i].name));
+      }else{
+	print_def(type->cstruct.members[i].type, false);
+	format("\n");
       }
-      format("}"); 
     }
+    format("}"); 
     break;
   case POINTER:
     print_def(type->ptr.inner, true);
     format(" *");
     break;
   case ENUM:
-    if(is_decl){
-      format("%s", symbol_name(type->cenum.name));
-    }else{
-      format("%s",symbol_name(type->cenum.name));
-    }
+    format("%s",symbol_name(type->cenum.name));
     break;
   case UNION:
-    if(is_decl){
-      format("%s", symbol_name(type->cunion.name));
-    }else{
-      format("union {\n");
-
-      for(i64 i = 0; i < type->cunion.cnt; i++){
-	print_def(type->cunion.members[i].type, false);
-	format(" %s;\n", symbol_name(type->cunion.members[i].name));
-      }
-      format("};");
+    format("union {\n");
+    for(i64 i = 0; i < type->cunion.cnt; i++){
+      print_def(type->cunion.members[i].type, false);
+      format(" %s;\n", symbol_name(type->cunion.members[i].name));
     }
+    format("};");
     break;
- 
  case TYPEDEF:
     inner = type->ctypedef.inner;
-    if(is_decl){
-      format("%s", symbol_name(type->ctypedef.name));
-    }else{
-      format("typedef ");
-      print_def(inner,false);
-      format(" %s;\n",symbol_name(type->ctypedef.name));
-    }
-    
+    format("typedef ");
+    print_def(inner,false);
+    format(" %s;\n",symbol_name(type->ctypedef.name));
     break;
   case FUNCTION:
-    // this is an error.
-    print_cdecl((decl){get_symbol("_"), type});
+    ERROR("Cannot print function definition, only as decleration (named) ");
+    break;
+  case type_def_kind_cnt:
+    ERROR("not implemented %i", type->type);
+  }
+}
+
+void print_cdecl(decl idecl){
+  
+  type_def * def = idecl.type;
+  switch(def->type){
+  case ENUM:
+  case UNION:
+  case TYPEDEF:
+  case STRUCT:
+  case OPAQUE_STRUCT:
+  case SIMPLE:
+  case POINTER:
+    print_def(def,true);
+    format(" %s",get_c_name(idecl.name));
+    break;
+  case FUNCTION:
+      
+    print_cdelc(def->fcn.ret);
+    format(" %s(",get_c_name(idecl.name));
+    for(i64 i = 0; i < def->fcn.cnt; i++){
+      print_def(def->fcn.args[i]);
+      if(i + 1 != def->fcn.cnt)
+	format(", ");
+    }
+    format(")");
+    break;
+  case type_def_kind_cnt:
+    ERROR("Not supported: '%i'\n", def->type);
+  }
+}
+
+void print_decl(type_def * t, symbol name){
+  decl dcl;
+  dcl.name = name;
+  dcl.type = t;
+  print_cdecl(dcl);
+}
+
+void print_def(type_def * type){
+  type_def * inner;
+  switch(type->type){
+  case SIMPLE:
+    format("%s", symbol_name(type->simple.name));
+    break;
+  case OPAQUE_STRUCT:
+    format("struct %s", symbol_name(type->cstruct.name));
+    break;
+  case STRUCT:
+    format("struct %s{\n", type->cstruct.name.id == 0 ? "" : symbol_name(type->cstruct.name));
+    for(i64 i = 0; i < type->cstruct.cnt; i++){	
+      if(type->cstruct.members[i].name.id != 0){
+	print_def(type->cstruct.members[i].type, true);
+	format(" %s;\n",symbol_name(type->cstruct.members[i].name));
+      }else{
+	print_def(type->cstruct.members[i].type, false);
+	format("\n");
+      }
+    }
+    format("}"); 
+    break;
+  case POINTER:
+    print_def(type->ptr.inner, true);
+    format(" *");
+    break;
+  case ENUM:
+    format("%s",symbol_name(type->cenum.name));
+    break;
+  case UNION:
+    format("union {\n");
+    for(i64 i = 0; i < type->cunion.cnt; i++){
+      print_def(type->cunion.members[i].type, false);
+      format(" %s;\n", symbol_name(type->cunion.members[i].name));
+    }
+    format("};");
+    break;
+ case TYPEDEF:
+    inner = type->ctypedef.inner;
+    format("typedef ");
+    print_def(inner,false);
+    format(" %s;\n",symbol_name(type->ctypedef.name));
+    break;
+  case FUNCTION:
+    ERROR("Cannot print function definition, only as decleration (named) ");
     break;
   case type_def_kind_cnt:
     ERROR("not implemented %i", type->type);
@@ -462,39 +528,6 @@ void print_c_code(c_root_code code){
   }
 }
 
-void print_cdecl(decl idecl){
-  void inner_print(decl idecl){
-    
-    type_def * def = idecl.type;
-    switch(def->type){
-    case ENUM:
-    case UNION:
-    case TYPEDEF:
-    case STRUCT:
-    case OPAQUE_STRUCT:
-    case SIMPLE:
-    case POINTER:
-      print_def(def,true);
-      format(" %s",get_c_name(idecl.name));
-      break;
-    case FUNCTION:
-      
-      print_def(def->fcn.ret,true);
-      format(" %s(",get_c_name(idecl.name));
-      for(i64 i = 0; i < def->fcn.cnt; i++){
-	inner_print(def->fcn.args[i]);
-	if(i + 1 != def->fcn.cnt)
-	  format(", ");
-      }
-      format(")");
-      break;
-    case type_def_kind_cnt:
-      ERROR("Not supported: '%i'\n", def->type);
-    }
-  }
-
-  inner_print(idecl);
-}
 
 void write_dependencies(type_def ** deps){
   format("#include \"cstd_header.h\"\n");

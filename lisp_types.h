@@ -43,10 +43,7 @@ struct _type_def{
     
     struct{
       type_def * ret;
-      // todo: consider redesigning so thar fcn args are just type_defs instead.
-      // the function type has really nothing to do with the arg names and hence should not be declerations.
-      // but: function types are complicated and backwards to write in c, so this is a tradeoff to make it easy.
-      decl * args;
+      type_def * args;
       i64 cnt;
     }fcn;
     
