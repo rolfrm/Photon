@@ -43,7 +43,7 @@ struct _type_def{
     
     struct{
       type_def * ret;
-      type_def * args;
+      type_def ** args;
       i64 cnt;
     }fcn;
     
@@ -87,7 +87,7 @@ symbol * get_symbol2(char * name);
 char * symbol_name(symbol s);
 bool symbol_cmp(symbol a, symbol b);
 
-type_def * function_type(type_def * ret,size_t cnt, decl * decls);
+type_def * function_type(type_def * ret,size_t cnt, type_def ** ts);
 
 void print_cdecl(decl idecl);
 
@@ -102,6 +102,7 @@ void register_type(type_def * type, char * name);
 // descending order, so least dependent comes first.
 void make_dependency_graph(type_def ** deps, type_def * def);
 
-void print_def(type_def * type, bool is_decl);
-
+void print_def(type_def * type);
+void print_min_type(type_def * type);
 type_def * str2type(char * str);
+void print_decl(type_def * t, symbol name);

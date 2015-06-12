@@ -42,7 +42,7 @@ static bool compare_function(type_def * a, type_def * b){
   bool isSame =  a->fcn.cnt == b->fcn.cnt && type_pool_get(a->fcn.ret) == type_pool_get(b->fcn.ret);
   if(isSame){
     for(i64 i = 0; i < a->fcn.cnt; i++){
-      if(type_pool_get(a->fcn.args[i].type) != type_pool_get(b->fcn.args[i].type))
+      if(type_pool_get(a->fcn.args[i]) != type_pool_get(b->fcn.args[i]))
 	return false;
     }
   }
@@ -126,7 +126,7 @@ type_def * _type_pool_get(type_def * lookup, bool is_static){
     case FUNCTION:
       found->fcn.ret = do_lookup(found->fcn.ret);
       for(int i = 0 ; i < found->fcn.cnt; i++){
-	found->fcn.args[i].type = do_lookup(found->fcn.args[i].type);
+	found->fcn.args[i] = do_lookup(found->fcn.args[i]);
       }
       break;
     case type_def_kind_cnt:

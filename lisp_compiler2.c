@@ -185,11 +185,11 @@ type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se){
     type_def * farg_types[argcnt];
     for(i64 i = 0; i < argcnt; i++){
       farg_types[i] = _compile_expr(block, fargs + i, args[i]);
-      if(type_pool_get(farg_types[i]) != type_pool_get(td->fcn.args[i].type)){
+      if(type_pool_get(farg_types[i]) != type_pool_get(td->fcn.args[i])){
 	logd("ERROR: got '");
-	print_def(farg_types[i],true);
+	print_min_type(farg_types[i]);
 	logd("' expected '");
-	print_def(td->fcn.args[i].type,true);
+	print_min_type(td->fcn.args[i]);
 	logd("'\n");
 	ERROR("Non matching types");
       }
@@ -246,8 +246,8 @@ c_root_code compile_lisp_to_eval(expr exp){
   td.fcn.args = NULL;
   td.fcn.cnt = 0;
 
-  f->fdecl.name = get_symbol("eval");
-  f->fdecl.type = type_pool_get(&td);
+  f->name = get_symbol("eval");
+  f->type = type_pool_get(&td);
 
   c_expr expr;
   expr.type = C_VALUE;
@@ -263,7 +263,7 @@ type_def * str2type(char * str){
 }
 
 void print_type(type_def * def){
-  logd("type: '")print_def(def,true); logd("'\n");
+  logd("type: '")print_min_type(def); logd("'\n");
 }
 void write_line(char * str){
   logd("%s\n", str);
@@ -290,9 +290,9 @@ void go_write(type_def ** deps, symbol * vdeps, c_root_code * codes, size_t code
   for(size_t i = 0; deps[i] != NULL; i++){
     if(deps[i]->type == TYPEDEF){
       continue;
-      print_def(deps[i]->ctypedef.inner,false);
+      print_def(deps[i]->ctypedef.inner);
     }else{
-      print_def(deps[i],false);
+      print_def(deps[i]);
     }
     format(";\n");
   }
@@ -358,10 +358,9 @@ void compile_as_c(c_root_code * codes, size_t code_cnt){
   for(size_t i = 0; i < code_cnt; i++){
     c_root_code r = codes[i];
     if(r.type == C_FUNCTION_DEF){
-      decl fdecl = r.fcndef.fdecl;
-      void * ptr = tcc_get_symbol(tccs, get_c_name(fdecl.name));
+      void * ptr = tcc_get_symbol(tccs, get_c_name(r.fcndef.name));
       ASSERT(ptr != NULL);
-      compiler_define_variable_ptr(fdecl.name, fdecl.type, ptr);
+      compiler_define_variable_ptr(r.fcndef.name, r.fcndef.type, ptr);
     }else if(r.type == C_VAR_DEF){
 
       decl vdecl = r.var.var;
@@ -416,7 +415,7 @@ void lisp_load_compiler(compiler_state * c){
 
 var_def * lisp_compile_expr(expr ex){
   c_root_code cl = compile_lisp_to_eval(ex);
-  if(cl.fcndef.fdecl.type->fcn.ret == &error_def)
+  if(cl.fcndef.type->fcn.ret == &error_def)
     return NULL;
   compile_as_c(&cl,1);
   symbol s = get_symbol("eval");
@@ -434,7 +433,7 @@ void lisp_run_expr(expr ex){
 
   var_def * evaldef = lisp_compile_expr(ex);
   ASSERT(evaldef != NULL);
-  print_def(evaldef->type->fcn.ret,false); logd(" :: ");
+  print_def(evaldef->type->fcn.ret); logd(" :: ");
   type_def * ret = evaldef->type->fcn.ret;
   if(ret == &void_def){
     logd("()\n");
@@ -513,13 +512,13 @@ bool test_lisp2c(){
 	ASSERT(type == type2 && type != type3);
 	
 	type_def * d = str2type("(alias (ptr type_def) td)");
-	print_def(d,false);
+	print_def(d);
 	type_def * d2 = str2type("(alias (struct _vec2 (x f32) (y f32)) vec2)");
-	print_def(d2,false);
+	print_def(d2);
 	type_def * d3 = str2type("(ptr vec2)");
-	print_def(d3,false);	
+	print_def(d3);	
 	type_def * d4 = str2type("(alias (struct _a) a)");
-	print_def(d4, false);
+	print_def(d4);
       }));
   return ret;
 }

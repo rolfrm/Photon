@@ -61,7 +61,7 @@ void get_sub_types(type_def * t, type_def ** out_types){
   case FUNCTION:
     *out_types++ = t->fcn.ret;
     for(int i = 0; i < t->fcn.cnt; i++){
-      *out_types++ = t->fcn.args[i].type;
+      *out_types++ = t->fcn.args[i];
     }
   case type_def_kind_cnt:
     ERROR("Unsupported type");
@@ -89,43 +89,21 @@ void print_min_type(type_def * type){
   case SIMPLE:
     format("%s", symbol_name(type->simple.name));
     break;
-  case OPAQUE_STRUCT:
-    format("struct %s", symbol_name(type->cstruct.name));
-    break;
+  case UNION:  
   case STRUCT:
-    format("struct %s{\n", type->cstruct.name.id == 0 ? "" : symbol_name(type->cstruct.name));
-    for(i64 i = 0; i < type->cstruct.cnt; i++){	
-      if(type->cstruct.members[i].name.id != 0){
-	print_def(type->cstruct.members[i].type, true);
-	format(" %s;\n",symbol_name(type->cstruct.members[i].name));
-      }else{
-	print_def(type->cstruct.members[i].type, false);
-	format("\n");
-      }
-    }
-    format("}"); 
+  case OPAQUE_STRUCT:
+    format("%s", symbol_name(type->cstruct.name));
     break;
   case POINTER:
-    print_def(type->ptr.inner, true);
+    print_min_type(type->ptr.inner);
     format(" *");
     break;
   case ENUM:
     format("%s",symbol_name(type->cenum.name));
     break;
-  case UNION:
-    format("union {\n");
-    for(i64 i = 0; i < type->cunion.cnt; i++){
-      print_def(type->cunion.members[i].type, false);
-      format(" %s;\n", symbol_name(type->cunion.members[i].name));
-    }
-    format("};");
-    break;
- case TYPEDEF:
-    inner = type->ctypedef.inner;
-    format("typedef ");
-    print_def(inner,false);
-    format(" %s;\n",symbol_name(type->ctypedef.name));
-    break;
+  case TYPEDEF:
+   format(" %s;\n",symbol_name(type->ctypedef.name));
+   break;
   case FUNCTION:
     ERROR("Cannot print function definition, only as decleration (named) ");
     break;
@@ -145,15 +123,14 @@ void print_cdecl(decl idecl){
   case OPAQUE_STRUCT:
   case SIMPLE:
   case POINTER:
-    print_def(def,true);
+    print_min_type(def);
     format(" %s",get_c_name(idecl.name));
     break;
   case FUNCTION:
-      
-    print_cdelc(def->fcn.ret);
+    print_min_type(def->fcn.ret);
     format(" %s(",get_c_name(idecl.name));
     for(i64 i = 0; i < def->fcn.cnt; i++){
-      print_def(def->fcn.args[i]);
+      print_min_type(def->fcn.args[i]);
       if(i + 1 != def->fcn.cnt)
 	format(", ");
     }
@@ -184,17 +161,17 @@ void print_def(type_def * type){
     format("struct %s{\n", type->cstruct.name.id == 0 ? "" : symbol_name(type->cstruct.name));
     for(i64 i = 0; i < type->cstruct.cnt; i++){	
       if(type->cstruct.members[i].name.id != 0){
-	print_def(type->cstruct.members[i].type, true);
+	print_min_type(type->cstruct.members[i].type);
 	format(" %s;\n",symbol_name(type->cstruct.members[i].name));
       }else{
-	print_def(type->cstruct.members[i].type, false);
+	print_def(type->cstruct.members[i].type);
 	format("\n");
       }
     }
     format("}"); 
     break;
   case POINTER:
-    print_def(type->ptr.inner, true);
+    print_min_type(type->ptr.inner);
     format(" *");
     break;
   case ENUM:
@@ -203,7 +180,7 @@ void print_def(type_def * type){
   case UNION:
     format("union {\n");
     for(i64 i = 0; i < type->cunion.cnt; i++){
-      print_def(type->cunion.members[i].type, false);
+      print_def(type->cunion.members[i].type);
       format(" %s;\n", symbol_name(type->cunion.members[i].name));
     }
     format("};");
@@ -211,8 +188,8 @@ void print_def(type_def * type){
  case TYPEDEF:
     inner = type->ctypedef.inner;
     format("typedef ");
-    print_def(inner,false);
-    format(" %s;\n",symbol_name(type->ctypedef.name));
+    print_def(inner);
+    format(" %s;\n", symbol_name(type->ctypedef.name));
     break;
   case FUNCTION:
     ERROR("Cannot print function definition, only as decleration (named) ");
@@ -280,7 +257,7 @@ void _make_dependency_graph(type_def ** defs, type_def * def, bool nested){
     _make_dependency_graph(defs, def->fcn.ret, nested);
 
     for(int i = 0; i < def->fcn.cnt; i++)
-      _make_dependency_graph(defs, def->fcn.args[i].type,nested);
+      _make_dependency_graph(defs, def->fcn.args[i],nested);
     break;
   case OPAQUE_STRUCT:
   case ENUM:
@@ -374,7 +351,7 @@ void block_dep(type_def ** deps, symbol * vdeps, c_block blk){
 void c_root_code_dep(type_def ** deps, symbol * vdeps, c_root_code code){
   switch(code.type){
   case C_FUNCTION_DEF:
-    make_dependency_graph(deps, code.fcndef.fdecl.type);
+    make_dependency_graph(deps, code.fcndef.type);
     block_dep(deps, vdeps, code.fcndef.block);
     break;
   case C_VAR_DEF:
@@ -429,7 +406,7 @@ void print_value(c_value val){
     break;
   case C_CAST:
     format("((");
-    print_def(val.cast.type, true);
+    print_min_type(val.cast.type);
     format(")");
     print_value(*val.cast.value);
     format(")");
@@ -489,17 +466,27 @@ void print_block(c_block blk){
 }
 
 void print_fcn_code(c_fcndef fcndef){
-  print_cdecl(fcndef.fdecl);
+  type_def * typeid  = fcndef.type;
+  ASSERT(typeid->type == FUNCTION);
+  print_min_type(typeid->fcn.ret);
+  format(" %s(",symbol_name(fcndef.name));
   // ** handle variables ** //
-  type_def * typeid  = fcndef.fdecl.type;
+  
   size_t varcnt = typeid->fcn.cnt;
   var_def _vars[typeid->fcn.cnt];
   var_def * vars = _vars;
   for(size_t i = 0; i < varcnt; i++){
+    type_def * arg_type = typeid->fcn.args[i];
     vars[i].data = NULL;
-    vars[i].name = typeid->fcn.args[i].name;
-    vars[i].type = typeid->fcn.args[i].type;
+    vars[i].name = fcndef.args[i];
+    vars[i].type = arg_type;
+    print_min_type(arg_type);
+    format(" %s", symbol_name(vars[i].name));
+    if(i != varcnt-1){
+      format(",");
+    }
   }
+  format(")");
   with_symbols(&vars,&varcnt,lambda(void,(){print_block(fcndef.block);}));
 }
 
@@ -519,7 +506,7 @@ void print_c_code(c_root_code code){
     print_c_var(code.var);
     break;
   case C_TYPE_DEF:
-    print_def(code.type_def,false);format(";\n");
+    print_def(code.type_def);format(";\n");
     break;
   case C_DECL:
     print_cdecl(code.decl);
@@ -563,12 +550,12 @@ void write_dependencies(type_def ** deps){
     }
   }
 }
-type_def * function_type(type_def * ret,size_t cnt, decl * decls){
+type_def * function_type(type_def * ret,size_t cnt, type_def ** ts){
   type_def td;
   td.type = FUNCTION;
   td.fcn.ret = ret;
   td.fcn.cnt = cnt;
-  td.fcn.args = decls;
+  td.fcn.args = ts;
   return type_pool_get(&td);
 }
 
@@ -633,10 +620,8 @@ bool test_print_c_code(){
     fundef.block.exprs = &expr3;
     fundef.block.expr_cnt = 1;
 
-    decl fdecl;
-    fdecl.type = type_pool_get(&ftype);
-    fdecl.name = get_symbol("print_test");
-    fundef.fdecl = fdecl;
+    fundef.type = type_pool_get(&ftype);
+    fundef.name = get_symbol("print_test");
     
     c_root_code c2;
     c2.type = C_FUNCTION_DEF;

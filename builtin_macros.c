@@ -282,9 +282,9 @@ type_def * defcmacro_macro(c_block * block, c_value * val, expr e_name, expr arg
   }
   type_def * fcnt = function_type(exprtd, argcnt, argsdecl);
 
-  decl *fdecl = &f->fdecl;
-  fdecl->name = name;
-  fdecl->type = fcnt;
+  //decl *fdecl = &f->fdecl;
+  f->name = name;
+  f->type = fcnt;
 
   compile_as_c(&newfcn_root,1);
   return compile_value(val, string_expr(symbol_name(name)).value);
@@ -341,8 +341,8 @@ type_def * defun_macro(c_block * block, c_value * value, expr name, expr args, e
   blk->expr_cnt = 0;
   
   // ** get function decleration **
-  decl *fdecl = &f->fdecl;
-  fdecl->name = fcnname;
+  
+  f->name = fcnname;
   
   expr subexpr[args.sub_expr.cnt + 1];
   subexpr[0] = symbol_expr("fcn");
@@ -353,15 +353,15 @@ type_def * defun_macro(c_block * block, c_value * value, expr name, expr args, e
   expr typexpr = mk_sub_expr(subexpr, array_count(subexpr));
 
   type_def * typeid = _type_macro(typexpr);
-  fdecl->type = typeid;
+  f->type = typeid;
   // ** register arguments as symbols ** //
   size_t varcnt = typeid->fcn.cnt;
   var_def _vars[typeid->fcn.cnt];
   var_def * vars = _vars;
   for(size_t i = 0; i < varcnt; i++){
     vars[i].data = NULL;
-    vars[i].name = typeid->fcn.args[i].name;
-    vars[i].type = typeid->fcn.args[i].type;
+    vars[i].name = f->args[i];
+    vars[i].type = typeid->fcn.args[i];
   }
   
   // ** Compile body with symbols registered ** //

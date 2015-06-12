@@ -8,7 +8,9 @@ typedef struct{
 }c_block;
 
 struct _c_fcndef{
-  decl fdecl;
+  symbol name;
+  type_def * type;
+  symbol * args;
   c_block block;
 };
 
