@@ -57,8 +57,10 @@ compiled_expr compile_expr(expr * e);
 type_def compile_iexpr(expr expr1);
 void compiler_set_state(compiler_state * ls);
 void write_dependencies(type_def ** deps);
-void with_compiler(compiler_state * c, void (* fcn)());
 
+void with_compiler(compiler_state * c, void (* fcn)());
+void pop_compiler();
+void push_compiler(compiler_state * c);
 void lisp_run_script_file(char * filepath);
 
 char * get_c_name(symbol s);
@@ -71,5 +73,6 @@ type_def * compile_value(c_value * val, value_expr e);
 
 // symbols
 void with_symbols(var_def ** vars, size_t * vars_cnt, void (*fcn)());
-
+void push_symbols(var_def ** vars, size_t * vars_cnt);
+void pop_symbols();
 bool test_lisp2c();

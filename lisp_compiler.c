@@ -8,12 +8,26 @@
 #include "type_pool.h"
 //static __thread comp_state * compstate = NULL;
 static __thread compiler_state * lisp_state = NULL;
+static __thread compiler_state * lisp_states[10] = {NULL};
+size_t state_count = 0;
+
+void push_compiler(compiler_state * c){
+  lisp_states[state_count] = lisp_state;
+  lisp_state = c;
+  state_count++;
+}
+
+void pop_compiler(){
+  state_count--;
+  lisp_state = lisp_states[state_count];
+}
 
 void with_compiler(compiler_state * c, void (* fcn)()){
-  compiler_state * old = lisp_state;
-  lisp_state = c;
-  with_symbols(&c->vars,&c->var_cnt,fcn);
-  lisp_state = old;
+  push_compiler(c);
+  push_symbols(&c->vars,&c->var_cnt);
+  fcn();
+  pop_symbols();
+  pop_compiler();
 }
 
 compiler_state * get_compiler(){

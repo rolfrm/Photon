@@ -43,23 +43,6 @@ type_def * compile_value(c_value * val, value_expr e){
   COMPILE_ERROR(false);
 }
 
-type_def * _type_macro(expr typexpr);
-bool read_decl(expr dclexpr, decl * out){
-  if(dclexpr.type == EXPR){
-    sub_expr sexpr = dclexpr.sub_expr;
-    if(sexpr.cnt == 2){
-      expr name = sexpr.exprs[0];
-      expr type = sexpr.exprs[1];
-      if(name.type == VALUE && name.value.type == SYMBOL){
-	out->name = expr_symbol(name);
-	out->type = _type_macro(type);
-	return &error_def != out->type;
-      }
-    }
-  }
-  return false;
-}
-
 type_def * _type_macro(expr typexpr){
   if(typexpr.type == EXPR){
     sub_expr sexp = typexpr.sub_expr;
@@ -75,12 +58,15 @@ type_def * _type_macro(expr typexpr){
       type_def * ret = _type_macro(sexp.exprs[1]);
     
       COMPILE_ASSERT(&error_def != ret);
-      decl args[sexp.cnt - 2];
+      type_def * args[sexp.cnt - 2];
       for(size_t i = 0; i < sexp.cnt - 2; i++){
-	COMPILE_ASSERT(read_decl(sexp.exprs[i + 2], args + i));
+	expr arg = sexp.exprs[i + 2];
+	COMPILE_ASSERT(arg.type == EXPR && arg.sub_expr.cnt == 2 && is_symbol(arg.sub_expr.exprs[0]));
+	args[i] = _type_macro(arg.sub_expr.exprs[1]);
+	COMPILE_ASSERT(args[i] != NULL && args[i] != &error_def);
       } 
       out.fcn.ret = ret;
-      out.fcn.args = clone(args, sizeof(args));
+      out.fcn.args = args;
       out.fcn.cnt = array_count(args);
       return type_pool_get(&out);
 
@@ -386,31 +372,30 @@ void defun(char * name, type_def * t, void * fcn){
 }
 
 void lisp_load_compiler(compiler_state * c){
-  with_compiler(c, lambda(void, (){
+  push_compiler(c);
 	
-	// Types
-	load_defs();
-	
-	builtin_macros_load();
+  // Types
+  load_defs();
+  
+  builtin_macros_load();
 
-	// Functions
-	type_def * type = str2type("(fcn void (a (ptr type_def)))");
-	compiler_define_variable_ptr(get_symbol("print_type"), type, print_type);
-	compiler_define_variable_ptr(get_symbol("write_line"), 
-				     str2type("(fcn void (a (ptr char)))"), &write_line);
-	compiler_define_variable_ptr(get_symbol("i64+"), 
-				     str2type("(fcn i64 (a i64) (b i64))"), &i64_add);
-	
-	compiler_define_variable_ptr(get_symbol("get-symbol"), 
-				     str2type("(fcn (ptr symbol) (a (ptr char)))"), get_symbol2);
-
-	type_def * d2t =  str2type("(fcn f64 (a f64) (b f64))");
-	defun("f+", d2t, double_add);
-	defun("f-", d2t, double_sub);
-	defun("f/", d2t, double_div);
-	defun("f*", d2t, double_mul);
-	
-      }));
+  // Functions
+  type_def * type = str2type("(fcn void (a (ptr type_def)))");
+  compiler_define_variable_ptr(get_symbol("print_type"), type, print_type);
+  compiler_define_variable_ptr(get_symbol("write_line"), 
+			       str2type("(fcn void (a (ptr char)))"), &write_line);
+  compiler_define_variable_ptr(get_symbol("i64+"), 
+			       str2type("(fcn i64 (a i64) (b i64))"), &i64_add);
+  
+  compiler_define_variable_ptr(get_symbol("get-symbol"), 
+			       str2type("(fcn (ptr symbol) (a (ptr char)))"), get_symbol2);
+  
+  type_def * d2t =  str2type("(fcn f64 (a f64) (b f64))");
+  defun("f+", d2t, double_add);
+  defun("f-", d2t, double_sub);
+  defun("f/", d2t, double_div);
+  defun("f*", d2t, double_mul);
+  pop_compiler();
 }
 
 var_def * lisp_compile_expr(expr ex){
@@ -503,23 +488,30 @@ bool test_lisp2c(){
   TEST(test_tcc);
   load_defs();
   compiler_state * c = compiler_make();
+
+  opaque_expr();
+  str2type("(fcn (ptr expr) (a (ptr expr)))");
+  logd("(fcn (ptr expr) (a (ptr expr)))");
+
   lisp_load_compiler(c);
   bool ret = TEST_SUCCESS;
-  with_compiler(c,lambda(void, (){
-	type_def * type = str2type("(fcn void (a (ptr type_def)))");
-	type_def * type2 = str2type("(fcn void (a (ptr type_def)))");
-	type_def * type3 = str2type("(fcn void (a (ptr void)))");
-	ASSERT(type == type2 && type != type3);
-	
-	type_def * d = str2type("(alias (ptr type_def) td)");
-	print_def(d);
-	type_def * d2 = str2type("(alias (struct _vec2 (x f32) (y f32)) vec2)");
-	print_def(d2);
-	type_def * d3 = str2type("(ptr vec2)");
-	print_def(d3);	
-	type_def * d4 = str2type("(alias (struct _a) a)");
-	print_def(d4);
-      }));
+  push_compiler(c);
+  type_def * type = str2type("(fcn void (a (ptr type_def)))");
+  type_def * type2 = str2type("(fcn void (a (ptr type_def)))");
+  type_def * type3 = str2type("(fcn void (a (ptr void)))");
+  ASSERT(type == type2 && type != type3);
+  
+  type_def * d = str2type("(alias (ptr type_def) td)");
+  print_def(d);
+  type_def * d2 = str2type("(alias (struct _vec2 (x f32) (y f32)) vec2)");
+  print_def(d2);
+  type_def * d3 = str2type("(ptr vec2)");
+  print_def(d3);	
+  type_def * d4 = str2type("(alias (struct _a) a)");
+  print_def(d4);
+  
+
+  pop_compiler();
   return ret;
 }
 

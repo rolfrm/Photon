@@ -263,8 +263,8 @@ type_def * defcmacro_macro(c_block * block, c_value * val, expr e_name, expr arg
 	// this should happen at macro run time not macro compile time.
 	type_def * td = _compile_expr(blk, &_val, body);
 	if(td != exprtd){
-	  logd("got '"); print_def(td,false); logd("' expected '");
-	  print_def(exprtd,false); logd("'\n");
+	  logd("got '"); print_min_type(td); logd("' expected '");
+	  print_min_type(exprtd); logd("'\n");
 	  ERROR("Types does not match");
 	}
       }));
@@ -274,13 +274,11 @@ type_def * defcmacro_macro(c_block * block, c_value * val, expr e_name, expr arg
   blk->exprs = &expr;
   blk->expr_cnt = 1;
   
-  decl argsdecl[argcnt];
+  type_def * args_type[argcnt];
   for(size_t i = 0; i < argcnt; i++){
-    argsdecl[i].type = exprtd;
-    argsdecl[i].name = _vars[i].name;
-    logd("SYM NAME: %s\n", symbol_name(_vars[i].name));
+    args_type[i] = exprtd;
   }
-  type_def * fcnt = function_type(exprtd, argcnt, argsdecl);
+  type_def * fcnt = function_type(exprtd, argcnt, args_type);
 
   //decl *fdecl = &f->fdecl;
   f->name = name;
@@ -344,34 +342,41 @@ type_def * defun_macro(c_block * block, c_value * value, expr name, expr args, e
   
   f->name = fcnname;
   
-  expr subexpr[args.sub_expr.cnt + 1];
-  subexpr[0] = symbol_expr("fcn");
-  for(size_t i = 1; i < args.sub_expr.cnt + 1; i++){
-    subexpr[i] = args.sub_expr.exprs[i-1];
+  type_def * arg_types[args.sub_expr.cnt - 1];
+  symbol arg_names[args.sub_expr.cnt - 1];
+  
+  for(size_t i = 0; i < args.sub_expr.cnt - 1; i++){
+    expr arg = args.sub_expr.exprs[i + 1];
+    COMPILE_ASSERT(arg.type == EXPR);
+    COMPILE_ASSERT(arg.sub_expr.cnt == 2);
+    expr namexpr = arg.sub_expr.exprs[0];
+    expr typexpr = arg.sub_expr.exprs[1];
+    COMPILE_ASSERT(is_symbol(namexpr));
+    arg_names[i] = expr_symbol(namexpr);
+    arg_types[i] = _type_macro(typexpr);
   }
   
-  expr typexpr = mk_sub_expr(subexpr, array_count(subexpr));
-
-  type_def * typeid = _type_macro(typexpr);
-  f->type = typeid;
+  type_def * ret = _type_macro(args.sub_expr.exprs[0]);
+  type_def * fcnt = function_type(ret, array_count(arg_names), (type_def **) arg_types);
+  f->type = fcnt;
   // ** register arguments as symbols ** //
-  size_t varcnt = typeid->fcn.cnt;
-  var_def _vars[typeid->fcn.cnt];
+  size_t varcnt = array_count(arg_names);
+  var_def _vars[varcnt];
   var_def * vars = _vars;
   for(size_t i = 0; i < varcnt; i++){
     vars[i].data = NULL;
-    vars[i].name = f->args[i];
-    vars[i].type = typeid->fcn.args[i];
+    vars[i].name = arg_names[i];
+    vars[i].type = arg_types[i];
   }
   
   // ** Compile body with symbols registered ** //
   c_value val;
   with_symbols(&vars, &varcnt, lambda(void, (){
 	type_def * td = _compile_expr(blk,&val, body);
-	ASSERT(td == typeid->fcn.ret);
+	ASSERT(td == fcnt->fcn.ret);
       }));
   c_expr expr;
-  if(typeid->fcn.ret == &void_def){
+  if(fcnt->fcn.ret == &void_def){
     expr.type = C_VALUE;
   }else{
     expr.type = C_RETURN;

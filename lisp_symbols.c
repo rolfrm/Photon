@@ -53,24 +53,32 @@ typedef struct _symbol_stack symbol_stack;
 struct _symbol_stack{
   var_def ** vars;
   size_t *vars_cnt;
-  symbol_stack * tail;
 };
-__thread symbol_stack * symbolstack = NULL;
+
+static __thread symbol_stack symbolstacks[100];
+static size_t stack_count = 0;
+
+void push_symbols(var_def ** vars, size_t * vars_cnt){
+  symbolstacks[stack_count].vars = vars;
+  symbolstacks[stack_count].vars_cnt = vars_cnt;  
+  stack_count++;
+}
+
+void pop_symbols(){
+  stack_count--;
+}
 
 void with_symbols(var_def ** vars, size_t * vars_cnt, void (*fcn)()){
-  symbol_stack nss;
-  nss.vars = vars;
-  nss.vars_cnt = vars_cnt;
-  nss.tail = symbolstack;
-  symbol_stack * oss = symbolstack;
-  symbolstack = &nss;
+
+  push_symbols(vars,vars_cnt);
   fcn();
-  symbolstack = oss;
+  pop_symbols();
 }
 
 var_def * get_variable(symbol name){
-  symbol_stack * ss = symbolstack;
-  while(ss != NULL){
+
+  for(i64 i = stack_count-1; i >= 0; i--){
+    symbol_stack * ss = symbolstacks + i;
     var_def * vars = *ss->vars;
     size_t varcnt = *ss->vars_cnt;
     for(size_t i = 0;i < varcnt; i++){
@@ -81,7 +89,6 @@ var_def * get_variable(symbol name){
     next_item:
       continue;
     }
-    ss = ss->tail;
   }
   return NULL;
 }

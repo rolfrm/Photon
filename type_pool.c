@@ -98,8 +98,6 @@ type_def * _type_pool_get(type_def * lookup, bool is_static){
     
     found = is_static ? lookup : clone(lookup, sizeof(*lookup));
     list_add((void **) kind_array, cnt, &found, sizeof(type_def *)); 
-    
-    type_def * (* do_lookup)(type_def *) = lambda(type_def *, (type_def * a){return _type_pool_get(a, is_static);});
 
     switch(lookup->type){
     case OPAQUE_STRUCT:
@@ -107,10 +105,10 @@ type_def * _type_pool_get(type_def * lookup, bool is_static){
     case ENUM:
       break;
     case POINTER:
-      found->ptr.inner = do_lookup(found->ptr.inner);
+      found->ptr.inner = _type_pool_get(found->ptr.inner, is_static);
       break;
     case TYPEDEF:
-      found->ctypedef.inner = do_lookup(found->ctypedef.inner);
+      found->ctypedef.inner = _type_pool_get(found->ctypedef.inner, is_static);
       break;
     case UNION:
     case STRUCT:
@@ -120,13 +118,14 @@ type_def * _type_pool_get(type_def * lookup, bool is_static){
 	dealloc(anonsym);
       }
       for(int i = 0; i < found->cstruct.cnt; i++){
-	found->cstruct.members[i].type = do_lookup(found->cstruct.members[i].type);
+	found->cstruct.members[i].type = _type_pool_get(found->cstruct.members[i].type, is_static);
       }
       break;
     case FUNCTION:
-      found->fcn.ret = do_lookup(found->fcn.ret);
+      found->fcn.ret = _type_pool_get(found->fcn.ret, is_static);
+      found->fcn.args = clone(found->fcn.args, sizeof(type_def *) * found->fcn.cnt);
       for(int i = 0 ; i < found->fcn.cnt; i++){
-	found->fcn.args[i] = do_lookup(found->fcn.args[i]);
+	found->fcn.args[i] = _type_pool_get(found->fcn.args[i], is_static);
       }
       break;
     case type_def_kind_cnt:
