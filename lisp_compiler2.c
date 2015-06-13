@@ -309,7 +309,7 @@ void compile_as_c(c_root_code * codes, size_t code_cnt){
     c_root_code_dep(deps, vdeps, codes[i]);
   }
   char * data = NULL;
-  size_t cnt = 0;
+ size_t cnt = 0;
   FILE * f = open_memstream(&data, &cnt);
   push_format_out(f);
   go_write(deps, vdeps, codes, code_cnt);
@@ -410,6 +410,7 @@ var_def * lisp_compile_expr(expr ex){
 void * lisp_compile_and_run_expr(expr ex){
   var_def * var = lisp_compile_expr(ex);
   void * (*fcn)() = var->data;
+  ASSERT(fcn != NULL);
   return fcn();
 }
 

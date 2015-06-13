@@ -77,10 +77,10 @@ void with_symbols(var_def ** vars, size_t * vars_cnt, void (*fcn)()){
 
 var_def * get_variable(symbol name){
 
-  for(i64 i = stack_count-1; i >= 0; i--){
-    symbol_stack * ss = symbolstacks + i;
-    var_def * vars = *ss->vars;
-    size_t varcnt = *ss->vars_cnt;
+  for(i64 j = stack_count-1; j >= 0; j--){
+    symbol_stack ss = symbolstacks[j];
+    var_def * vars = *ss.vars;
+    size_t varcnt = *ss.vars_cnt;
     for(size_t i = 0;i < varcnt; i++){
       if(!symbol_cmp(name,vars[i].name)){
 	goto next_item;

@@ -147,17 +147,54 @@ type_def * opaque_expr(){
   return exprtd;
 }
 
+
+typedef struct{
+  expr exp;
+  symbol * args;
+  size_t arg_cnt;
+}macro_store;
+
+type_def * macro_store_type(){
+  return str2type("(ptr (alias (opaque-struct _macro_store) macro_store))");
+}
+
+expr * expand_macro_store(macro_store * ms, expr * exprs, size_t cnt){
+  ASSERT(ms->arg_cnt == cnt);
+  var_def vars[cnt];
+  type_def * exprtd = opaque_expr();
+  expr * exprv[cnt];
+  for(size_t i = 0; i < cnt; i++){
+    exprv[cnt] = exprs + i;
+    vars[i].type = exprtd;
+    vars[i].name = ms->args[i];
+    vars[i].data = exprv + i;
+  }
+  var_def * __vars = vars;
+  var_def ** _vars = &__vars;
+  push_symbols(_vars, &cnt);
+  expr * exp2 = lisp_compile_and_run_expr(ms->exp);
+  pop_symbols();
+  return exp2;
+
+}
+
 type_def * expand_macro(c_block * block, c_value * val, expr * exprs, size_t cnt){
+  UNUSED(block);
   COMPILE_ASSERT(cnt > 0);
   COMPILE_ASSERT(is_symbol(exprs[0]));
   
-  type_def * exprtd = opaque_expr();
+  type_def * exprtd = macro_store_type();
 
   symbol name = expr_symbol(exprs[0]);
   var_def * fcn_var = get_variable(name);
   COMPILE_ASSERT(fcn_var != NULL);
-  type_def * fcn_type = fcn_var->type;
-  COMPILE_ASSERT(fcn_type->type == FUNCTION && fcn_type->fcn.ret == exprtd);
+  COMPILE_ASSERT(fcn_var->type == exprtd);
+
+  expr * outexpr = expand_macro_store(fcn_var->data, exprs + 1, cnt - 1);
+
+  return _compile_expr(block, val, *outexpr);
+
+  /*
   size_t argcnt = fcn_type->fcn.cnt;
   COMPILE_ASSERT(cnt == argcnt + 1);
   void * d = fcn_var->data;
@@ -181,7 +218,8 @@ type_def * expand_macro(c_block * block, c_value * val, expr * exprs, size_t cnt
   default:
     ERROR("Not supported");
   }  
-  return _compile_expr(block, val, *result);
+  logd("Got output..\n");
+  return _compile_expr(block, val, *result);*/
 }
 
 expr walk_expr(expr body){
@@ -191,10 +229,10 @@ expr walk_expr(expr body){
   sub_expr exp = body.sub_expr;
   if(exp.cnt > 0 && is_symbol(exp.exprs[0]) 
      && expr_symbol(exp.exprs[0]).id == get_symbol("unexpr").id){
-    ASSERT(exp.cnt == 2);
+    //ASSERT(exp.cnt == 2);
     // it breaks here..
-    expr * exp2 = lisp_compile_and_run_expr(exp.exprs[1]);
-    return *exp2;
+    //expr * exp2 = lisp_compile_and_run_expr(exp.exprs[1]);
+    //return *exp2;
     // special case not handled yet.
   }
   expr sub[exp.cnt];
@@ -219,7 +257,6 @@ type_def * expr_macro(c_block * block, c_value * val, expr body){
   static int expr_idx = 0;
   sprintf(buf,"_tmp_symbol_%i",expr_idx++);
   
-
   symbol tmp = get_symbol(buf);
   expr newbody = walk_expr(body);
   expr * ex = clone(&newbody, sizeof(expr));
@@ -233,28 +270,34 @@ type_def * expr_macro(c_block * block, c_value * val, expr body){
   return _compile_expr(block, val, e);
 }
 
+
 type_def * defcmacro_macro(c_block * block, c_value * val, expr e_name, expr args, expr body){
   UNUSED(block);
   COMPILE_ASSERT(is_symbol(e_name));
   COMPILE_ASSERT(args.type == EXPR);
 
-  type_def * exprtd = opaque_expr();
+
 
   size_t argcnt = args.sub_expr.cnt;
   expr * sexprs = args.sub_expr.exprs;
   symbol name = expr_symbol(e_name);
   logd("defining macro: '%s'\n", symbol_name(name));
-  var_def _vars[argcnt];
+  //var_def _vars[argcnt];
   symbol argnames[argcnt];
   for(size_t i = 0; i < argcnt; i++){
     COMPILE_ASSERT(is_symbol(sexprs[i]));
     argnames[i] = expr_symbol(sexprs[i]);
-    _vars[i].type = exprtd;
-    _vars[i].name = argnames[i];
-    _vars[i].data = NULL;
+    //_vars[i].type = exprtd;
+    //_vars[i].name = argnames[i];
+    //_vars[i].data = NULL;
   }
 
-  c_root_code newfcn_root;
+  macro_store * macro = alloc0(sizeof(macro_store));
+  macro->exp = walk_expr(body);
+  macro->args = clone(&argnames,sizeof(argnames));
+  macro->arg_cnt = argcnt;
+  compiler_define_variable_ptr(name, macro_store_type() , macro);
+  /*c_root_code newfcn_root;
   newfcn_root.type = C_FUNCTION_DEF;
   c_fcndef * f = &newfcn_root.fcndef;
   c_block * blk = &f->block;
@@ -286,7 +329,7 @@ type_def * defcmacro_macro(c_block * block, c_value * val, expr e_name, expr arg
   f->name = name;
   f->type = fcnt;
   f->args = argnames;
-  compile_as_c(&newfcn_root,1);
+  compile_as_c(&newfcn_root,1);*/
   return compile_value(val, string_expr(symbol_name(name)).value);
 }
 
