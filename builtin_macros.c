@@ -245,10 +245,12 @@ type_def * defcmacro_macro(c_block * block, c_value * val, expr e_name, expr arg
   symbol name = expr_symbol(e_name);
   logd("defining macro: '%s'\n", symbol_name(name));
   var_def _vars[argcnt];
+  symbol argnames[argcnt];
   for(size_t i = 0; i < argcnt; i++){
     COMPILE_ASSERT(is_symbol(sexprs[i]));
+    argnames[i] = expr_symbol(sexprs[i]);
     _vars[i].type = exprtd;
-    _vars[i].name = expr_symbol(sexprs[i]);
+    _vars[i].name = argnames[i];
     _vars[i].data = NULL;
   }
 
@@ -283,7 +285,7 @@ type_def * defcmacro_macro(c_block * block, c_value * val, expr e_name, expr arg
   //decl *fdecl = &f->fdecl;
   f->name = name;
   f->type = fcnt;
-
+  f->args = argnames;
   compile_as_c(&newfcn_root,1);
   return compile_value(val, string_expr(symbol_name(name)).value);
 }
