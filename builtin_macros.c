@@ -344,7 +344,7 @@ type_def * defun_macro(c_block * block, c_value * value, expr name, expr args, e
   
   type_def * arg_types[args.sub_expr.cnt - 1];
   symbol arg_names[args.sub_expr.cnt - 1];
-  
+  f->args = arg_names;
   for(size_t i = 0; i < args.sub_expr.cnt - 1; i++){
     expr arg = args.sub_expr.exprs[i + 1];
     COMPILE_ASSERT(arg.type == EXPR);

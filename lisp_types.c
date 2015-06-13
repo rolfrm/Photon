@@ -87,12 +87,12 @@ type_def make_ptr(type_def * def){
 void print_min_type(type_def * type){
   switch(type->type){
   case SIMPLE:
-    format("%s", symbol_name(type->simple.name));
+    format("%s", get_c_name(type->simple.name));
     break;
   case UNION:  
   case STRUCT:
   case OPAQUE_STRUCT:
-    format("%s", symbol_name(type->cstruct.name));
+    format("%s", get_c_name(type->cstruct.name));
     break;
   case POINTER:
     print_min_type(type->ptr.inner);
@@ -102,7 +102,7 @@ void print_min_type(type_def * type){
     format("%s",symbol_name(type->cenum.name));
     break;
   case TYPEDEF:
-   format(" %s;\n",symbol_name(type->ctypedef.name));
+   format("%s",symbol_name(type->ctypedef.name));
    break;
   case FUNCTION:
     ERROR("Cannot print function definition, only as decleration (named) ");
@@ -469,11 +469,11 @@ void print_fcn_code(c_fcndef fcndef){
   type_def * typeid  = fcndef.type;
   ASSERT(typeid->type == FUNCTION);
   print_min_type(typeid->fcn.ret);
-  format(" %s(",symbol_name(fcndef.name));
+  format(" %s(",get_c_name(fcndef.name));
   // ** handle variables ** //
   
   size_t varcnt = typeid->fcn.cnt;
-  var_def _vars[typeid->fcn.cnt];
+  var_def _vars[varcnt];
   var_def * vars = _vars;
   for(size_t i = 0; i < varcnt; i++){
     type_def * arg_type = typeid->fcn.args[i];
@@ -481,7 +481,7 @@ void print_fcn_code(c_fcndef fcndef){
     vars[i].name = fcndef.args[i];
     vars[i].type = arg_type;
     print_min_type(arg_type);
-    format(" %s", symbol_name(vars[i].name));
+    format(" %s", get_c_name(vars[i].name));
     if(i != varcnt-1){
       format(",");
     }
