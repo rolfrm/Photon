@@ -38,8 +38,8 @@
 
 (type (fcn (ptr f64))) ;a function that returns a pointer t an f64 and takes no args.
 
-(print_type (type (fcn f64 (a f64) (b f64)))) ; a function that returns a f64 and takes two f64s. 
-(type (struct _vec2 (x f32) (y f32))) ; this actually defines a struct named _vec2.
+(type (fcn f64 (a f64) (b f64))) ; a function that returns a f64 and takes two f64s. 
+(print_type (type (struct _vec2 (x f32) (y f32)))) ; this actually defines a struct named _vec2.
 (type (alias (ptr _vec2) vec2)) ; defines vec2 as a _vec2 struct.
 (defvar xy :type vec2)
 
