@@ -99,5 +99,14 @@
 ;(expr (unexpr (expr (unexpr "hello?")))))
 
 (expand fun-expr "hello" (write_line "WORLD!"))
-
+(defun not (bool (x bool)) (eq (cast 0 bool) x))
 (if (eq 2 1) 2 3)
+(defvar a 0)
+(if (not (eq a 1))
+    100
+    1000)
+(while (not (eq a 10))
+  (progn 
+    (setf a (+ a 1))
+    (write_line "...")
+    a))

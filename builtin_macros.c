@@ -205,11 +205,6 @@ expr * expand_macro_store(macro_store * ms, expr * exprs, size_t cnt){
   pop_symbols();
   return exp2;
 }
-	  
-type_def * unexpr_macro(c_block * block, c_value * val, expr body){
-  expr * exp2 = lisp_compile_and_run_expr(body);
-  return _compile_expr(block, val, *exp2);
-}
 
 type_def * expand_macro(c_block * block, c_value * val, expr * exprs, size_t cnt){
   UNUSED(block);
@@ -467,8 +462,11 @@ type_def * if_macro(c_block * block, c_value * val, expr cnd, expr then, expr _e
   
   c_expr cmpexpr;
   c_value * cmp_value = &cmpexpr.value;
+  cmp_value->type = C_SUB_EXPR;
+  c_value * inner_value = alloc(sizeof(c_value));
+  cmp_value->value = inner_value;
   cmpexpr.type = C_VALUE_UNENDED;
-  type_def * cmp = _compile_expr(block, cmp_value, cnd);
+  type_def * cmp = _compile_expr(block, inner_value, cnd);
   COMPILE_ASSERT(cmp == &bool_def);
 
   c_expr then_blk_expr;
@@ -509,6 +507,42 @@ type_def * if_macro(c_block * block, c_value * val, expr cnd, expr then, expr _e
   return else_t;
 }
 	  
+type_def * while_macro(c_block * block, c_value * val, expr cnd, expr body){
+  c_expr whilexpr;
+  whilexpr.type = C_KEYWORD;
+  whilexpr.keyword = get_symbol("while");
+ 
+  c_expr cmpexpr;
+  c_value * cmp_value = &cmpexpr.value;
+  cmp_value->type = C_SUB_EXPR;
+  cmpexpr.type = C_VALUE_UNENDED;
+  c_value * inner_value = alloc(sizeof(c_value));
+  cmp_value->value = inner_value;
+  type_def * cmp = _compile_expr(block, inner_value, cnd);
+  COMPILE_ASSERT(cmp == &bool_def);
+  
+  c_expr bodyexpr;
+  bodyexpr.type = C_BLOCK;
+  c_expr valuexpr;
+  valuexpr.type = C_VALUE;
+  type_def * body_t = setf_macro(&bodyexpr.block, &valuexpr.value, symbol_expr("_tmp"), body);
+  block_add(&bodyexpr.block, valuexpr);
+  c_expr tmp_expr;
+  tmp_expr.type = C_VAR;
+  tmp_expr.var.var.name = get_symbol("_tmp");
+  tmp_expr.var.var.type = body_t;
+  tmp_expr.var.value = NULL;
+  
+  block_add(block, tmp_expr);
+  block_add(block, whilexpr);
+  block_add(block, cmpexpr);
+  block_add(block, bodyexpr);
+
+  val->type = C_SYMBOL;
+  val->symbol = get_symbol("_tmp");
+
+  return body_t;
+}
 
 void builtin_macros_load(){
   // Macros
@@ -526,7 +560,7 @@ void builtin_macros_load(){
   define_macro("expr", 1, expr_macro);
   define_macro("eq", 2, eq_macro);
   define_macro("if", 3, if_macro);
-  //define_macro("unexpr", 1, unexpr_macro);
+  define_macro("while", 2, while_macro);
 
   opaque_expr();
   compiler_define_variable_ptr(get_symbol("walk-expr"), 

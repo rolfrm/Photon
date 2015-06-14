@@ -30,11 +30,11 @@ V1 Release Checklist
 * [x] Quoting 'symbolname
 * [x] Opaque types
 * [x] c-macros - Register the functions/types needed to work with macros.
-* [ ] Equality (deep / shallow) (eq/equals)
-* [x] conditionals (if)
-* [ ] Literal strings
+* [x] Equality "eq"
+* [x] conditionals "if"
 * [ ] loops (while expr body) result is the output of the last item.
 * [ ] a better REPL (history, multi-line)
+* [ ] proper literal strings
 * [ ] Structs
  * [ ] Defining
  * [ ] member access
