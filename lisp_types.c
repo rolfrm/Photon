@@ -327,17 +327,21 @@ void expr_dep(type_def ** deps, symbol * vdeps, c_expr expr){
   switch(expr.type){
   case C_VAR:
     make_dependency_graph(deps, expr.var.var.type);
-    add_var_dep(vdeps, expr.var.var.name);
     if(expr.var.value != NULL){
+      add_var_dep(vdeps, expr.var.var.name);
       value_dep(deps, vdeps, *expr.var.value);
     }
+
     break;
   case C_VALUE:
   case C_RETURN:
+  case C_VALUE_UNENDED:
     value_dep(deps, vdeps, expr.value);
     break;
   case C_BLOCK:
     block_dep(deps, vdeps, expr.block);
+    break;
+  case C_KEYWORD:
     break;
   }
 }
@@ -397,7 +401,7 @@ void print_value(c_value val){
   case C_OPERATOR:
     format("(");
     print_value(*val.operator.left);
-    format(" %c ", val.operator.operator);
+    format(" %s ", val.operator.operator);
     print_value(*val.operator.right);
     format(")");
     break;
@@ -429,9 +433,11 @@ static void print_expr2(c_expr expr){
     break;
   case C_RETURN:
     format("return ");
+  case C_VALUE_UNENDED:
   case C_VALUE:
     print_value(expr.value);
-    format(";\n");
+    if(expr.type != C_VALUE_UNENDED)
+      format(";\n");
     break;
   case C_BLOCK:
     format("{\n");
@@ -439,6 +445,10 @@ static void print_expr2(c_expr expr){
       print_expr2(expr.block.exprs[i]);
     }
     format("}\n");
+    break;
+  case C_KEYWORD:
+    format("%s ", get_c_name(expr.keyword));
+    break;
   }
 }
 

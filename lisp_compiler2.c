@@ -416,7 +416,6 @@ void * lisp_compile_and_run_expr(expr ex){
 
 
 void lisp_run_expr(expr ex){
-
   var_def * evaldef = lisp_compile_expr(ex);
   ASSERT(evaldef != NULL);
   print_def(evaldef->type->fcn.ret); logd(" :: ");
@@ -450,6 +449,10 @@ void lisp_run_expr(expr ex){
     f64 (* fcn)() = evaldef->data;
     f64 v = fcn();
     logd("%f\n",v);  
+  }else if(ret == &bool_def){
+    bool (* fcn)() = evaldef->data;
+    bool  v = fcn();
+    logd("%s\n", v ? "true" : "false");
   }else if(ret->type == SIMPLE){
     i64 (* fcn)() = evaldef->data;
     i64 v = fcn();

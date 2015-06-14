@@ -16,7 +16,7 @@ type_def u16_def;
 type_def u8_def;
 type_def f32_def;
 type_def f64_def;
-
+type_def bool_def;
 // Pointers
 type_def void_ptr_def;
 type_def char_ptr_def;

@@ -10,12 +10,14 @@ Only works on 64bit Linux at the moment.
 
 To test the compiler.
 ---------------------
-
-1. Check out the code
+1. mkdir photon
 2. cd photon
-3. make
-4. ./photon test.lisp
-5. ./photon \#to start the REPL
+3. git clone git@github.com:rolfrm/Photon.git
+4. git clone git@github.com:rolfrm/iron.git
+5. cd Photon
+6. make
+7. ./foton test.lisp
+8. ./foton 
 
 V1 Release Checklist
 --------
@@ -29,7 +31,8 @@ V1 Release Checklist
 * [x] Opaque types
 * [x] c-macros - Register the functions/types needed to work with macros.
 * [ ] Equality (deep / shallow) (eq/equals)
-* [ ] conditionals (if)
+* [x] conditionals (if)
+* [ ] Literal strings
 * [ ] loops (while expr body) result is the output of the last item.
 * [ ] a better REPL (history, multi-line)
 * [ ] Structs

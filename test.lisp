@@ -32,6 +32,14 @@
 (setf test8 100) ; Setting a variable
 (+ test8 test7)
 
+;; Shallow comparison
+
+(defvar a 1)
+(defvar b 2)
+(eq a b)
+(eq b b)
+
+
 ;; Types
 (type f64) ; returns the type of f64 (double).
 (type (ptr f64)) ; a pointer to an f64. (double *)
@@ -42,6 +50,12 @@
 (print_type (type (struct _vec2 (x f32) (y f32)))) ; this actually defines a struct named _vec2.
 (type (alias (ptr _vec2) vec2)) ; defines vec2 as a _vec2 struct.
 (defvar xy :type vec2)
+
+;; Types can be compared
+(write_line "Should be true..")
+(eq (type (ptr _vec2)) (type (ptr _vec2)))
+(write_line "Should be false..")
+(eq (type (ptr _vec2)) (type vec2))
 
 ;; Casting variables to different type
 (cast "asd" (ptr i32))
@@ -86,3 +100,4 @@
 
 (expand fun-expr "hello" (write_line "WORLD!"))
 
+(if (eq 2 1) 2 3)

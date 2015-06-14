@@ -1,5 +1,6 @@
 #include<stdint.h>
 typedef char i8;
+typedef i8 bool;
 typedef short i16;
 typedef int i32;
 typedef int64_t i64;

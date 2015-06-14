@@ -17,8 +17,10 @@ struct _c_fcndef{
 typedef enum{
   C_VAR = 2,
   C_VALUE = 4,
+  C_VALUE_UNENDED = 5,
   C_RETURN = 6,
-  C_BLOCK = 7
+  C_BLOCK = 7,
+  C_KEYWORD = 8
 }c_expr_kind;
 
 typedef enum{
@@ -47,7 +49,7 @@ typedef struct{
 typedef struct{
   c_value * left;
   c_value * right;
-  char operator;
+  char * operator;
 }c_operator;
 
 typedef struct{
@@ -81,6 +83,8 @@ struct _c_expr{
     // return, value
     c_value value;
     c_block block;
+    symbol keyword;
+
   };
 };
 
@@ -109,6 +113,10 @@ void c_root_code_dep(type_def ** deps, symbol* vdeps, c_root_code code);
 
 // Calculates the type and variable dependencies for a c code block.
 void block_dep(type_def ** deps, symbol * vdeps, c_block blk);
+
+void block_add(c_block * blk, c_expr expr);
+
+extern const c_block c_block_empty;
 
 // format out the c-code
 void print_c_code(c_root_code code);

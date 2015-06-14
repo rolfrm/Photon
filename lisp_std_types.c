@@ -50,6 +50,9 @@ void load_defs(){
   r2(&f32_def);
   f64_def = make_simple("f64");
   r2(&f64_def);
+
+  bool_def = make_simple("bool");
+  r2(&bool_def);
   // pointers to simple types //
   char_ptr_def.type = POINTER;
   char_ptr_def.ptr.inner = &char_def;

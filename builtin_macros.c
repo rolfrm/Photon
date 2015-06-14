@@ -86,7 +86,7 @@ type_def * defvar_macro(c_block * block, c_value * val, expr * exprs, size_t cnt
     val->type = C_OPERATOR;
     val->operator.left = vl;
     val->operator.right = vr;
-    val->operator.operator = '=';
+    val->operator.operator = "=";
   }
 
   c_root_code var_root;
@@ -110,7 +110,7 @@ type_def * setf_macro(c_block * block, c_value * val, expr name, expr body){
   val->type = C_OPERATOR;
   val->operator.left = vl;
   val->operator.right = vr;
-  val->operator.operator = '=';
+  val->operator.operator = "=";
   return t;
 }
 
@@ -433,12 +433,82 @@ type_def * defun_macro(c_block * block, c_value * value, expr name, expr args, e
     expr.type = C_RETURN;
   }
   expr.value = val;
-
-  list_add((void **) &blk->exprs, &blk->expr_cnt, &expr, sizeof(c_expr));
+  block_add(blk,expr);
   compile_as_c(&newfcn_root,1);
   // ** Just return the function name ** //
   return compile_value(value, string_expr(symbol_name(fcnname)).value);
 }
+
+void block_add(c_block * blk, c_expr expr){
+  list_add((void **) &blk->exprs, &blk->expr_cnt, &expr, sizeof(c_expr));
+}
+
+type_def * eq_macro(c_block * block, c_value * val, expr item1, expr item2){
+  c_value * val1 = alloc(sizeof(c_value));
+  c_value * val2 = alloc(sizeof(c_value));
+  c_value * comp = alloc(sizeof(c_value));
+  type_def * t1 = _compile_expr(block, val1, item1);
+  type_def * t2 = _compile_expr(block, val2, item2);
+  COMPILE_ASSERT(t1 != &error_def && t1 == t2 && t1 != &void_def);
+  val->type = C_CAST;
+  val->cast.value = comp;
+  val->cast.type = str2type("bool");
+  comp->type = C_OPERATOR;
+  comp->operator.operator = "==";
+  comp->operator.left = val1;
+  comp->operator.right = val2;
+  return val->cast.type;
+}
+	  
+type_def * if_macro(c_block * block, c_value * val, expr cnd, expr then, expr _else){
+  c_expr ifexpr;
+  ifexpr.type = C_KEYWORD;
+  ifexpr.keyword = get_symbol("if");
+  
+  c_expr cmpexpr;
+  c_value * cmp_value = &cmpexpr.value;
+  cmpexpr.type = C_VALUE_UNENDED;
+  type_def * cmp = _compile_expr(block, cmp_value, cnd);
+  COMPILE_ASSERT(cmp == &bool_def);
+
+  c_expr then_blk_expr;
+  then_blk_expr.type = C_BLOCK;
+  then_blk_expr.block = c_block_empty;
+  c_expr then_expr;
+  then_expr.type = C_VALUE;
+  type_def * then_t = setf_macro(&then_blk_expr.block, &then_expr.value, symbol_expr("_tmp"), then);
+  block_add(&then_blk_expr.block, then_expr);
+
+  c_expr elsexpr;
+  elsexpr.type = C_KEYWORD;
+  elsexpr.keyword = get_symbol("else");
+  c_expr else_blk_expr;
+  else_blk_expr.type = C_BLOCK;
+  else_blk_expr.block = c_block_empty;
+  c_expr else_expr;
+  else_expr.type = C_VALUE;
+  type_def * else_t = setf_macro(&else_blk_expr.block, &else_expr.value, symbol_expr("_tmp"), _else);
+  COMPILE_ASSERT(else_t == then_t);
+  block_add(&else_blk_expr.block, else_expr);
+
+  c_expr tmp_expr;
+  tmp_expr.type = C_VAR;
+  tmp_expr.var.var.name = get_symbol("_tmp");
+  tmp_expr.var.var.type = else_t;
+  tmp_expr.var.value = NULL;
+
+  block_add(block, tmp_expr);
+  block_add(block, ifexpr);
+  block_add(block, cmpexpr);
+  block_add(block, then_blk_expr);
+  block_add(block, elsexpr);
+  block_add(block, else_blk_expr);
+  val->type = C_SYMBOL;
+  val->symbol = get_symbol("_tmp");
+
+  return else_t;
+}
+	  
 
 void builtin_macros_load(){
   // Macros
@@ -454,6 +524,8 @@ void builtin_macros_load(){
   define_macro("defcmacro", 3, defcmacro_macro);
   define_macro("expand",-1,expand_macro);
   define_macro("expr", 1, expr_macro);
+  define_macro("eq", 2, eq_macro);
+  define_macro("if", 3, if_macro);
   //define_macro("unexpr", 1, unexpr_macro);
 
   opaque_expr();
