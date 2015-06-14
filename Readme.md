@@ -32,15 +32,15 @@ V1 Release Checklist
 * [x] c-macros - Register the functions/types needed to work with macros.
 * [x] Equality "eq"
 * [x] conditionals "if"
-* [ ] loops (while expr body) result is the output of the last item.
-* [ ] a better REPL (history, multi-line)
+* [x] loops (while expr body) result is the output of the last item.
+* [ ] a better REPL (history, multi-line, line-edit)
 * [ ] proper literal strings
 * [ ] Structs
  * [ ] Defining
  * [ ] member access
 * [ ] Arrays / pointers
 * [ ] sizeof macro.
-* [ ] Lisp macros (tick/backtick syntax)
+* [x] Lisp macros (tick/backtick syntax) choosen expr/unexpr equvivalent of tick/backtick
 * [ ] Standard library
  * [ ] -ldl related
  * [ ] -lm related

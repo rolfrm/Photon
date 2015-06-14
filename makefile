@@ -4,7 +4,7 @@ CC = gcc
 TARGET = foton
 OBJECTS =$(SOURCES:.c=.o) 
 LDFLAGS=-ldl -L. -L../libconcurrency-read-only/  $(OPT) -Wextra #-lmcheck #-ftlo  #setrlimit on linux 
-LIBS= -ldl -lm -lpthread
+LIBS= -ldl -lm -lpthread -lreadline
 
 CFLAGS = -Itcc -I.. -I../libconcurrency-read-only/libconcurrency/ -std=c11 -c $(OPT) -Wall -Wextra -Werror=implicit-function-declaration -Wformat=0  -g3 -O0 -D_GNU_SOURCE -fdiagnostics-color -Werror
 
