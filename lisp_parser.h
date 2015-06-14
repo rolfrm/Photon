@@ -48,3 +48,4 @@ bool test_lisp_parser();
 
 expr * lisp_parse_all(char * code, size_t * out_cnt);
 expr lisp_parse1(char * code);
+expr * clone_expr(expr * e);

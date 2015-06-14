@@ -27,7 +27,7 @@ V1 Release Checklist
 * [x] Proper symbols -  one symbol - one ID. Symbols to be used for functions, variable names. This meams that vars will be symbol based instead of string based.
 * [x] Quoting 'symbolname
 * [x] Opaque types
-* [ ] c-macros - Register the functions/types needed to work with macros.
+* [x] c-macros - Register the functions/types needed to work with macros.
 * [ ] Equality (deep / shallow) (eq/equals)
 * [ ] conditionals (if)
 * [ ] loops (while expr body) result is the output of the last item.
@@ -44,7 +44,7 @@ V1 Release Checklist
 * [ ] ffi
 * [ ] enums
 * [ ] function overloading macro
-
+* [ ] Fix massive memory leaks
 
 
 Vn Features

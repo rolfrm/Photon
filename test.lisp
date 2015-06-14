@@ -77,10 +77,12 @@
 
 ;; a macro is really just a function that takes exprs and compiles them to code.
 ;; unexpr is evaluated at 
-(defcmacro fun-expr (expr1)
-  (expr (write_line (unexpr expr1))))
+(defcmacro fun-expr (expr1 expr2)
+  (expr (progn
+	  (write_line (unexpr expr1))
+	  (unexpr expr2))))
 ; `(write_line ,expr1))
 ;(expr (unexpr (expr (unexpr "hello?")))))
 
-(expand fun-expr "hello")
+(expand fun-expr "hello" (write_line "WORLD!"))
 

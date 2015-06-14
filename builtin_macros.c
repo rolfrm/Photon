@@ -146,7 +146,35 @@ type_def * opaque_expr(){
   }
   return exprtd;
 }
+	  
+expr walk_expr(expr body){
+  if(body.type == VALUE)
+    return body;
 
+  sub_expr exp = body.sub_expr;
+  if(exp.cnt > 0 && is_symbol(exp.exprs[0]) 
+     && expr_symbol(exp.exprs[0]).id == get_symbol("unexpr").id){
+    ASSERT(exp.cnt == 2);
+    // it breaks here..
+    expr * exp2 = lisp_compile_and_run_expr(exp.exprs[1]);
+    return *exp2;
+    // special case not handled yet.
+  }
+  expr sub[exp.cnt];
+  for(size_t i = 0; i < exp.cnt; i++){
+    sub[i] = walk_expr(exp.exprs[i]);
+  }
+  expr nexpr;
+  nexpr.type = EXPR;
+  nexpr.sub_expr.exprs = clone(sub,sizeof(sub));
+  nexpr.sub_expr.cnt = exp.cnt;
+  return nexpr;
+}
+	  
+expr * walk_expr2(expr * body){
+  expr r = walk_expr(*body);
+  return clone(&r, sizeof(r));
+}
 
 typedef struct{
   expr exp;
@@ -164,7 +192,7 @@ expr * expand_macro_store(macro_store * ms, expr * exprs, size_t cnt){
   type_def * exprtd = opaque_expr();
   expr * exprv[cnt];
   for(size_t i = 0; i < cnt; i++){
-    exprv[cnt] = exprs + i;
+    exprv[i] = exprs + i;
     vars[i].type = exprtd;
     vars[i].name = ms->args[i];
     vars[i].data = exprv + i;
@@ -172,10 +200,15 @@ expr * expand_macro_store(macro_store * ms, expr * exprs, size_t cnt){
   var_def * __vars = vars;
   var_def ** _vars = &__vars;
   push_symbols(_vars, &cnt);
-  expr * exp2 = lisp_compile_and_run_expr(ms->exp);
+  expr * e1 = walk_expr2(&ms->exp);
+  expr * exp2 = lisp_compile_and_run_expr(*e1);
   pop_symbols();
   return exp2;
-
+}
+	  
+type_def * unexpr_macro(c_block * block, c_value * val, expr body){
+  expr * exp2 = lisp_compile_and_run_expr(body);
+  return _compile_expr(block, val, *exp2);
 }
 
 type_def * expand_macro(c_block * block, c_value * val, expr * exprs, size_t cnt){
@@ -191,7 +224,6 @@ type_def * expand_macro(c_block * block, c_value * val, expr * exprs, size_t cnt
   COMPILE_ASSERT(fcn_var->type == exprtd);
 
   expr * outexpr = expand_macro_store(fcn_var->data, exprs + 1, cnt - 1);
-
   return _compile_expr(block, val, *outexpr);
 
   /*
@@ -222,33 +254,7 @@ type_def * expand_macro(c_block * block, c_value * val, expr * exprs, size_t cnt
   return _compile_expr(block, val, *result);*/
 }
 
-expr walk_expr(expr body){
-  if(body.type == VALUE)
-    return body;
-  
-  sub_expr exp = body.sub_expr;
-  if(exp.cnt > 0 && is_symbol(exp.exprs[0]) 
-     && expr_symbol(exp.exprs[0]).id == get_symbol("unexpr").id){
-    //ASSERT(exp.cnt == 2);
-    // it breaks here..
-    //expr * exp2 = lisp_compile_and_run_expr(exp.exprs[1]);
-    //return *exp2;
-    // special case not handled yet.
-  }
-  expr sub[exp.cnt];
-  for(size_t i = 0; i < exp.cnt; i++){
-    sub[i] = walk_expr(exp.exprs[i]);
-  }
-  expr nexpr;
-  nexpr.type = EXPR;
-  nexpr.sub_expr.exprs = clone(sub,sizeof(sub));
-  nexpr.sub_expr.cnt = exp.cnt;
-  return nexpr;
-}
-expr * walk_expr2(expr * body){
-  expr r = walk_expr(*body);
-  return clone(&r, sizeof(r));
-}
+	  
 // expr turns makes a expr tree literal
 type_def * expr_macro(c_block * block, c_value * val, expr body){
   UNUSED(block);
@@ -258,7 +264,7 @@ type_def * expr_macro(c_block * block, c_value * val, expr body){
   sprintf(buf,"_tmp_symbol_%i",expr_idx++);
   
   symbol tmp = get_symbol(buf);
-  expr newbody = walk_expr(body);
+  expr newbody = body;
   expr * ex = clone(&newbody, sizeof(expr));
   compiler_define_variable_ptr(tmp, exprtd, clone(&ex,sizeof(expr *)));
   
@@ -293,7 +299,7 @@ type_def * defcmacro_macro(c_block * block, c_value * val, expr e_name, expr arg
   }
 
   macro_store * macro = alloc0(sizeof(macro_store));
-  macro->exp = walk_expr(body);
+  macro->exp = *clone_expr(&body);
   macro->args = clone(&argnames,sizeof(argnames));
   macro->arg_cnt = argcnt;
   compiler_define_variable_ptr(name, macro_store_type() , macro);
@@ -448,6 +454,7 @@ void builtin_macros_load(){
   define_macro("defcmacro", 3, defcmacro_macro);
   define_macro("expand",-1,expand_macro);
   define_macro("expr", 1, expr_macro);
+  //define_macro("unexpr", 1, unexpr_macro);
 
   opaque_expr();
   compiler_define_variable_ptr(get_symbol("walk-expr"), 
