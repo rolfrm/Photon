@@ -1,13 +1,15 @@
-#include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
 #include <ctype.h>
+#include <stdint.h>
+
 #include "lisp_parser.h"
 
-#include <stdint.h>
-#include <stdio.h>
-
-#include <iron/full.h>
+#include <iron/types.h>
+#include <iron/log.h>
+#include <iron/test.h>
+#include <iron/mem.h>
+#include <iron/array.h>
 char * take_while(char * data, bool (* fcn)(char char_code)){
   while(fcn(data[0])) data++;
   return data;
@@ -54,6 +56,7 @@ char * parse_symbol(char * code, value_expr * sym){
   sym->type = SYMBOL;
   return end;
 }
+
 char * read_to_end_of_string(char * code){
   while(true){
     code++;
@@ -145,7 +148,7 @@ char * parse_subexpr(char * code, sub_expr * subexpr){
   if(*code == ')'){
 
     subexpr->cnt = len;
-    subexpr->exprs = malloc(len * sizeof(expr));
+    subexpr->exprs = alloc(len * sizeof(expr));
     memcpy(subexpr->exprs, exprs, len * sizeof(expr));
 
     return code + 1;  
@@ -175,7 +178,7 @@ char * parse_expr(char * code, expr * out_expr){
   }
   
   value_expr value;
-  { // parse value. can be many things.
+  { // parse value.
     char * next = parse_value(code, &value);
     if(next != NULL){
       out_expr->value = value;
@@ -186,14 +189,13 @@ char * parse_expr(char * code, expr * out_expr){
   return NULL;
 }
 
-// not implemented yet
 void delete_expr(expr * expr){
   if(expr->type == EXPR){
     sub_expr sexpr = expr->sub_expr;
     for(size_t i = 0 ; i < sexpr.cnt; i++){
       delete_expr(sexpr.exprs + i);
     }
-    free(sexpr.exprs);
+    dealloc(sexpr.exprs);
   }
 }
 
@@ -204,8 +206,9 @@ char * value_type2str(value_type vt){
   case STRING: return "string";
   case COMMENT: return "comment";
   case SYMBOL: return "symbol";
-  default: return "error. unknown type";
   }
+  ASSERT_UNREACHABLE();
+  return NULL;
 }
 
 void print_expr(expr * expr1){
@@ -216,13 +219,13 @@ void print_expr(expr * expr1){
     
     switch(expr2->type){
     case EXPR:
-      //printf("%-7s: %*s %.*s \n","expr", indent, " ", value.strln, subexpr.name.value);
+      //logd("%-7s: %*s %.*s \n","expr", indent, " ", value.strln, subexpr.name.value);
       for(size_t i = 0 ; i < subexpr.cnt; i++){
 	iprint(subexpr.exprs + i,indent + 1);
       }
       break;
     case VALUE:
-      printf("%-7s: %*s  |%.*s|\n", value_type2str(value.type), indent, " ", value.strln,value.value);
+      logd("%-7s: %*s  |%.*s|\n", value_type2str(value.type), indent, " ", value.strln,value.value);
       break;
     }
   }
