@@ -8,11 +8,6 @@
 #include "type_pool.h"
 #include "expr_utils.h"
 #include "builtin_macros.h"
-	
-typedef struct{
-  c_root_code * c_code;
-  size_t code_cnt;
-}compiled_lisp;
 
 type_def * compile_value(c_value * val, value_expr e){
   val->type = C_INLINE_VALUE;

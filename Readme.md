@@ -33,7 +33,7 @@ V1 Release Checklist
 * [x] Equality "eq"
 * [x] conditionals "if"
 * [x] loops (while expr body) result is the output of the last item.
-* [ ] a better REPL (history, multi-line, line-edit)
+* [x] a better REPL (history, multi-line, line-edit)
 * [ ] proper literal strings
 * [ ] Structs
  * [ ] Defining
@@ -48,7 +48,8 @@ V1 Release Checklist
 * [ ] enums
 * [ ] function overloading macro
 * [ ] Fix massive memory leaks
-
+* [ ] Bugs / Stability
+* [ ] line number of error.
 
 Vn Features
 ---------

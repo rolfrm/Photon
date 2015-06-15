@@ -14,10 +14,7 @@ typedef enum{
   // Comments are ignored by the compiler
   COMMENT = 4,
   // Symbols are used first in functions.
-  SYMBOL = 5,
-  VOID = 6,
-  CVARADIC = 7, // c: ...
-  VALUE_TYPE_LAST
+  SYMBOL = 5
 }value_type;
 
 typedef struct{
