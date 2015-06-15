@@ -35,16 +35,17 @@ V1 Release Checklist
 * [x] loops (while expr body) result is the output of the last item.
 * [x] a better REPL (history, multi-line, line-edit)
 * [ ] proper literal strings
-* [ ] Structs
- * [ ] Defining
+* [x] Structs
+ * [x] Defining - structs can be defined using the type macro
  * [ ] member access
-* [ ] Arrays / pointers
-* [ ] sizeof macro.
-* [x] Lisp macros (tick/backtick syntax) choosen expr/unexpr equvivalent of tick/backtick
-* [ ] Standard library
+* [ ] Arrays / pointers - c-style deref
+* [ ] sizeof macro - size calculated at compile time.
+* [x] Lisp macros (tick/backtick syntax) choosen expr/unexpr equal of tick/backtick
+* [ ] ffi
+* [ ] Standard library - use ffi to bind c std lib
+ * [ ] libc
  * [ ] -ldl related
  * [ ] -lm related
-* [ ] ffi
 * [ ] enums
 * [ ] function overloading macro
 * [ ] Fix massive memory leaks
