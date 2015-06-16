@@ -115,3 +115,5 @@
 	  (write_line "bb")
 	  2))
     a))
+
+(deref "asd")

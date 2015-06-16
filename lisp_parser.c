@@ -207,7 +207,7 @@ char * value_type2str(value_type vt){
   case COMMENT: return "comment";
   case SYMBOL: return "symbol";
   }
-  ASSERT_UNREACHABLE();
+  UNREACHABLE();
   return NULL;
 }
 
