@@ -31,7 +31,7 @@ type_def * compile_value(c_value * val, value_expr e){
     val->raw.type = &i64_def;
     return type_pool_get(&i64_def);
     break;
-  default:
+  case COMMENT:
     break;
   }
   logd("type: %i\n", e.type);

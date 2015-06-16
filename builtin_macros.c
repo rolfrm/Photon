@@ -220,33 +220,6 @@ type_def * expand_macro(c_block * block, c_value * val, expr * exprs, size_t cnt
 
   expr * outexpr = expand_macro_store(fcn_var->data, exprs + 1, cnt - 1);
   return _compile_expr(block, val, *outexpr);
-
-  /*
-  size_t argcnt = fcn_type->fcn.cnt;
-  COMPILE_ASSERT(cnt == argcnt + 1);
-  void * d = fcn_var->data;
-  expr * result;
-  switch(argcnt){
-  case 0:
-    result = ((expr * (*)())d)();
-    break;
-  case 1:
-    result = ((expr * (*)(expr *))d)(exprs + 1);
-    break;
-  case 2:
-    result = ((expr * (*)(expr *, expr *))d)(exprs + 1, exprs + 2);
-    break;
-  case 3:
-    result = ((expr * (*)(expr *, expr *, expr *))d)(exprs + 1, exprs + 2, exprs + 3);
-    break;
-  case 4:
-    result = ((expr * (*)(expr *, expr *, expr *, expr *))d)(exprs + 1, exprs + 2, exprs + 3, exprs + 4);
-    break;
-  default:
-    ERROR("Not supported");
-  }  
-  logd("Got output..\n");
-  return _compile_expr(block, val, *result);*/
 }
 
 	  
@@ -277,8 +250,6 @@ type_def * defcmacro_macro(c_block * block, c_value * val, expr e_name, expr arg
   COMPILE_ASSERT(is_symbol(e_name));
   COMPILE_ASSERT(args.type == EXPR);
 
-
-
   size_t argcnt = args.sub_expr.cnt;
   expr * sexprs = args.sub_expr.exprs;
   symbol name = expr_symbol(e_name);
@@ -298,39 +269,6 @@ type_def * defcmacro_macro(c_block * block, c_value * val, expr e_name, expr arg
   macro->args = clone(&argnames,sizeof(argnames));
   macro->arg_cnt = argcnt;
   compiler_define_variable_ptr(name, macro_store_type() , macro);
-  /*c_root_code newfcn_root;
-  newfcn_root.type = C_FUNCTION_DEF;
-  c_fcndef * f = &newfcn_root.fcndef;
-  c_block * blk = &f->block;
-  c_value _val;
-  var_def * __vars = _vars;
-  
-  with_symbols(&__vars, &argcnt, lambda(void, (){
-	// this should happen at macro run time not macro compile time.
-	type_def * td = _compile_expr(blk, &_val, body);
-	if(td != exprtd){
-	  logd("got '"); print_min_type(td); logd("' expected '");
-	  print_min_type(exprtd); logd("'\n");
-	  ERROR("Types does not match");
-	}
-      }));
-  c_expr expr;
-  expr.value = _val;
-  expr.type = C_RETURN;
-  blk->exprs = &expr;
-  blk->expr_cnt = 1;
-  
-  type_def * args_type[argcnt];
-  for(size_t i = 0; i < argcnt; i++){
-    args_type[i] = exprtd;
-  }
-  type_def * fcnt = function_type(exprtd, argcnt, args_type);
-
-  //decl *fdecl = &f->fdecl;
-  f->name = name;
-  f->type = fcnt;
-  f->args = argnames;
-  compile_as_c(&newfcn_root,1);*/
   return compile_value(val, string_expr(symbol_name(name)).value);
 }
 
@@ -384,8 +322,7 @@ type_def * defun_macro(c_block * block, c_value * value, expr name, expr args, e
   blk->exprs = NULL;
   blk->expr_cnt = 0;
   
-  // ** get function decleration **
-  
+  // ** get function decleration ** //  
   f->name = fcnname;
   
   type_def * arg_types[args.sub_expr.cnt - 1];
@@ -432,10 +369,6 @@ type_def * defun_macro(c_block * block, c_value * value, expr name, expr args, e
   compile_as_c(&newfcn_root,1);
   // ** Just return the function name ** //
   return compile_value(value, string_expr(symbol_name(fcnname)).value);
-}
-
-void block_add(c_block * blk, c_expr expr){
-  list_add((void **) &blk->exprs, &blk->expr_cnt, &expr, sizeof(c_expr));
 }
 
 type_def * eq_macro(c_block * block, c_value * val, expr item1, expr item2){

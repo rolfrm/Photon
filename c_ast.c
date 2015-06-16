@@ -9,11 +9,11 @@
 #include <iron/test.h>
 #include <iron/fileio.h>
 #include <iron/mem.h>
+#include <iron/array.h>
 #include "lisp_parser.h"
 #include "lisp_types.h"
 #include "lisp_compiler.h"
 const c_block c_block_empty = {0,0};
-
 
 void add_var_dep(symbol * vdeps, symbol newdep){
   for(;!symbol_cmp(*vdeps, symbol_empty); vdeps++){
@@ -107,7 +107,8 @@ void c_root_code_dep(type_def ** deps, symbol * vdeps, c_root_code code){
     break;
   case C_TYPE_DEF:
     make_dependency_graph(deps, code.type_def);
-  default:
+  case C_INCLUDE:
+  case C_INCLUDE_LIB:
     break;
   }
 }
@@ -261,4 +262,8 @@ void print_c_code(c_root_code code){
     format(";\n");
     break;
   }
+}
+
+void block_add(c_block * blk, c_expr expr){
+  list_add((void **) &blk->exprs, &blk->expr_cnt, &expr, sizeof(c_expr));
 }
