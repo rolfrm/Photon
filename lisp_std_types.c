@@ -22,36 +22,36 @@ void r2(type_def * def){
 // call before anything else.
 void load_defs(){
   // simple types //
-  void_def = make_simple("void");
+  void_def = make_simple("void", sizeof(void));
   r(&void_def);
   void_ptr_def = make_ptr(&void_def);
   r2(&void_ptr_def);
-  error_def = make_simple("error");
+  error_def = make_simple("error",sizeof(u64));
   r2(&error_def);
-  char_def = make_simple("char");
+  char_def = make_simple("char",sizeof(char));
   r2(&char_def);
-  i64_def = make_simple("i64");
+  i64_def = make_simple("i64",sizeof(i64));
   r2(&i64_def);
-  i32_def = make_simple("i32");
+  i32_def = make_simple("i32",sizeof(i32));
   r2(&i32_def);
-  i16_def = make_simple("i16");
+  i16_def = make_simple("i16",sizeof(i16));
   r2(&i16_def);
-  i8_def = make_simple("i8");
+  i8_def = make_simple("i8",sizeof(i8));
   r2(&i8_def);
-  u64_def = make_simple("u64");
+  u64_def = make_simple("u64", sizeof(u64));
   r2(&u64_def);
-  u32_def = make_simple("u32");
+  u32_def = make_simple("u32", sizeof(u32));
   r2(&u32_def);
-  u16_def = make_simple("u16");
+  u16_def = make_simple("u16", sizeof(u16));
   r2(&u16_def);
-  u8_def = make_simple("u8");
+  u8_def = make_simple("u8", sizeof(u8));
   r2(&u8_def);
-  f32_def = make_simple("f32");
+  f32_def = make_simple("f32", sizeof(f32));
   r2(&f32_def);
-  f64_def = make_simple("f64");
+  f64_def = make_simple("f64", sizeof(f64));
   r2(&f64_def);
 
-  bool_def = make_simple("bool");
+  bool_def = make_simple("bool", sizeof(bool));
   r2(&bool_def);
   // pointers to simple types //
   char_ptr_def.type = POINTER;

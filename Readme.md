@@ -38,7 +38,7 @@ V1 Release Checklist
 * [x] Structs
  * [x] Defining - structs can be defined using the type macro
  * [ ] member access
-* [ ] Arrays / pointers - c-style deref
+* [x] Arrays / pointers - c-style deref
 * [ ] sizeof macro - size calculated at compile time.
 * [x] Lisp macros (tick/backtick syntax) choosen expr/unexpr equal of tick/backtick
 * [ ] ffi

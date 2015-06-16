@@ -69,11 +69,11 @@ void get_sub_types(type_def * t, type_def ** out_types){
   }
 }
 
-
-type_def make_simple(char * name){
+type_def make_simple(char * name, size_t s){
   static type_def def;
   def.type = SIMPLE;
   def.simple.name = get_symbol(name);
+  def.simple.size = s;
   return def;
 }
 
@@ -269,6 +269,44 @@ void _make_dependency_graph(type_def ** defs, type_def * def, bool nested){
     ERROR("Unknown type: %i",def->type);
     break;
   }
+}
+
+
+u64 size_of(type_def * t){
+  size_t s = 0;
+  switch(t->type){
+  case UNION:
+    for(int i = 0; i < t->cunion.cnt ; i++)
+      s = MAX(size_of(t->cunion.members[i].type), s);
+    return s;
+  case STRUCT:
+    for(int i = 0; i < t->cunion.cnt ; i++){
+	u64 thiss  = size_of(t->cstruct.members[i].type);
+	if(thiss > 4 - (s % 4)){
+	  s += (s % 4) + thiss;
+	}
+	else{
+	  s += thiss;
+	}
+      }
+    return s;
+  case FUNCTION:
+  case POINTER:
+  case ENUM:
+    return sizeof(void *);
+  case TYPEDEF:
+    return size_of(t->ctypedef.inner);
+  case OPAQUE_STRUCT:
+    ERROR("opq");
+    break;
+  case SIMPLE:
+    return t->simple.size;
+  case type_def_kind_cnt:
+    ERROR("Unknown type");
+    break;
+  }
+
+  return 0;
 }
 
 // if the code depends on *def it also depends on a number of other 

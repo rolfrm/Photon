@@ -86,12 +86,12 @@ symbol  get_symbol(char * name);
 symbol * get_symbol2(char * name);
 char * symbol_name(symbol s);
 bool symbol_cmp(symbol a, symbol b);
-
+u64 size_of(type_def * t);
 type_def * function_type(type_def * ret,size_t cnt, type_def ** ts);
 
 void print_cdecl(decl idecl);
 
-type_def make_simple(char * name);
+type_def make_simple(char * name, size_t s);
 type_def make_ptr(type_def * def);
 /*type_def * get_type_def(type_def def);
 type_def * get_type_from_string(char * name);

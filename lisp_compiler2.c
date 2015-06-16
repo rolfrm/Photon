@@ -366,6 +366,7 @@ void defun(char * name, type_def * t, void * fcn){
   compiler_define_variable_ptr(get_symbol(name), t, fcn);
 }
 
+
 void lisp_load_compiler(compiler_state * c){
   push_compiler(c);
 	
@@ -390,6 +391,7 @@ void lisp_load_compiler(compiler_state * c){
   defun("f-", d2t, double_sub);
   defun("f/", d2t, double_div);
   defun("f*", d2t, double_mul);
+  defun("size-of",str2type("(fcn u64 (type (ptr type_def)))"), &size_of);
   pop_compiler();
 }
 
@@ -502,13 +504,20 @@ bool test_lisp2c(){
   
   type_def * d = str2type("(alias (ptr type_def) td)");
   print_def(d);
-  type_def * d2 = str2type("(alias (struct _vec2 (x f32) (y f32)) vec2)");
+  type_def * d2 = str2type("(alias (struct _vec2 (x i16) (y i8) (z i16)) vec2)");
   print_def(d2);
   type_def * d3 = str2type("(ptr vec2)");
   print_def(d3);	
   type_def * d4 = str2type("(alias (struct _a) a)");
   print_def(d4);
-  
+
+  struct _vec2{
+    i16 x;
+    i8 x2;
+    i16 z;
+  };
+  logd("%i == %i\n",sizeof(struct _vec2), size_of(d2));
+  TEST_ASSERT(sizeof(struct _vec2) == size_of(d2));
 
   pop_compiler();
   return ret;
