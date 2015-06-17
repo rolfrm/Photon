@@ -88,6 +88,7 @@ type_def * _type_macro(expr typexpr){
 	COMPILE_ASSERT(sx.exprs[0].type == VALUE && sx.exprs[0].value.type == SYMBOL);
 	members[i].name = vexpr_symbol(sx.exprs[0].value);
 	members[i].type = _type_macro(sx.exprs[1]);
+	sub++;
       }
       type_def out;
       out.type = STRUCT;
