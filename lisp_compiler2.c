@@ -8,7 +8,7 @@
 #include "type_pool.h"
 #include "expr_utils.h"
 #include "builtin_macros.h"
-
+#include "builtin_functions.h"
 type_def * compile_value(c_value * val, value_expr e){
   val->type = C_INLINE_VALUE;
   var_def * vdef;
@@ -244,13 +244,6 @@ type_def * str2type(char * str){
   return _type_macro(lisp_parse1(str));
 }
 
-void print_type(type_def * def){
-  logd("type: '")print_def(def); logd("'\n");
-}
-void write_line(char * str){
-  logd("%s\n", str);
-}
-
 #include <libtcc.h>
 #include <stdlib.h>
 void tccerror(void * opaque, const char * msg){
@@ -355,44 +348,18 @@ void compile_as_c(c_root_code * codes, size_t code_cnt){
   tcc_delete(tccs);
 }
 
-i64 i64_add(i64 a, i64 b){
-  return a + b;
-}
-
-double double_add(double a, double b){ return a + b;}
-double double_sub(double a, double b){ return a - b;}
-double double_div(double a, double b){ return a / b;}
-double double_mul(double a, double b){ return a * b;}
-void defun(char * name, type_def * t, void * fcn){
-  compiler_define_variable_ptr(get_symbol(name), t, fcn);
-}
-
-
 void lisp_load_compiler(compiler_state * c){
   push_compiler(c);
 	
   // Types
   load_defs();
-  
+
+  // Macros
   builtin_macros_load();
 
   // Functions
-  type_def * type = str2type("(fcn void (a (ptr type_def)))");
-  compiler_define_variable_ptr(get_symbol("print_type"), type, print_type);
-  compiler_define_variable_ptr(get_symbol("write_line"), 
-			       str2type("(fcn void (a (ptr char)))"), &write_line);
-  compiler_define_variable_ptr(get_symbol("i64+"), 
-			       str2type("(fcn i64 (a i64) (b i64))"), &i64_add);
-  
-  compiler_define_variable_ptr(get_symbol("get-symbol"), 
-			       str2type("(fcn (ptr symbol) (a (ptr char)))"), get_symbol2);
-  
-  type_def * d2t =  str2type("(fcn f64 (a f64) (b f64))");
-  defun("f+", d2t, double_add);
-  defun("f-", d2t, double_sub);
-  defun("f/", d2t, double_div);
-  defun("f*", d2t, double_mul);
-  defun("size-of",str2type("(fcn u64 (type (ptr type_def)))"), &size_of);
+  load_functions();
+
   pop_compiler();
 }
 
@@ -471,8 +438,6 @@ void lisp_run_exprs(compiler_state * c, expr * exprs, size_t exprcnt){
 	  lisp_run_expr(exprs[i]);
 	}};));
 }
-
-
 
 void lisp_run_script_file(char * filepath){
   char * code = read_file_to_string(filepath);

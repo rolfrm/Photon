@@ -17,7 +17,7 @@ char * read_string(char * buffer){
       return NULL;
     buffer++;
   }
-  return buffer + 1;
+  return buffer;
 }
 
 char * read_paren(char * buffer){
@@ -28,7 +28,7 @@ char * read_paren(char * buffer){
       return NULL;
     buffer++;
   }
-  return buffer + 1;
+  return buffer;
 }
 
 bool check_expression(char * buffer){
