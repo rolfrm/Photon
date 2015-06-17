@@ -505,21 +505,29 @@ bool test_lisp2c(){
   
   type_def * d = str2type("(alias (ptr type_def) td)");
   print_def(d);
-  type_def * d2 = str2type("(alias (struct _vec2 (x i16) (y i8) (z i16)) vec2)");
+  type_def * d2 = str2type("(alias (struct _s1 (x i16) (y i8) (z i16) (x2 i16) (y2 i8) (z2 i16) (x3 i16) (y3 i8) (z3 i16)) s1)");
   print_def(d2);
-  type_def * d3 = str2type("(ptr vec2)");
+  type_def * d3 = str2type("(ptr s1)");
   print_def(d3);	
   type_def * d4 = str2type("(alias (struct _a) a)");
   print_def(d4);
 
-  struct _vec2{
+  struct _s1{
     i16 x;
-    i8 x2;
+    i8 y;
     i16 z;
+    i16 x2;
+    i8 y2;
+    i16 z2;
+    i16 x3;
+    i8 y3;
+    i16 z3;
   };
-  logd("%i == %i\n",sizeof(struct _vec2), size_of(d2));
-  TEST_ASSERT(sizeof(struct _vec2) == size_of(d2));
-
+  logd("sizes: %i %i\n",sizeof(struct _s1), size_of(d2));
+  TEST_ASSERT(sizeof(struct _s1) == size_of(d2));
+  TEST_ASSERT(sizeof(struct _s1 *) == size_of(d3));
+  
+  
   pop_compiler();
   return ret;
 }

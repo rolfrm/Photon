@@ -139,26 +139,28 @@ char * parse_subexpr(char * code, sub_expr * subexpr){
   code = take_while(code,is_whitespace);
   subexpr->exprs = NULL;
   subexpr->cnt = 0;
-  expr exprs[10];
-  int len = 0;
+  size_t len = 0;
 
  next_part:
   code = take_while(code,is_whitespace);
 
   if(*code == ')'){
 
-    subexpr->cnt = len;
-    subexpr->exprs = alloc(len * sizeof(expr));
-    memcpy(subexpr->exprs, exprs, len * sizeof(expr));
-
+    
     return code + 1;  
   }
-  code = parse_expr(code, exprs + len);
-  if(code == NULL)
+  expr e;
+  code = parse_expr(code, &e);
+  
+  if(code == NULL){
+    dealloc(subexpr->exprs);
+    subexpr->cnt = 0;
     return NULL;
-  if(exprs[len].type == VALUE && exprs[len].value.type == COMMENT){
+  }
+  if(e.type == VALUE && e.value.type == COMMENT){
     // skip comments
   }else{
+    list_add((void **) &subexpr->exprs, &subexpr->cnt, &e, sizeof(e));
     len++;
   }
   goto next_part;
@@ -324,6 +326,14 @@ bool test_empty(){
   return TEST_SUCCESS;
 }
 
+bool test_type_bug(){
+  char * code = "(alias (struct _s1 (x i16) (y i8) (z i16) (x2 i16) (y2 i8) (z2 i16) (x3 i16) (y3 i8) (z3 i16)) s1)";
+  size_t out_cnt = 0;
+  expr * exprs = lisp_parse_all(code, &out_cnt);
+  ASSERT(exprs->type == EXPR);
+  return TEST_SUCCESS;
+}
+
 bool test_lisp_parser(){
 
   TEST(test_empty);
@@ -336,6 +346,7 @@ bool test_lisp_parser(){
   for(int i = 0; i < exprs_count; i++)
     delete_expr(exprs + i);
   TEST(test_infinite_bug);
+  TEST(test_type_bug);
   return TEST_SUCCESS;
 }
 

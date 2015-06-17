@@ -282,12 +282,14 @@ u64 size_of(type_def * t){
   case STRUCT:
     for(int i = 0; i < t->cunion.cnt ; i++){
 	u64 thiss  = size_of(t->cstruct.members[i].type);
-	if(thiss > 4 - (s % 4)){
-	  s += (s % 4) + thiss;
+	u64 size_left = 4 - (s % 4); // size_left in 4 byte align block.
+	if(thiss > size_left){
+	  s += size_left + thiss;
 	}
 	else{
 	  s += thiss;
 	}
+	//logd("size: %i %i\n",s, thiss);
       }
     return s;
   case FUNCTION:
