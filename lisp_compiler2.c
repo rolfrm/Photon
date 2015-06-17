@@ -374,7 +374,10 @@ var_def * lisp_compile_expr(expr ex){
 
 void * lisp_compile_and_run_expr(expr ex){
   var_def * var = lisp_compile_expr(ex);
+  if(var == NULL)
+    return NULL;
   void * (*fcn)() = var->data;
+ 
   ASSERT(fcn != NULL);
   return fcn();
 }
@@ -382,6 +385,7 @@ void * lisp_compile_and_run_expr(expr ex){
 
 void lisp_run_expr(expr ex){
   var_def * evaldef = lisp_compile_expr(ex);
+  if(evaldef == NULL) return; //to do: make better.
   ASSERT(evaldef != NULL);
   print_def(evaldef->type->fcn.ret); logd(" :: ");
   type_def * ret = evaldef->type->fcn.ret;
