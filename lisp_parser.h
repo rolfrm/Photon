@@ -41,8 +41,11 @@ struct _expr{
 char * lisp_parse(char * code, expr * out_exprs, int * out_exprs_count);
 void delete_expr(expr * expr);
 void print_expr(expr * expr);
-bool test_lisp_parser();
 
+// convenience
 expr * lisp_parse_all(char * code, size_t * out_cnt);
 expr lisp_parse1(char * code);
 expr * clone_expr(expr * e);
+
+// test
+bool test_lisp_parser();

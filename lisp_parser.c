@@ -76,7 +76,7 @@ char * parse_string(char * code, value_expr * string){
   code++;
   char * end = read_to_end_of_string(code);
   string->value = code;
-  string->strln = (int) (end - code - 1); //-1: last "
+  string->strln = (int) (end - code - 1); // -1: do not include last \" 
   string->type = STRING;
   return end;
 }
@@ -127,7 +127,6 @@ char * parse_value(char * code, value_expr * val){
   if(next != NULL) return next;
   next = parse_symbol(code, val);
   if(next != NULL) return next;
-  
   return NULL;
 }
 char * parse_expr(char * code, expr * out_expr);
@@ -144,11 +143,8 @@ char * parse_subexpr(char * code, sub_expr * subexpr){
  next_part:
   code = take_while(code,is_whitespace);
 
-  if(*code == ')'){
-
-    
-    return code + 1;  
-  }
+  if(*code == ')') return code + 1;  
+  
   expr e;
   code = parse_expr(code, &e);
   
