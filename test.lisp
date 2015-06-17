@@ -108,12 +108,13 @@
   (progn 
     (setf a (+ a 1))
     (if (eq a 5)
-	(progn
-	  (write_line "aaa")
-	  1)
-	(progn
-	  (write_line "bb")
-	  2))
+	(progn (write_line "aaa") 1)
+	(progn (write_line "bbb") 2))
     a))
 
 (deref "asd")
+(defvar libc (load-lib "libc")) ;dlopen
+(defext libc malloc (fcn (ptr void) (size u64))) ;getsym??
+(defext libc free (fcn void (ptr (ptr void))))
+(free (malloc 10))
+(unload-lib libc) ;dlclose

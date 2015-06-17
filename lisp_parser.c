@@ -106,6 +106,7 @@ char * parse_single_line_comment(char * code, value_expr * val){
   bool is_comment(char c){
     return c != '\n';
   }
+  
   if(*code != ';')
     return NULL;
   char * r = take_while(code, is_comment);

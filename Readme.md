@@ -39,7 +39,7 @@ V1 Release Checklist
  * [x] Defining - structs can be defined using the type macro
  * [ ] member access
 * [x] Arrays / pointers - c-style deref
-* [ ] sizeof macro - size calculated at compile time.
+* [x] sizeof macro - size calculated at compile time.
 * [x] Lisp macros (tick/backtick syntax) choosen expr/unexpr equal of tick/backtick
 * [ ] ffi
 * [ ] Standard library - use ffi to bind c std lib
@@ -50,7 +50,7 @@ V1 Release Checklist
 * [ ] function overloading macro
 * [ ] Fix massive memory leaks
 * [ ] Bugs / Stability
-* [ ] line number of error.
+* [ ] line number of exprs.
 
 Vn Features
 ---------
