@@ -126,6 +126,7 @@
 (load-symbol libc (quote usleep) (quote usleep) (type (fcn void (time i32))))
 (write_line "asd")
 (printf "test: %i\n" 5)
+(write_line "the following works if libglfw is installed")
 
 (defvar libglfw (load-lib "libglfw.so"))
 (load-symbol libglfw (quote glfw-init) (quote glfwInit) (type (fcn void)))
