@@ -31,8 +31,7 @@ double double_mul(double a, double b){ return a * b;}
 i64 i64_add(i64 a, i64 b){ return a + b; }
 
 void load_functions(){
-type_def * type = str2type("(fcn void (a (ptr type_def)))");
-  defun("print_type", type, print_type);
+  defun("print_type", str2type("(fcn void (a (ptr type_def)))"), print_type);
   defun("write_line", str2type("(fcn void (a (ptr char)))"), &write_line);
   defun("i64+", str2type("(fcn i64 (a i64) (b i64))"), &i64_add);
   defun("get-symbol", str2type("(fcn (ptr symbol) (a (ptr char)))"), get_symbol2);
@@ -43,8 +42,7 @@ type_def * type = str2type("(fcn void (a (ptr type_def)))");
   defun("f/", d2t, double_div);
   defun("f*", d2t, double_mul);
   defun("size-of",str2type("(fcn u64 (type (ptr type_def)))"), &size_of);
-  type_def * libtype = str2type("(alias (ptr (opaque-struct _lib)) lib)");
-  print_def(libtype);format(" <-- \n");
+  str2type("(alias (ptr (opaque-struct _lib)) lib)"); // declare the lib tyoedef
   defun("load-lib",str2type("(fcn lib (libname (ptr char)))"), &load_lib);
   type_def * loadsymbol = str2type("(fcn void (_lib lib) (sym (ptr symbol)) (name (ptr symbol)) (t (ptr type_def)))");
   defun("load-symbol", loadsymbol, &load_symbol);
