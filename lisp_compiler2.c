@@ -28,8 +28,16 @@ type_def * compile_value(c_value * val, value_expr e){
     return type_pool_get(vdef->type);
   case NUMBER:
     val->raw.value = fmtstr("%.*s",e.strln,e.value);
-    val->raw.type = &i64_def;
-    return type_pool_get(&i64_def);
+    bool isfloat = false;
+    for(u32 i = 0; i < e.strln;i++){
+      if(e.value[i] == '.'){
+	isfloat = true;
+	break;
+      }
+    }
+    type_def *t  = isfloat ? &f64_def: &i64_def;
+    val->raw.type = t;
+    return t;
     break;
   case COMMENT:
     break;

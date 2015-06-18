@@ -32,14 +32,10 @@ i64 i64_add(i64 a, i64 b){ return a + b; }
 
 void load_functions(){
 type_def * type = str2type("(fcn void (a (ptr type_def)))");
-  compiler_define_variable_ptr(get_symbol("print_type"), type, print_type);
-  compiler_define_variable_ptr(get_symbol("write_line"), 
-			       str2type("(fcn void (a (ptr char)))"), &write_line);
-  compiler_define_variable_ptr(get_symbol("i64+"), 
-			       str2type("(fcn i64 (a i64) (b i64))"), &i64_add);
-  
-  compiler_define_variable_ptr(get_symbol("get-symbol"), 
-			       str2type("(fcn (ptr symbol) (a (ptr char)))"), get_symbol2);
+  defun("print_type", type, print_type);
+  defun("write_line", str2type("(fcn void (a (ptr char)))"), &write_line);
+  defun("i64+", str2type("(fcn i64 (a i64) (b i64))"), &i64_add);
+  defun("get-symbol", str2type("(fcn (ptr symbol) (a (ptr char)))"), get_symbol2);
   
   type_def * d2t =  str2type("(fcn f64 (a f64) (b f64))");
   defun("f+", d2t, double_add);

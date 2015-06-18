@@ -120,4 +120,4 @@
 ;; (unload-lib libc) ;dlclose
 (defvar libm (load-lib "libm.so"))
 (load-symbol libm (quote cos) (quote cos) (type (fcn f64 (x f64))))
-(cos (cast 3.14 f64))
+(cos 3.14)
