@@ -47,6 +47,7 @@ V1 Release Checklist
  * [ ] libc
  * [ ] -ldl related
  * [ ] -lm related
+* [ ] varadic functions
 * [ ] enums
 * [ ] function overloading macro
 * [ ] Fix massive memory leaks
