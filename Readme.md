@@ -42,13 +42,13 @@ V1 Release Checklist
 * [ ] address off. (ref obj)
 * [x] sizeof macro - size calculated at compile time.
 * [x] Lisp macros (tick/backtick syntax) choosen expr/unexpr equal of tick/backtick
-* [ ] ffi
+* [x] ffi
 * [ ] Standard library - use ffi to bind c std lib
  * [ ] libc
  * [ ] -ldl related
  * [ ] -lm related
 * [ ] varadic functions
-* [ ] enums
+* [ ] enums (Needs to be compatible with c macros but type safe)
 * [ ] function overloading macro
 * [ ] Fix massive memory leaks
 * [ ] Bugs / Stability

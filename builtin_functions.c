@@ -21,7 +21,10 @@ void * load_lib(char * path){
 }
 
 void load_symbol(void * lib, symbol * sym, symbol * name, type_def * t){
-  compiler_define_variable_ptr(*sym, t, dlsym(lib, get_c_name(*name)));
+  void * ptr = dlsym(lib, get_c_name(*name));
+  if(ptr == NULL) {loge("Error no such symbol '%s'", symbol_name(*name));}
+  else {compiler_define_variable_ptr(*sym, t, ptr);}
+
 }
 
 double double_add(double a, double b){ return a + b;}
