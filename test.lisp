@@ -127,8 +127,9 @@
 ;; Loading a library
 (defvar libm (load-lib "libm.so"))
 (load-symbol libm (quote cos) (quote cos) (type (fcn f64 (x f64))))
+(load-symbol libm (quote cosf) (quote cosf) (type (fcn f32 (x f32))))
 (cos 3.14)
-
+(cosf 3.14)
 
 
 
@@ -160,7 +161,7 @@
 
 (glfw-make-current win)
 
-(defvar gl:color-buffer-bit (cast 16384 i32))
+(defvar gl:color-buffer-bit (cast 0x4000 i32))
 (defvar r 0.0)
 (progn
   (gl-clear-color 1.0  1.0 1.0  1.0 )
