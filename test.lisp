@@ -141,6 +141,17 @@
 (load-symbol libgl (quote gl-clear) (quote glClear) (type (fcn void (mask i32))))
 (load-symbol libgl (quote gl-clear-color) (quote glClearColor) 
 	     (type (fcn void (r f32) (g f32) (b f32) (a f32))))
+(write_line "create-shader")
+(defvar gl:fragment-shader 0x8b30)
+(defvar gl:vertex-shader 0x8b31)
+(load-symbol libgl (quote gl:create-shader) (quote glCreateShader)
+	     (type (fcn u32 (type u32))))
+(load-symbol libgl (quote gl:shader-source) (quote glShaderSource)
+	     (type (fcn void 
+			(shader u32) 
+			(count u32) 
+			(shader-string (ptr (ptr char)))
+			(length (ptr u32)))))
 
 (glfw-init)
 (defvar win (glfw-create-window (cast 512 i32) (cast 512 i32) "test.." (cast 0 (ptr void)) (cast 0 (ptr void))))

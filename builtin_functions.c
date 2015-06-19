@@ -20,11 +20,12 @@ void * load_lib(char * path){
   return dlopen(path, RTLD_LAZY);
 }
 
-void load_symbol(void * lib, symbol * sym, symbol * name, type_def * t){
+void * load_symbol(void * lib, symbol * sym, symbol * name, type_def * t){
   void * ptr = dlsym(lib, get_c_name(*name));
-  if(ptr == NULL) {loge("Error no such symbol '%s'", symbol_name(*name));}
+  if(ptr == NULL) {
+    loge("Error no such symbol '%s'", symbol_name(*name));}
   else {compiler_define_variable_ptr(*sym, t, ptr);}
-
+  return ptr;
 }
 
 double double_add(double a, double b){ return a + b;}
@@ -47,6 +48,6 @@ void load_functions(){
   defun("size-of",str2type("(fcn u64 (type (ptr type_def)))"), &size_of);
   str2type("(alias (ptr (opaque-struct _lib)) lib)"); // declare the lib tyoedef
   defun("load-lib",str2type("(fcn lib (libname (ptr char)))"), &load_lib);
-  type_def * loadsymbol = str2type("(fcn void (_lib lib) (sym (ptr symbol)) (name (ptr symbol)) (t (ptr type_def)))");
+  type_def * loadsymbol = str2type("(fcn (ptr void) (_lib lib) (sym (ptr symbol)) (name (ptr symbol)) (t (ptr type_def)))");
   defun("load-symbol", loadsymbol, &load_symbol);
 }
