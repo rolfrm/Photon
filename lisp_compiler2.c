@@ -130,6 +130,20 @@ type_def * _type_macro(expr typexpr){
   return &error_def;
 }
 
+bool is_number_literal(expr ex){
+  return ex.type == VALUE && ex.value.type == NUMBER;
+}
+bool is_float_literal(expr ex){
+  if(is_number_literal(ex)){
+    for(size_t i = 0; i < ex.value.strln; i++){
+      if(ex.value.value[i] == '.'){
+	return true;
+      }
+    }
+  }
+  return false;
+}
+
 type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se){
   UNUSED(value);
   if(se->cnt == 0)
@@ -175,13 +189,23 @@ type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se){
     type_def * farg_types[argcnt];
     for(i64 i = 0; i < argcnt; i++){
       farg_types[i] = _compile_expr(block, fargs + i, args[i]);
+      
       if(type_pool_get(farg_types[i]) != type_pool_get(td->fcn.args[i])){
-	logd("ERROR: got '");
-	print_min_type(farg_types[i]);
-	logd("' expected '");
-	print_min_type(td->fcn.args[i]);
-	logd("'\n");
-	ERROR("Non matching types");
+	// handle literals.
+	bool is_number = is_number_literal(args[i]);
+	bool is_float = is_float_literal(args[i]);
+	bool is_integral = is_number && !is_float;
+	if(is_float_type(farg_types[i])&& is_number){
+	}else if(is_integral && is_integral_type(farg_types[i])){
+	  
+	}else{
+	  logd("ERROR: got '");
+	  print_min_type(farg_types[i]);
+	  logd("' expected '");
+	  print_min_type(td->fcn.args[i]);
+	  logd("'\n");
+	  ERROR("Non matching types");
+	}
       }
     }
     

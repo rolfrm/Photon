@@ -34,4 +34,7 @@ type_def fcn_def_def;
 type_def cmacro_def_def;
 type_def symbol_def;
 
+bool is_integral_type(type_def * td);
+bool is_float_type(type_def * td);
+
 void load_defs();

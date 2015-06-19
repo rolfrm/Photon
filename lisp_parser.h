@@ -18,9 +18,14 @@ typedef enum{
 }value_type;
 
 typedef struct{
+  
+}number_expr;
+
+typedef struct{
   value_type type;
   char * value;
   size_t strln;
+  bool is_hex;
 }value_expr;
 
 typedef struct _expr expr;

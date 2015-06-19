@@ -49,6 +49,16 @@
 (type (fcn f64 (a f64) (b f64))) ; a function that returns a f64 and takes two f64s. 
 (print_type (type (struct _vec2 (x f32) (y f32)))) ; this actually defines a struct named _vec2.
 (type (alias (ptr _vec2) vec2)) ; defines vec2 as a _vec2 struct.
+
+(defvar numbers:one 1)
+(defvar numbers:two 2)
+(defvar numbers:three 3)
+;(type (enum numbers (one 1) (two 2) (three 3)))
+;; alt:
+;(type (enum number-names (one "one") (two "two")))
+;(enum_value numbers one) ;; 1
+;numbers:three ;; 3
+
 (defvar xy :type vec2)
 
 ;; Types can be compared
@@ -113,14 +123,15 @@
     a))
 
 (deref "asd")
-;; (defvar libc (load-lib "libc")) ;dlopen
-;; (defext libc malloc (fcn (ptr void) (size u64))) ;getsym??
-;; (defext libc free (fcn void (ptr (ptr void))))
-;; (free (malloc 10))
-;; (unload-lib libc) ;dlclose
+
+;; Loading a library
 (defvar libm (load-lib "libm.so"))
 (load-symbol libm (quote cos) (quote cos) (type (fcn f64 (x f64))))
 (cos 3.14)
+
+
+
+
 (defvar libc (load-lib "/lib/x86_64-linux-gnu/libc.so.6"))
 (load-symbol libc (quote printf) (quote printf) (type (fcn void (fmt (ptr char)) (x i64))))
 (load-symbol libc (quote usleep) (quote usleep) (type (fcn void (time i32))))
@@ -142,47 +153,30 @@
 (load-symbol libgl (quote gl-clear-color) (quote glClearColor) 
 	     (type (fcn void (r f32) (g f32) (b f32) (a f32))))
 
+
 (glfw-init)
-(defvar win (glfw-create-window (cast 512 i32) (cast 512 i32) "test.." (cast 0 (ptr void)) (cast 0 (ptr void))))
+(defvar null (cast 0 (ptr void)))
+(defvar win (glfw-create-window 512 512 "test.." null null))
 
 (glfw-make-current win)
 
+(defvar gl:color-buffer-bit (cast 16384 i32))
 (defvar r 0.0)
 (progn
-  (gl-clear-color (cast 255.0 f32) (cast 1.0 f32) (cast 1.0 f32) (cast 1.0 f32))
-  (gl-clear (cast 16384 i32))
+  (gl-clear-color 1.0  1.0 1.0  1.0 )
+  (gl-clear gl:color-buffer-bit)
   (glfw-swap-buffers win)
-  (usleep (cast 250000 i32))
-  (gl-clear-color (cast 0.0 f32) (cast 0.0 f32) (cast 1.0 f32) (cast 1.0 f32))
-  (gl-clear (cast 16384 i32))
+  (usleep 250000)
+  (gl-clear-color 1.0  0.0 1.0  1.0 )
+  (gl-clear gl:color-buffer-bit)
   (glfw-swap-buffers win)
-  (usleep (cast 250000 i32))
-  (gl-clear-color (cast 0.0 f32) (cast 0.0 f32) (cast 1.0 f32) (cast 1.0 f32))
-  (gl-clear (cast 16384 i32))
+  (usleep 250000)
+  (gl-clear-color 0.0  0.0 1.0  1.0 )
+  (gl-clear gl:color-buffer-bit)
   (glfw-swap-buffers win)
-  (usleep (cast 250000 i32))
-  (gl-clear-color (cast 1.0 f32) (cast 0.0 f32) (cast 0.0 f32) (cast 1.0 f32))
-  (gl-clear (cast 16384 i32))
+  (usleep 250000)
+  (gl-clear-color 0.0  0.0 0.0  1.0 )
+  (gl-clear gl:color-buffer-bit)
   (glfw-swap-buffers win)
-  (usleep (cast 250000 i32))
-  (gl-clear-color (cast 0.0 f32) (cast 1.0 f32) (cast 0.0 f32) (cast 1.0 f32))
-  (gl-clear (cast 16384 i32))
-  (glfw-swap-buffers win)
-  (usleep (cast 250000 i32))
-  (gl-clear-color (cast 255.0 f32) (cast 1.0 f32) (cast 1.0 f32) (cast 1.0 f32))
-  (gl-clear (cast 16384 i32))
-  (glfw-swap-buffers win)
-  (usleep (cast 250000 i32))
-  (gl-clear-color (cast 0.0 f32) (cast 0.0 f32) (cast 1.0 f32) (cast 1.0 f32))
-  (gl-clear (cast 16384 i32))
-  (glfw-swap-buffers win)
-  (usleep (cast 250000 i32))
-  (gl-clear-color (cast 0.0 f32) (cast 0.0 f32) (cast 1.0 f32) (cast 1.0 f32))
-  (gl-clear (cast 16384 i32))
-  (glfw-swap-buffers win)
-  (usleep (cast 250000 i32))
-  (gl-clear-color (cast 1.0 f32) (cast 0.0 f32) (cast 0.0 f32) (cast 1.0 f32))
-  (gl-clear (cast 16384 i32))
-  (glfw-swap-buffers win)
-  (usleep (cast 250000 i32))
+  (usleep 250000)
   (write_line "done.."))
