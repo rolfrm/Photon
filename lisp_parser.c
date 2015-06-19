@@ -81,16 +81,65 @@ char * parse_string(char * code, value_expr * string){
   return end;
 }
 
+int is_hex(char chr){
+  switch(chr){
+  case '0':
+  case '1':
+  case '2':
+  case '3':
+  case '4':  
+  case '5':
+  case '6':
+  case '7':
+  case '8':
+  case '9':
+  case 'a':
+  case 'b':
+  case 'c':
+  case 'd':
+  case 'e':
+  case 'f':
+    return 1;
+  default:
+    return 0;
+  }
+}
+int is_digit(char chr){
+  switch(chr){
+  case '0':
+  case '1':
+  case '2':
+  case '3':
+  case '4':  
+  case '5':
+  case '6':
+  case '7':
+  case '8':
+  case '9':
+    return 1;
+  default:
+    return 0;
+  }
+}
 char * parse_number(char * code, value_expr * string){
   int decimal_reached = 0;
   char * it = code;
+  bool _is_hex = false;
   if(*it == '-') it++; //if negative
+
+  int (* val_chr)(char chr) = is_digit;
+
+  if(*it == '0' && it[1] == 'x') {
+    _is_hex = true;
+    it += 2;
+    val_chr = is_hex;
+  }
   for(; false == is_endexpr(*it); it++){
     if(*it == '.'){
       if(decimal_reached)
 	return NULL;
       decimal_reached = 1;
-    }else if(!isdigit(*it)){
+    }else if(!val_chr(*it)){
       return NULL;
     }
   }
@@ -99,6 +148,7 @@ char * parse_number(char * code, value_expr * string){
   string->value = code;
   string->type = NUMBER;
   string->strln = l;
+  string->is_hex = _is_hex;
   return it;
 }
 

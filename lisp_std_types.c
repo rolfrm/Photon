@@ -298,6 +298,23 @@ void load_defs(){
     members[2].type = &void_ptr_def;
     r2(&cmacro_def_def);
   }
-
 }
+
+bool is_integral_type(type_def * td){
+  if(td == &i64_def ||
+     td == &i32_def ||
+     td == &i16_def ||
+     td == &i8_def ||
+     td == &u64_def ||
+     td == &u32_def ||
+     td == &u16_def ||
+     td == &u8_def){
+    return true;
+  }
+  return false;
+}
+bool is_float_type(type_def * td){
+  return td == &f32_def || td == &f64_def;
+}
+
 
