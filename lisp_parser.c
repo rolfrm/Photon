@@ -129,8 +129,9 @@ char * parse_number(char * code, value_expr * string){
 
   int (* val_chr)(char chr) = is_digit;
 
-  if(*it == '0' && it[1] == 'x') {
+  if(*it == '0' && (it[1] == 'x' || it[1] == 'X')) {
     _is_hex = true;
+    decimal_reached = 1;
     it += 2;
     val_chr = is_hex;
   }

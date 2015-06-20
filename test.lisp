@@ -105,8 +105,6 @@
   (expr (progn
 	  (write_line (unexpr expr1))
 	  (unexpr expr2))))
-; `(write_line ,expr1))
-;(expr (unexpr (expr (unexpr "hello?")))))
 
 (expand fun-expr "hello" (write_line "WORLD!"))
 
@@ -132,13 +130,29 @@
 (cosf 3.14)
 
 
+(defcmacro load-symbol+ (lib name cname _type)
+  (expr (load-symbol (unexpr lib) 
+		     (quote (unexpr name))
+		     (quote (unexpr cname))
+		     (type (unexpr _type)))))
 
 (defvar libc (load-lib "/lib/x86_64-linux-gnu/libc.so.6"))
-(load-symbol libc (quote printf) (quote printf) (type (fcn void (fmt (ptr char)) (x i64))))
-(load-symbol libc (quote usleep) (quote usleep) (type (fcn void (time i32))))
+;(load-symbol libc (quote printf) (quote printf) (type ))
+;(load-symbol libc (quote usleep) (quote usleep) (type (fcn void (time i32))))
+;(expand load-symbol+ libc usleep usleep (fcn void (time i32)))
+(defcmacro load-libc (name type)
+  (expr (expand load-symbol+ libc (unexpr name) (unexpr name) (unexpr type))))
+
+(expand load-libc printf (fcn void (fmt (ptr char)) (x i64)))
+(expand load-libc usleep (fcn void (time i32)))
+(expand load-libc malloc (fcn (ptr i8) (bytes i64)))
+
 (write_line "asd")
 (printf "test: %i\n" 5)
 (write_line "the following works if libglfw is installed")
+
+(defcmacro comment (_expr)
+  (expr (write_line "lol..")))
 
 (defvar libglfw (load-lib "libglfw.so"))
 (load-symbol libglfw (quote glfw-init) (quote glfwInit) (type (fcn void)))
@@ -165,7 +179,6 @@
 			(shader-string (ptr (ptr char)))
 			(length (ptr u32)))))
 
-
 (glfw-init)
 (defvar null (cast 0 (ptr void)))
 (defvar win (glfw-create-window 512 512 "test.." null null))
@@ -178,17 +191,24 @@
   (gl-clear-color 1.0  1.0 1.0  1.0 )
   (gl-clear gl:color-buffer-bit)
   (glfw-swap-buffers win)
-  (usleep 250000)
+  (usleep 500000)
   (gl-clear-color 1.0  0.0 1.0  1.0 )
   (gl-clear gl:color-buffer-bit)
   (glfw-swap-buffers win)
-  (usleep 250000)
+  (usleep 500000)
   (gl-clear-color 0.0  0.0 1.0  1.0 )
   (gl-clear gl:color-buffer-bit)
   (glfw-swap-buffers win)
-  (usleep 250000)
+  (usleep 500000)
   (gl-clear-color 0.0  0.0 0.0  1.0 )
   (gl-clear gl:color-buffer-bit)
   (glfw-swap-buffers win)
-  (usleep 250000)
-  (write_line "done.."))
+  (usleep 500000)
+  (write_line "done..")
+  (+ 5 100))
+
+;; (while (eq 1 1) 
+;;   (progn
+;;     (write_line "hello..")
+;;     (malloc 1000000)))
+
