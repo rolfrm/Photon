@@ -44,18 +44,17 @@ V1 Release Checklist
 * [x] Lisp macros (tick/backtick syntax) choosen expr/unexpr equal of tick/backtick
 * [x] ffi
 * [x] literal hex values
-* [ ] lvalue checking (setf 1 10) is invalid for instance. (setf a 10) might be ok.
 * [ ] Standard library - use ffi to bind c std lib
  * [ ] libc
  * [ ] -ldl related
  * [ ] -lm related
-* [ ] varadic functions
-* [ ] enums (Needs to be compatible with c macros but type safe)
-* [ ] function overloading macro
+* [ ] function overloading macro / varadic functions
+* [ ] macros that do not require 'expand'
 * [ ] Fix massive memory leaks
 * [ ] Bugs / Stability
 * [ ] Propert error handling
 * [ ] line number of exprs.
+* [ ] lvalue checking (setf 1 10) is invalid for instance. (setf a 10) might be ok.
 
 Vn Features
 ---------
@@ -66,6 +65,7 @@ Vn Features
 * [ ] Front end optimizations like tail call optimizations, function inlining and constant propagation. Note: pure functions can be evaluated during constant propagation.
 * [ ] Bignums
 * [ ] SSE support
+* [ ] enums
 
 License
 ------

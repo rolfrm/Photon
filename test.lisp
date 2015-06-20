@@ -1,5 +1,5 @@
 ;; The following code runs / compiles
-
+(load "std.lisp")
 ;; Constants
 1 
 "hello world!"
@@ -14,23 +14,20 @@
 
 ;; Variables and functions can be named any unicode thing, except things starting with '('/')'
 ;; and they cannot contain whitespace either
-(defun + (i64 (a i64) (b i64))
-  (i64+ a b))
-(+ 1 5)
 
 ;; Defining / using variables
 (defvar test1 1)
-(defvar test2 (+ test1 1))
-(defvar test3 (+ test1 test2))
-(defvar test4 (+ test3 test2))
-(defvar test5 (+ test4 test3))
-(defvar test6 (+ test5 test4))
-(defvar test7 (+ test6 test5))
-(defvar test8 (+ test7 test6))
+(defvar test2 (i64+ test1 1))
+(defvar test3 (i64+ test1 test2))
+(defvar test4 (i64+ test3 test2))
+(defvar test5 (i64+ test4 test3))
+(defvar test6 (i64+ test5 test4))
+(defvar test7 (i64+ test6 test5))
+(defvar test8 (i64+ test7 test6))
 
-(+ test8 test8)
+(i64+ test8 test8)
 (setf test8 100) ; Setting a variable
-(+ test8 test7)
+(i64+ test8 test7)
 
 ;; Shallow comparison
 
@@ -111,11 +108,11 @@
 (if (eq 2 1) 2 3)
 
 (defvar a 0)
-(defun not (bool (x bool)) (eq (cast 0 bool) x))
+
 (write_line "gets here")
 (while (not (eq a 10))
   (progn 
-    (setf a (+ a 1))
+    (setf a (i64+ a 1))
     (if (eq a 5)
 	(progn (write_line "aaa") 1)
 	(progn (write_line "bbb") 2))
@@ -142,13 +139,64 @@
 ;(load-symbol libc (quote usleep) (quote usleep) (type (fcn void (time i32))))
 ;(expand load-symbol+ libc usleep usleep (fcn void (time i32)))
 (defcmacro load-libc (name type)
-  (expr (expand load-symbol+ libc (unexpr name) (unexpr name) (unexpr type))))
+  (expr 
+   (progn
+     
+     (expand load-symbol+ libc (unexpr name) (unexpr name) (unexpr type)))))
 
 (expand load-libc printf (fcn void (fmt (ptr char)) (x i64)))
 (expand load-libc usleep (fcn void (time i32)))
 (expand load-libc malloc (fcn (ptr void) (bytes i64)))
 (expand load-libc free (fcn void (ptr (ptr void))))
 (expand load-libc realloc (fcn (ptr void) (ptr (ptr void)) (bytes u64)))
+(expand load-libc memcpy (fcn void (dst (ptr void)) (src (ptr void)) (bytes u64)))
+(expand load-libc exit  (fcn void (status i32)))
+(defvar teststr "asdaasd")
+(defvar testarray (malloc 10))
+(memcpy testarray (cast teststr (ptr void)) 8)
+(write_line ")))))(((((")
+(write_line (cast testarray (ptr char)))
+(write_line ")))))(((((")
+
+(defun add-to-list (void (list (ptr (ptr void)))
+		    (cnt (ptr u64)) (data (ptr void)) (elem-size u64))
+  (progn
+     (setf (deref list) 
+	   (realloc (deref list) (u64* elem-size (u64+ (deref cnt) 1))))
+     (memcpy (cast
+	      (u64+ (cast (deref list) u64) (u64* (deref cnt) elem-size))
+	      (ptr void))
+	     data
+	     elem-size)
+     (setf (deref cnt) (u64+ (deref cnt) 1))
+     (write_line "lol")
+     ))
+(defvar add-test (cast null (ptr i64)))
+(defvar add-test-cnt (cast 0 u64))
+(defvar to-add (cast 15 i64))
+(add-to-list (cast (addrof add-test) (ptr (ptr void)))
+	     (addrof add-test-cnt)
+	     (cast (addrof to-add) (ptr void))
+	     (size-of (type i64)))
+(setf to-add 20)
+(add-to-list (cast (addrof add-test) (ptr (ptr void)))
+	     (addrof add-test-cnt)
+	     (cast (addrof to-add) (ptr void))
+	     (size-of (type i64)))
+(setf to-add 30)
+(add-to-list (cast (addrof add-test) (ptr (ptr void)))
+	     (addrof add-test-cnt)
+	     (cast (addrof to-add) (ptr void))
+	     (size-of (type i64)))
+(write_line "new deref:")
+(deref add-test)
+(deref (cast (u64+ (cast add-test u64)
+	     8) (ptr i64)))
+(deref (cast (u64+ (cast add-test u64)
+	     16) (ptr i64)))
+add-test-cnt
+(exit 0)
+
 (write_line "asd")
 (printf "test: %i\n" 5)
 (write_line "the following works if libglfw is installed")
@@ -157,17 +205,17 @@
   (expr (write_line "lol..")))
 
 (defvar libglfw (load-lib "libglfw.so"))
-(load-symbol libglfw (quote glfw-init) (quote glfwInit) (type (fcn void)))
-(load-symbol libglfw (quote glfw-create-window) (quote glfwCreateWindow) 
+(load-symbol libglfw (quote glfw:init) (quote glfwInit) (type (fcn void)))
+(load-symbol libglfw (quote glfw:create-window) (quote glfwCreateWindow) 
 	     (type (fcn (ptr void) (width i32) (height i32) 
 			(title (ptr char)) (a (ptr void)) (b (ptr void)))))
-(load-symbol libglfw (quote glfw-swap-buffers) (quote glfwSwapBuffers) 
+(load-symbol libglfw (quote glfw:swap-buffers) (quote glfwSwapBuffers) 
 	     (type (fcn void (a ( ptr void)))))
-(load-symbol libglfw (quote glfw-make-current) (quote glfwMakeContextCurrent) (type (fcn void (win (ptr void)))))
+(load-symbol libglfw (quote glfw:make-current) (quote glfwMakeContextCurrent) (type (fcn void (win (ptr void)))))
 
 (defvar libgl (load-lib "libGL.so"))
-(load-symbol libgl (quote gl-clear) (quote glClear) (type (fcn void (mask i32))))
-(load-symbol libgl (quote gl-clear-color) (quote glClearColor) 
+(load-symbol libgl (quote gl:clear) (quote glClear) (type (fcn void (mask i32))))
+(load-symbol libgl (quote gl:clear-color) (quote glClearColor) 
 	     (type (fcn void (r f32) (g f32) (b f32) (a f32))))
 (write_line "create-shader")
 (defvar gl:fragment-shader 0x8b30)
@@ -181,41 +229,47 @@
 			(shader-string (ptr (ptr char)))
 			(length (ptr u32)))))
 
-(glfw-init)
-(defvar null (cast 0 (ptr void)))
-(defvar win (glfw-create-window 512 512 "test.." null null))
+(glfw:init)
 
-(glfw-make-current win)
+(defvar win (glfw:create-window 512 512 "test.." null null))
+
+(glfw:make-current win)
 (defvar sleeptime (cast 10000 i32))
 (defvar gl:color-buffer-bit (cast 0x4000 i32))
 (defvar r 0.0)
 (progn
-  (gl-clear-color 1.0  1.0 1.0  1.0 )
-  (gl-clear gl:color-buffer-bit)
-  (glfw-swap-buffers win)
+  (gl:clear-color 1.0  1.0 1.0  1.0 )
+  (gl:clear gl:color-buffer-bit)
+  (glfw:swap-buffers win)
   (usleep sleeptime)
-  (gl-clear-color 1.0  0.0 1.0  1.0 )
-  (gl-clear gl:color-buffer-bit)
-  (glfw-swap-buffers win)
+  (gl:clear-color 1.0  0.0 1.0  1.0 )
+  (gl:clear gl:color-buffer-bit)
+  (glfw:swap-buffers win)
   (usleep sleeptime)
-  (gl-clear-color 0.0  0.0 1.0  1.0 )
-  (gl-clear gl:color-buffer-bit)
-  (glfw-swap-buffers win)
+  (gl:clear-color 0.0  0.0 1.0  1.0 )
+  (gl:clear gl:color-buffer-bit)
+  (glfw:swap-buffers win)
   (usleep sleeptime)
-  (gl-clear-color 0.0  0.0 0.0  1.0 )
-  (gl-clear gl:color-buffer-bit)
-  (glfw-swap-buffers win)
+  (gl:clear-color 0.0  0.0 0.0  1.0 )
+  (gl:clear gl:color-buffer-bit)
+  (glfw:swap-buffers win)
   (usleep sleeptime)
   (write_line "done..")
-  (+ 5 100))
+  (i64+ 5 100))
 
-;; testing memory corruption
+(defvar m (cast (malloc 100) (ptr char)))
+(setf (deref m) (deref "a"))
+(setf (deref m) (deref "œ"))
+
+;(load "overload.lisp")
+
+"SUCCESS!"
+
+;; testing for memory corruption
 (defvar a 0)
 (while (not (eq a 1000))
   (progn
-    (setf a (+ a 1))
+    (setf a (i64+ a 1))
     (free (realloc (malloc 1000) 2000))
     10
     ))
-(defvar m (cast (malloc 100) (ptr char)))
-(setf (deref m) (deref "a"))
