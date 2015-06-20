@@ -39,11 +39,12 @@ V1 Release Checklist
  * [x] Defining - structs can be defined using the type macro
  * [ ] member access
 * [x] Arrays / pointers - c-style deref
-* [ ] address off. (ref obj)
+* [x] address off. (ref obj)
 * [x] sizeof macro - size calculated at compile time.
 * [x] Lisp macros (tick/backtick syntax) choosen expr/unexpr equal of tick/backtick
 * [x] ffi
 * [x] literal hex values
+* [ ] lvalue checking (setf 1 10) is invalid for instance. (setf a 10) might be ok.
 * [ ] Standard library - use ffi to bind c std lib
  * [ ] libc
  * [ ] -ldl related

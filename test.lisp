@@ -107,11 +107,12 @@
 	  (unexpr expr2))))
 
 (expand fun-expr "hello" (write_line "WORLD!"))
-
+(write_line "gets here")
 (if (eq 2 1) 2 3)
+
 (defvar a 0)
 (defun not (bool (x bool)) (eq (cast 0 bool) x))
-
+(write_line "gets here")
 (while (not (eq a 10))
   (progn 
     (setf a (+ a 1))
@@ -214,12 +215,7 @@
   (progn
     (setf a (+ a 1))
     (free (realloc (malloc 1000) 2000))
+    10
     ))
-  
-
-
-;; (while (eq 1 1) 
-;;   (progn
-;;     (write_line "hello..")
-;;     (malloc 1000000)))
-
+(defvar m (cast (malloc 100) (ptr char)))
+(setf (deref m) (deref "a"))

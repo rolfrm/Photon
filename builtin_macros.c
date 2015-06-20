@@ -99,14 +99,16 @@ type_def * defvar_macro(c_block * block, c_value * val, expr * exprs, size_t cnt
 }
 
 type_def * setf_macro(c_block * block, c_value * val, expr name, expr body){
-  COMPILE_ASSERT(is_symbol(name));
-  symbol sym = expr_symbol(name);
+  //COMPILE_ASSERT(is_symbol(name));
+  //symbol sym = expr_symbol(name);
 
   c_value * vr = alloc0(sizeof(c_value));
   c_value * vl = alloc0(sizeof(c_value));
-  vl->type = C_SYMBOL;
-  vl->symbol = sym;
+  //vl->type = C_SYMBOL;
+  //vl->symbol = sym;
+  type_def * t1 = _compile_expr(block, vl, name);
   type_def * t = _compile_expr(block, vr, body);
+  TEST_ASSERT(t1 == t);
   val->type = C_OPERATOR;
   val->operator.left = vl;
   val->operator.right = vr;
@@ -402,12 +404,21 @@ type_def * if_macro(c_block * block, c_value * val, expr cnd, expr then, expr _e
   type_def * cmp = _compile_expr(block, inner_value, cnd);
   COMPILE_ASSERT(cmp == &bool_def);
 
+  c_expr then_expr;
+  then_expr.type = C_VALUE;
+  type_def * then_t = _compile_expr(block,&then_expr.value,then);
+  var_def tmpsym;
+  tmpsym.name = get_symbol("_tmp");
+  tmpsym.type = then_t;
+  size_t cnt = 1;
+  var_def * tmpsymptr = &tmpsym;
+  push_symbols(&tmpsymptr, &cnt);
+
   c_expr then_blk_expr;
   then_blk_expr.type = C_BLOCK;
   then_blk_expr.block = c_block_empty;
-  c_expr then_expr;
-  then_expr.type = C_VALUE;
-  type_def * then_t = setf_macro(&then_blk_expr.block, &then_expr.value, symbol_expr("_tmp"), then);
+  
+  then_t = setf_macro(&then_blk_expr.block, &then_expr.value, symbol_expr("_tmp"), then);
   block_add(&then_blk_expr.block, then_expr);
 
   c_expr elsexpr;
@@ -418,6 +429,7 @@ type_def * if_macro(c_block * block, c_value * val, expr cnd, expr then, expr _e
   else_blk_expr.block = c_block_empty;
   c_expr else_expr;
   else_expr.type = C_VALUE;
+
   type_def * else_t = setf_macro(&else_blk_expr.block, &else_expr.value, symbol_expr("_tmp"), _else);
   COMPILE_ASSERT(else_t == then_t);
   block_add(&else_blk_expr.block, else_expr);
@@ -436,7 +448,7 @@ type_def * if_macro(c_block * block, c_value * val, expr cnd, expr then, expr _e
   block_add(block, else_blk_expr);
   val->type = C_SYMBOL;
   val->symbol = get_symbol("_tmp");
-
+  pop_symbols();
   return else_t;
 }
 	  
@@ -453,12 +465,24 @@ type_def * while_macro(c_block * block, c_value * val, expr cnd, expr body){
   cmp_value->value = inner_value;
   type_def * cmp = _compile_expr(block, inner_value, cnd);
   COMPILE_ASSERT(cmp == &bool_def);
-  
+  c_value tmp;
+  c_block blk;
+  blk.exprs = NULL;
+  blk.expr_cnt = 0;
+  type_def * body_t = _compile_expr(&blk, &tmp, body);
   c_expr bodyexpr;
   bodyexpr.type = C_BLOCK;
   c_expr valuexpr;
   valuexpr.type = C_VALUE;
-  type_def * body_t = setf_macro(&bodyexpr.block, &valuexpr.value, symbol_expr("_tmp"), body);
+  var_def tmpsym;
+  tmpsym.name = get_symbol("_tmp");
+  tmpsym.type = body_t;
+  size_t cnt = 1;
+  var_def * tmpsymptr = &tmpsym;
+  push_symbols(&tmpsymptr, &cnt);
+
+  type_def * body_t2 = setf_macro(&bodyexpr.block, &valuexpr.value, symbol_expr("_tmp"), body);
+  COMPILE_ASSERT(body_t == body_t2);
   block_add(&bodyexpr.block, valuexpr);
   c_expr tmp_expr;
   tmp_expr.type = C_VAR;
@@ -473,7 +497,7 @@ type_def * while_macro(c_block * block, c_value * val, expr cnd, expr body){
 
   val->type = C_SYMBOL;
   val->symbol = get_symbol("_tmp");
-
+  pop_symbols();
   return body_t;
 }
 
