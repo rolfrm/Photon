@@ -193,9 +193,37 @@
 (deref (cast (u64+ (cast add-test u64)
 	     8) (ptr i64)))
 (deref (cast (u64+ (cast add-test u64)
-	     16) (ptr i64)))
+		   16) (ptr i64)))
 add-test-cnt
+
+(defcmacro show-type (exp)
+  (progn
+    (print_type (type-of exp))
+    (expr (write_line "..."))))
+
+(defcmacro size2 (exp)
+  (var ((s (size-of (type-of exp))))
+       (expr (unexpr s))))
+
+(expand show-type (addrof to-add))
+
+(defcmacro add-to-list+ (lst cnt item)
+  (expr 
+   (var ((lstptr (addrof (unexpr lst)))
+	 (cntptr (addrof (unexpr cnt)))
+	 (itemaddr (unexpr item)))
+	(add-to-list (cast lstptr (ptr (ptr void)))
+		     cntptr
+		     (cast itemaddr (ptr void))
+		     (unexpr (size-of  (type-of  item))))
+	)))
+
+;(expand add-to-list+ add-test add-test-cnt to-add)
+(expand size2 to-add)
 (exit 0)
+
+
+
 
 (write_line "asd")
 (printf "test: %i\n" 5)

@@ -56,10 +56,9 @@ type_def * var_macro(c_block * block, c_value * val, expr vars, expr body){
     list_add((void **) &block->exprs, &block->expr_cnt, cvars + i, sizeof(c_expr));
   }
   
-  type_def * ret_type;
-  with_symbols(&lisp_vars,&sexpr.cnt,lambda(void,(){
-	ret_type = _compile_expr(block,val,body);
-      }));
+  push_symbols(&lisp_vars, &sexpr.cnt);
+  type_def *ret_type = _compile_expr(block,val,body);
+  pop_symbols();
   return ret_type;
 }
 
@@ -202,8 +201,8 @@ expr * expand_macro_store(macro_store * ms, expr * exprs, size_t cnt){
   var_def * __vars = vars;
   var_def ** _vars = &__vars;
   push_symbols(_vars, &cnt);
-  expr * e1 = walk_expr2(&ms->exp);
-  expr * exp2 = lisp_compile_and_run_expr(*e1);
+  //expr * e1 = walk_expr2(&ms->exp);
+  expr * exp2 = lisp_compile_and_run_expr(ms->exp);
   pop_symbols();
   return exp2;
 }
@@ -234,7 +233,7 @@ type_def * expr_macro(c_block * block, c_value * val, expr body){
   sprintf(buf,"_tmp_symbol_%i",expr_idx++);
   
   symbol tmp = get_symbol(buf);
-  expr newbody = body;
+  expr newbody = walk_expr(body);
   expr * ex = clone(&newbody, sizeof(expr));
   compiler_define_variable_ptr(tmp, exprtd, clone(&ex,sizeof(expr *)));
   

@@ -42,8 +42,15 @@ u64 u64_sub(u64 a, u64 b){ return a - b; }
 u64 u64_mul(u64 a, u64 b){ return a * b; }
 u64 u64_div(u64 a, u64 b){ return a / b; }
 
-i32 i32_add(i32 a, i32 b) { return a + b; 
+i32 i32_add(i32 a, i32 b) { return a + b; }
+type_def * type_of(expr * ex){
+c_block blk;
+blk.exprs = NULL;
+blk.expr_cnt = 0;
+c_value val;
+return _compile_expr(&blk, &val, *ex);
 }
+
 void load_functions(){
   defun("print_type", str2type("(fcn void (a (ptr type_def)))"), print_type);
   defun("write_line", str2type("(fcn void (a (ptr char)))"), &write_line);
@@ -73,4 +80,5 @@ void load_functions(){
   defun("load-lib",str2type("(fcn lib (libname (ptr char)))"), &load_lib);
   type_def * loadsymbol = str2type("(fcn (ptr void) (_lib lib) (sym (ptr symbol)) (name (ptr symbol)) (t (ptr type_def)))");
   defun("load-symbol", loadsymbol, &load_symbol);
+defun("type-of",str2type("(fcn (ptr type_def) (expr (ptr expr)))"), type_of);
 }

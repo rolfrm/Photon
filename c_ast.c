@@ -67,7 +67,7 @@ void expr_dep(type_def ** deps, symbol * vdeps, c_expr expr){
   case C_VAR:
     make_dependency_graph(deps, expr.var.var.type);
     if(expr.var.value != NULL){
-      add_var_dep(vdeps, expr.var.var.name);
+      //add_var_dep(vdeps, expr.var.var.name);
       value_dep(deps, vdeps, *expr.var.value);
     }
 

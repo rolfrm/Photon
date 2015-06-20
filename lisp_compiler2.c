@@ -382,7 +382,9 @@ void compile_as_c(c_root_code * codes, size_t code_cnt){
 
 void lisp_load_compiler(compiler_state * c){
   push_compiler(c);
-	
+  
+  opaque_expr();
+  
   // Types
   load_defs();
 
