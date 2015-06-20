@@ -486,6 +486,17 @@ type_def * deref_macro(c_block * block, c_value * val, expr ptr){
   return td->ptr.inner;
 }
 
+type_def * addrof_macro(c_block * block, c_value * val, expr value){
+  c_value * _val = new(c_value);
+  type_def * td = _compile_expr(block, _val, value);
+  val->type = C_ADDRESS_OF;
+  val->value = _val;
+  type_def newtype;
+  newtype.type = POINTER;
+  newtype.ptr.inner = td;
+  return type_pool_get(&newtype);
+}
+
 void builtin_macros_load(){
   // Macros
   define_macro("type", 1, type_macro);
@@ -504,6 +515,7 @@ void builtin_macros_load(){
   define_macro("if", 3, if_macro);
   define_macro("while", 2, while_macro);
   define_macro("deref", 1, deref_macro);
+  define_macro("addrof", 1, addrof_macro);
   opaque_expr();
   compiler_define_variable_ptr(get_symbol("walk-expr"), 
 			       str2type("(fcn (ptr expr) (a (ptr expr)))"), walk_expr2);

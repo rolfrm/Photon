@@ -29,6 +29,7 @@ typedef enum{
   C_FUNCTION_CALL,
   C_OPERATOR,
   C_DEREF,
+  C_ADDRESS_OF,
   C_SYMBOL,
   C_CAST
 }c_value_kind;

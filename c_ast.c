@@ -43,6 +43,7 @@ void value_dep(type_def ** deps, symbol * vdeps, c_value val){
     break;
   case C_SUB_EXPR:
   case C_DEREF:
+  case C_ADDRESS_OF:
     value_dep(deps, vdeps, *val.value);
     break;
   case C_SYMBOL:
@@ -116,6 +117,10 @@ void c_root_code_dep(type_def ** deps, symbol * vdeps, c_root_code code){
 
 void print_value(c_value val){
   switch(val.type){
+  case C_ADDRESS_OF:
+    format("&");
+    print_value(*val.value);
+    break;
   case C_DEREF:
     format("*");
   case C_SUB_EXPR:

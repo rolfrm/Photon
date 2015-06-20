@@ -145,8 +145,9 @@
 
 (expand load-libc printf (fcn void (fmt (ptr char)) (x i64)))
 (expand load-libc usleep (fcn void (time i32)))
-(expand load-libc malloc (fcn (ptr i8) (bytes i64)))
-
+(expand load-libc malloc (fcn (ptr void) (bytes i64)))
+(expand load-libc free (fcn void (ptr (ptr void))))
+(expand load-libc realloc (fcn (ptr void) (ptr (ptr void)) (bytes u64)))
 (write_line "asd")
 (printf "test: %i\n" 5)
 (write_line "the following works if libglfw is installed")
@@ -184,28 +185,38 @@
 (defvar win (glfw-create-window 512 512 "test.." null null))
 
 (glfw-make-current win)
-
+(defvar sleeptime (cast 10000 i32))
 (defvar gl:color-buffer-bit (cast 0x4000 i32))
 (defvar r 0.0)
 (progn
   (gl-clear-color 1.0  1.0 1.0  1.0 )
   (gl-clear gl:color-buffer-bit)
   (glfw-swap-buffers win)
-  (usleep 500000)
+  (usleep sleeptime)
   (gl-clear-color 1.0  0.0 1.0  1.0 )
   (gl-clear gl:color-buffer-bit)
   (glfw-swap-buffers win)
-  (usleep 500000)
+  (usleep sleeptime)
   (gl-clear-color 0.0  0.0 1.0  1.0 )
   (gl-clear gl:color-buffer-bit)
   (glfw-swap-buffers win)
-  (usleep 500000)
+  (usleep sleeptime)
   (gl-clear-color 0.0  0.0 0.0  1.0 )
   (gl-clear gl:color-buffer-bit)
   (glfw-swap-buffers win)
-  (usleep 500000)
+  (usleep sleeptime)
   (write_line "done..")
   (+ 5 100))
+
+;; testing memory corruption
+(defvar a 0)
+(while (not (eq a 1000))
+  (progn
+    (setf a (+ a 1))
+    (free (realloc (malloc 1000) 2000))
+    ))
+  
+
 
 ;; (while (eq 1 1) 
 ;;   (progn
