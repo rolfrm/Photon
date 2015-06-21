@@ -6,3 +6,10 @@
 
 (defun write-line (void (str (ptr char)))
   (write_line str))
+
+(defvar libm (load-lib "libm.so"))
+(load-symbol libm (quote cos) (quote cos) (type (fcn f64 (x f64))))
+(load-symbol libm (quote cosf) (quote cosf) (type (fcn f32 (x f32))))
+(cos 3.14)
+(cosf 3.14)
+

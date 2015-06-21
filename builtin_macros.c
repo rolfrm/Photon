@@ -53,7 +53,7 @@ type_def * var_macro(c_block * block, c_value * val, expr vars, expr body){
     cvars[i].var = var;
   }
   for(size_t i = 0; i < sexpr.cnt; i++){
-    list_add((void **) &block->exprs, &block->expr_cnt, cvars + i, sizeof(c_expr));
+    block_add(block,cvars[i]);
   }
   
   push_symbols(&lisp_vars, &sexpr.cnt);
@@ -158,6 +158,8 @@ expr walk_expr(expr body){
     ASSERT(exp.cnt == 2);
     // it breaks here..
     expr * exp2 = lisp_compile_and_run_expr(exp.exprs[1]);
+    logd("Expanded: "); print_expr(exp2);
+    
     return *exp2;
     // special case not handled yet.
   }
@@ -201,7 +203,6 @@ expr * expand_macro_store(macro_store * ms, expr * exprs, size_t cnt){
   var_def * __vars = vars;
   var_def ** _vars = &__vars;
   push_symbols(_vars, &cnt);
-  //expr * e1 = walk_expr2(&ms->exp);
   expr * exp2 = lisp_compile_and_run_expr(ms->exp);
   pop_symbols();
   return exp2;
@@ -223,26 +224,148 @@ type_def * expand_macro(c_block * block, c_value * val, expr * exprs, size_t cnt
   return _compile_expr(block, val, *outexpr);
 }
 
-	  
-// expr turns makes a expr tree literal
+int recurse_count(expr ex){
+  if(ex.type == VALUE)
+    return 0;
+  sub_expr exp = ex.sub_expr;
+  if(exp.cnt > 0 && is_symbol(exp.exprs[0]) 
+     && expr_symbol(exp.exprs[0]).id == get_symbol("unexpr").id){
+    ASSERT(exp.cnt == 2);
+    return 1;
+  }
+  
+  int cnt = 0;
+  for(size_t i = 0; i < exp.cnt; i++)
+    cnt += recurse_count(exp.exprs[i]);    
+  return cnt;
+ 
+}
+
+expr recurse_expand(expr ex, expr ** exprs, int * cnt){
+  if(ex.type == VALUE)
+    return ex;
+  sub_expr exp = ex.sub_expr;
+  if(exp.cnt > 0 && is_symbol(exp.exprs[0]) 
+     && expr_symbol(exp.exprs[0]).id == get_symbol("unexpr").id){
+    ASSERT(exp.cnt == 2);
+    int idx = *cnt;
+    (*cnt)++;
+    return *exprs[idx];
+    // special case not handled yet.
+  }
+  expr sexp[exp.cnt];
+  for(size_t i = 0; i < exp.cnt; i++)
+    sexp[i] = recurse_expand(exp.exprs[i], exprs, cnt);    
+  expr new;
+  new.type = EXPR;
+  new.sub_expr.exprs = clone(sexp, sizeof(sexp));
+  new.sub_expr.cnt = exp.cnt;
+  return new;
+  
+}
+#include <stdarg.h>
+expr * expand_expr(expr * exprs, ...){
+  expr * first = exprs;
+  int nexprs = recurse_count(*first);
+  int cnt = 0;
+  va_list vl;
+  va_start(vl, exprs); 
+  
+  logd("-- EXPANDING %i--\n", nexprs);
+
+  print_expr(first);
+  expr * list[nexprs];
+  for(int i = 0; i < nexprs; i++){
+    list[i] =va_arg(vl, expr *);
+    ASSERT(list[i] != NULL);   
+    print_expr(list[i]);
+  }
+  va_end(vl);
+  logd(" -- OK -- \n");
+  expr _new = recurse_expand(*first, list, &cnt);
+  expr * cl = clone(&_new, sizeof(expr));
+  logd("expanded: |");
+  print_expr(cl);
+  logd("|\n");
+  return cl;
+}
+
+symbol get_recurse_sym(int id, int cnt){
+  char name_buffer[30];
+  sprintf(name_buffer, "_tmp_%i__%i_", id, cnt);
+  return get_symbol(name_buffer);
+}
+
+void recurse_expr(expr * ex, c_block * block, int id, int * cnt){
+  if(ex->type == VALUE)
+    return;
+  sub_expr exp = ex->sub_expr;
+  if(exp.cnt > 0 && is_symbol(exp.exprs[0]) 
+     && expr_symbol(exp.exprs[0]).id == get_symbol("unexpr").id){
+    ASSERT(exp.cnt == 2);
+    c_value cval;
+    type_def * t =_compile_expr(block, &cval, exp.exprs[1]);
+    c_var var;
+    var.var.name = get_recurse_sym(id,(*cnt)++);
+    var.var.type = t;
+    var.value = clone(&cval,sizeof(cval));
+    c_expr exp;
+    exp.type = C_VAR;
+    exp.var = var;
+    block_add(block, exp);
+    // special case not handled yet.
+  }else{
+    for(size_t i = 0; i < exp.cnt; i++)
+      recurse_expr(exp.exprs + i, block, id, cnt);    
+  }
+}
+
 type_def * expr_macro(c_block * block, c_value * val, expr body){
   UNUSED(block);
+  
   type_def * exprtd = opaque_expr();
   char buf[30];
   static int expr_idx = 0;
   sprintf(buf,"_tmp_symbol_%i",expr_idx++);
   
   symbol tmp = get_symbol(buf);
-  expr newbody = walk_expr(body);
-  expr * ex = clone(&newbody, sizeof(expr));
-  compiler_define_variable_ptr(tmp, exprtd, clone(&ex,sizeof(expr *)));
+  //expr newbody = body;
+  expr * ex = clone(&body, sizeof(expr));
+  static int id = 0;
+  int cnt = 0;
+  id++;
+  recurse_expr(ex, block, id, &cnt);
+  expr ** exx = alloc(sizeof(expr *));
+  *exx = ex;
+  compiler_define_variable_ptr(tmp, exprtd, exx);
   
-  expr e;
-  e.type = VALUE;
-  e.value.value = buf;
-  e.value.strln = strlen(buf);
-  e.value.type = SYMBOL;
-  return _compile_expr(block, val, e);
+  type_def ftype = *str2type("(fcn (ptr expr) (e (ptr expr)) )");
+  type_def * args[cnt + 2];
+  for(int i = 0; i < cnt + 2; i++)
+    args[i] = exprtd;
+  ftype.fcn.args = args;
+  ftype.fcn.cnt = cnt + 1;
+  c_value cargs[cnt + 1];
+  for(int i = 1; i < cnt + 1; i++){
+    cargs[i].type = C_SYMBOL;
+    cargs[i].symbol = get_recurse_sym(id, i - 1);
+  }
+  cargs[0].type = C_SYMBOL;
+  cargs[0].symbol = tmp;
+  type_def * ftype2 = type_pool_get(&ftype);
+  char _expandname[18];
+  sprintf(_expandname, "___expand%i",cnt);
+  symbol expandname = get_symbol(_expandname);
+  if(get_variable(expandname) == NULL)
+    defun(_expandname, ftype2, expand_expr);
+  val->type = C_FUNCTION_CALL;
+  val->call.name = expandname;
+  val->call.args = clone(cargs,sizeof(c_value) * (cnt + 2));
+  val->call.arg_cnt = cnt + 1;
+  val->call.type = ftype2;
+  val->call.args[0].type = C_SYMBOL;
+  val->call.args[0].symbol = tmp;
+  return exprtd;
 }
 
 
@@ -520,6 +643,16 @@ type_def * addrof_macro(c_block * block, c_value * val, expr value){
   return type_pool_get(&newtype);
 }
 
+expr * number2expr(i64 num){
+  char * str = fmtstr("%i",num);
+  expr e;
+  e.type = VALUE;
+  e.value.type = NUMBER;
+  e.value.value = str;
+  e.value.strln = strlen(str);
+  return clone(&e, sizeof(e));
+}
+
 void builtin_macros_load(){
   // Macros
   define_macro("type", 1, type_macro);
@@ -542,4 +675,7 @@ void builtin_macros_load(){
   opaque_expr();
   compiler_define_variable_ptr(get_symbol("walk-expr"), 
 			       str2type("(fcn (ptr expr) (a (ptr expr)))"), walk_expr2);
+  compiler_define_variable_ptr(get_symbol("___expand"), str2type("(fcn (ptr expr) (e (ptr expr)))"),expand_expr);
+  defun("number2expr",str2type("(fcn (ptr expr) (a i64))"), number2expr);
+			       
 }

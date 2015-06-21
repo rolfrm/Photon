@@ -269,17 +269,22 @@ void print_expr(expr * expr1){
     
     switch(expr2->type){
     case EXPR:
-      //logd("%-7s: %*s %.*s \n","expr", indent, " ", value.strln, subexpr.name.value);
+      logd("(");
       for(size_t i = 0 ; i < subexpr.cnt; i++){
 	iprint(subexpr.exprs + i,indent + 1);
+	if(i != (subexpr.cnt - 1)) logd(" ");
       }
+      logd(")");
       break;
     case VALUE:
-      logd("%-7s: %*s  |%.*s|\n", value_type2str(value.type), indent, " ", value.strln,value.value);
+      if(value.type == STRING) logd("\"");
+      logd("%.*s",value.strln ,value.value);
+      if(value.type == STRING) logd("\"");
       break;
     }
   }
   iprint(expr1,0);
+  logd("\n");
 }
 
 

@@ -85,6 +85,10 @@
 ;; (overload + f+)
 ;; (overload + i64+)
 
+(var ((a (expr "?/hello??")))
+     (print-expr (expr (write_line (unexpr a)))))
+(write_line "done")
+
 (defcmacro one_expr (expr1) expr1)
 (expand one_expr (write_line "??"))
 (defcmacro two-expr (expr1 expr2)
@@ -95,6 +99,7 @@
    (expr (progn (write_line "???") (write_line "!!!")))) 
 (expand no-expr)
 (expand no-expr)
+
 
 ;; a macro is really just a function that takes exprs and compiles them to code.
 ;; unexpr is evaluated at 
@@ -135,9 +140,6 @@
 		     (type (unexpr _type)))))
 
 (defvar libc (load-lib "/lib/x86_64-linux-gnu/libc.so.6"))
-;(load-symbol libc (quote printf) (quote printf) (type ))
-;(load-symbol libc (quote usleep) (quote usleep) (type (fcn void (time i32))))
-;(expand load-symbol+ libc usleep usleep (fcn void (time i32)))
 (defcmacro load-libc (name type)
   (expr 
    (progn
@@ -202,26 +204,34 @@ add-test-cnt
     (expr (write_line "..."))))
 
 (defcmacro size2 (exp)
-  (var ((s (size-of (type-of exp))))
-       (expr (unexpr s))))
+  (expr
+   (var ((s (size-of (type-of exp))))
+        (unexpr s))))
 
 (expand show-type (addrof to-add))
 
 (defcmacro add-to-list+ (lst cnt item)
-  (expr 
-   (var ((lstptr (addrof (unexpr lst)))
-	 (cntptr (addrof (unexpr cnt)))
-	 (itemaddr (unexpr item)))
-	(add-to-list (cast lstptr (ptr (ptr void)))
-		     cntptr
-		     (cast itemaddr (ptr void))
-		     (unexpr (size-of  (type-of  item))))
-	)))
+  (var ((size (size-of (type-of item))))
+       (var ((out-expr (expr 
+			(var ((lstptr (addrof (unexpr lst)))
+			      (cntptr (addrof (unexpr cnt)))
+			      (itemaddr (unexpr item)))
+			
+					(add-to-list (cast lstptr (ptr (ptr void)))
+						     cntptr
+						     (cast itemaddr (ptr void))
+						     (unexpr (number2expr (cast size i64))))
+					))))
+	    out-expr)))
 
-;(expand add-to-list+ add-test add-test-cnt to-add)
-(expand size2 to-add)
+(expand add-to-list+ add-test add-test-cnt to-add)
+;(expand size2 to-add)
+(defun test-expr ((ptr expr) (a (ptr expr)))
+  (expr (unexpr a)))
+;(test-expr 1)
+(defvar a (expr "lolol"))
+(print-expr (test-expr a));(expr (+ 1 (unexpr a))))
 (exit 0)
-
 
 
 

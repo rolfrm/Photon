@@ -10,7 +10,7 @@
  (alias
   (struct _overload
 	  (members (ptr overload-info))
-	  (member-cnt u64))
+	  (member-cnt i64))
   overload))
 
 
@@ -27,7 +27,7 @@
      (let ((it_ptr (member (deref overload) members))
 	   (it_cnt (member (deref overload) member-cnt))
 	   (found (cast null (ptr overload-info))))
-       (while (not (eq 0 (i64+ it_cnt 1)))
+       (while (not (eq -1 it_cnt))
 	 (progn
 	   (setf it_cnt (i64- it_cnt 1))
 	   (if (overload-eq (deref it_ptr) newoverload)
@@ -36,8 +36,15 @@
 		 (setf it_cnt 0))
 	       1)
 	   (setf it_ptr (cast (i64+ (cast it_ptr i64) 1) (ptr overload-info)))))
-       (if found
-	   1
+       (if (eq found (cast null (ptr overload-info)))
+	   (progn
+	     (add-to-list (addrof (member (deref overload) members))
+			  (addrof (member (deref overload) member-cnt))
+			  (addrof overload)
+			  (size-of overload-info))
+			  
+			  
+	     
 	   
 
 (defoverloaded +)
