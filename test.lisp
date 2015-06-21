@@ -252,7 +252,7 @@ void main(){
 (defvar frag-src-len (strlen frag-src))
 
 (defvar vert-src "
-#version 150
+#version 130
 in vec2 vertex_position;
 uniform vec2 offset;
 void main(){
