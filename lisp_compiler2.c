@@ -219,15 +219,11 @@ type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se){
     value->call.arg_cnt = argcnt;
     
     return td->fcn.ret;
+  }else if(fvar->type == macro_store_type()){
+    return expand_macro(block, value, se->exprs, se->cnt);
   }else{
+
     ERROR("Not supported.. %i\n", fvar->type->type);
-  }
-  type_def * sub_types[se->cnt];
-  UNUSED(sub_types);
-  c_value val[se->cnt];
-  for(size_t i = 0; i < se->cnt; i++){
-    expr * e = se->exprs + i;
-    sub_types[i] = _compile_expr(block, val + i, *e);
   }
   return &error_def;
 }

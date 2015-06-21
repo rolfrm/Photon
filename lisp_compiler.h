@@ -72,7 +72,8 @@ void compile_as_c(c_root_code * codes, size_t code_cnt);
 type_def * compile_value(c_value * val, value_expr e);
 
 void defun(char * sym, type_def * t, void * fcnptr);
-
+type_def * macro_store_type();
+type_def * expand_macro(c_block * block, c_value * val, expr * exprs, size_t cnt);
 // symbols
 void with_symbols(var_def ** vars, size_t * vars_cnt, void (*fcn)());
 void push_symbols(var_def ** vars, size_t * vars_cnt);

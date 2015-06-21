@@ -126,12 +126,6 @@
 (deref "asd")
 
 ;; Loading a library
-(defvar libm (load-lib "libm.so"))
-(load-symbol libm (quote cos) (quote cos) (type (fcn f64 (x f64))))
-(load-symbol libm (quote cosf) (quote cosf) (type (fcn f32 (x f32))))
-(cos 3.14)
-(cosf 3.14)
-
 
 (defcmacro load-symbol+ (lib name cname _type)
   (expr (load-symbol (unexpr lib) 
@@ -139,20 +133,25 @@
 		     (quote (unexpr cname))
 		     (type (unexpr _type)))))
 
+(defvar libm (load-lib "libm.so"))
+(load-symbol+ libm  cos cos  (fcn f64 (x f64)))
+(load-symbol+ libm  cosf cosf (fcn f32 (x f32)))
+(cos 3.14)
+(cosf 3.14)
+
 (defvar libc (load-lib "/lib/x86_64-linux-gnu/libc.so.6"))
 (defcmacro load-libc (name type)
   (expr 
-   (progn
-     
-     (expand load-symbol+ libc (unexpr name) (unexpr name) (unexpr type)))))
+     (load-symbol+ libc (unexpr name) (unexpr name) (unexpr type))))
 
-(expand load-libc printf (fcn void (fmt (ptr char)) (x i64)))
-(expand load-libc usleep (fcn void (time i32)))
-(expand load-libc malloc (fcn (ptr void) (bytes i64)))
-(expand load-libc free (fcn void (ptr (ptr void))))
-(expand load-libc realloc (fcn (ptr void) (ptr (ptr void)) (bytes u64)))
-(expand load-libc memcpy (fcn void (dst (ptr void)) (src (ptr void)) (bytes u64)))
-(expand load-libc exit  (fcn void (status i32)))
+(load-libc printf (fcn void (fmt (ptr char)) (x i64)))
+(load-libc usleep (fcn void (time i32)))
+(load-libc malloc (fcn (ptr void) (bytes i64)))
+(load-libc free (fcn void (ptr (ptr void))))
+(load-libc realloc (fcn (ptr void) (ptr (ptr void)) (bytes u64)))
+(load-libc memcpy (fcn void (dst (ptr void)) (src (ptr void)) (bytes u64)))
+(load-libc exit  (fcn void (status i32)))
+(exit 0)
 (defvar teststr "asdaasd")
 (defvar testarray (malloc 10))
 (memcpy testarray (cast teststr (ptr void)) 8)
@@ -221,9 +220,13 @@ add-test-cnt
 	    out-expr)))
 
 (expand add-to-list+ add-test add-test-cnt to-add)
-
+(expand add-to-list+ add-test add-test-cnt to-add)
+(expand add-to-list+ add-test add-test-cnt to-add)
+(expand add-to-list+ add-test add-test-cnt to-add)
+(expand add-to-list+ add-test add-test-cnt to-add)
+(expand add-to-list+ add-test add-test-cnt to-add)
 (write_line "asd")
-(printf "test: %i\n" 5)
+(printf "test: %i\n" (cast add-test-cnt i64))
 (write_line "the following works if libglfw is installed")
 
 (defcmacro comment (_expr)
@@ -247,6 +250,7 @@ add-test-cnt
 (defvar gl:vertex-shader 0x8b31)
 (load-symbol libgl (quote gl:create-shader) (quote glCreateShader)
 	     (type (fcn u32 (type u32))))
+
 (load-symbol libgl (quote gl:shader-source) (quote glShaderSource)
 	     (type (fcn void 
 			(shader u32) 

@@ -270,24 +270,13 @@ expr * expand_expr(expr * exprs, ...){
   int cnt = 0;
   va_list vl;
   va_start(vl, exprs); 
-  
-  logd("-- EXPANDING %i--\n", nexprs);
-
-  print_expr(first);
   expr * list[nexprs];
-  for(int i = 0; i < nexprs; i++){
+  for(int i = 0; i < nexprs; i++)
     list[i] =va_arg(vl, expr *);
-    ASSERT(list[i] != NULL);   
-    print_expr(list[i]);
-  }
+
   va_end(vl);
-  logd(" -- OK -- \n");
   expr _new = recurse_expand(*first, list, &cnt);
-  expr * cl = clone(&_new, sizeof(expr));
-  logd("expanded: |");
-  print_expr(cl);
-  logd("|\n");
-  return cl;
+  return clone(&_new, sizeof(expr));
 }
 
 symbol get_recurse_sym(int id, int cnt){
