@@ -256,7 +256,8 @@ add-test-cnt
 		   (length (ptr u32))))
 (load-symbol+ libgl gl:create-program glCreateProgram (fcn u32))
 (load-symbol+ libgl gl:compile-shader glCompileShader (fcn void (shader u32)))
-
+(load-symbol+ libgl gl:get-shader-info-log glGetShaderInfoLog 
+	      (fcn void (shader u32) (maxlength u32) (length (ptr u32)) (buffer (ptr char))))
 ;;GL_SHADER_TYPE, GL_DELETE_STATUS, GL_COMPILE_STATUS, GL_INFO_LOG_LENGTH, GL_SHADER_SOURCE_LENGTH.
 (defvar gl:shader-type (cast 0x8B4F u32))
 (defvar gl:delete-status (cast 0x8B80 u32))
@@ -298,6 +299,19 @@ void main(){
 (if (eq glstatus gl:true)
       (write-line "success!")
       (write-line "fail!"))
+(gl:shader-source vert 1 (addrof vert-src) (addrof vert-src-len))
+(gl:compile-shader vert)
+(gl:get-shader-info vert gl:compile-status (addrof glstatus))
+(if (eq glstatus gl:true)
+      (write-line "success!")
+      (write-line "fail!"))
+(defvar buffer (cast (malloc 1000) (ptr char)))
+(defvar length (cast 0 u32))
+(gl:get-shader-info-log vert 1000 (addrof length) buffer)
+length
+(write-line "--- INFO LOG ---")
+(write-line buffer)
+(write-line "----------------")
 (exit 0)
 (progn
   (gl:clear-color 1.0  1.0 1.0  1.0 )
