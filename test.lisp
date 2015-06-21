@@ -203,10 +203,6 @@ add-test-cnt
     (print_type (type-of exp))
     (expr (write_line "..."))))
 
-(defcmacro size2 (exp)
-  (expr
-   (var ((s (size-of (type-of exp))))
-        (unexpr s))))
 
 (expand show-type (addrof to-add))
 
@@ -215,7 +211,7 @@ add-test-cnt
        (var ((out-expr (expr 
 			(var ((lstptr (addrof (unexpr lst)))
 			      (cntptr (addrof (unexpr cnt)))
-			      (itemaddr (unexpr item)))
+			      (itemaddr (addrof (unexpr item))))
 			
 					(add-to-list (cast lstptr (ptr (ptr void)))
 						     cntptr
@@ -225,15 +221,6 @@ add-test-cnt
 	    out-expr)))
 
 (expand add-to-list+ add-test add-test-cnt to-add)
-;(expand size2 to-add)
-(defun test-expr ((ptr expr) (a (ptr expr)))
-  (expr (unexpr a)))
-;(test-expr 1)
-(defvar a (expr "lolol"))
-(print-expr (test-expr a));(expr (+ 1 (unexpr a))))
-(exit 0)
-
-
 
 (write_line "asd")
 (printf "test: %i\n" 5)
