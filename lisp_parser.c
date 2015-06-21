@@ -99,6 +99,12 @@ int is_hex(char chr){
   case 'd':
   case 'e':
   case 'f':
+  case 'A':
+  case 'B':
+  case 'C':
+  case 'D':
+  case 'E':
+  case 'F':
     return 1;
   default:
     return 0;

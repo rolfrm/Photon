@@ -31,7 +31,8 @@ typedef enum{
   C_DEREF,
   C_ADDRESS_OF,
   C_SYMBOL,
-  C_CAST
+  C_CAST,
+  C_NOTHING
 }c_value_kind;
 
 struct _c_value;

@@ -151,13 +151,12 @@
 (load-libc realloc (fcn (ptr void) (ptr (ptr void)) (bytes u64)))
 (load-libc memcpy (fcn void (dst (ptr void)) (src (ptr void)) (bytes u64)))
 (load-libc exit  (fcn void (status i32)))
-(exit 0)
+(load-libc strlen (fcn u32 (str (ptr char))))
+
 (defvar teststr "asdaasd")
 (defvar testarray (malloc 10))
 (memcpy testarray (cast teststr (ptr void)) 8)
-(write_line ")))))(((((")
 (write_line (cast testarray (ptr char)))
-(write_line ")))))(((((")
 
 (defun add-to-list (void (list (ptr (ptr void)))
 		    (cnt (ptr u64)) (data (ptr void)) (elem-size u64))
@@ -170,8 +169,8 @@
 	     data
 	     elem-size)
      (setf (deref cnt) (u64+ (deref cnt) 1))
-     (write_line "lol")
      ))
+
 (defvar add-test (cast null (ptr i64)))
 (defvar add-test-cnt (cast 0 u64))
 (defvar to-add (cast 15 i64))
@@ -203,7 +202,7 @@ add-test-cnt
     (expr (write_line "..."))))
 
 
-(expand show-type (addrof to-add))
+(show-type (addrof to-add))
 
 (defcmacro add-to-list+ (lst cnt item)
   (var ((size (size-of (type-of item))))
@@ -219,12 +218,12 @@ add-test-cnt
 					))))
 	    out-expr)))
 
-(expand add-to-list+ add-test add-test-cnt to-add)
-(expand add-to-list+ add-test add-test-cnt to-add)
-(expand add-to-list+ add-test add-test-cnt to-add)
-(expand add-to-list+ add-test add-test-cnt to-add)
-(expand add-to-list+ add-test add-test-cnt to-add)
-(expand add-to-list+ add-test add-test-cnt to-add)
+(add-to-list+ add-test add-test-cnt to-add)
+(add-to-list+ add-test add-test-cnt to-add)
+(add-to-list+ add-test add-test-cnt to-add)
+(add-to-list+ add-test add-test-cnt to-add)
+(add-to-list+ add-test add-test-cnt to-add)
+(add-to-list+ add-test add-test-cnt to-add)
 (write_line "asd")
 (printf "test: %i\n" (cast add-test-cnt i64))
 (write_line "the following works if libglfw is installed")
@@ -242,30 +241,64 @@ add-test-cnt
 (load-symbol libglfw (quote glfw:make-current) (quote glfwMakeContextCurrent) (type (fcn void (win (ptr void)))))
 
 (defvar libgl (load-lib "libGL.so"))
-(load-symbol libgl (quote gl:clear) (quote glClear) (type (fcn void (mask i32))))
-(load-symbol libgl (quote gl:clear-color) (quote glClearColor) 
-	     (type (fcn void (r f32) (g f32) (b f32) (a f32))))
+(load-symbol+ libgl gl:clear glClear  (fcn void (mask i32)))
+(load-symbol+ libgl gl:clear-color  glClearColor (fcn void (r f32) (g f32) (b f32) (a f32)))
 (write_line "create-shader")
-(defvar gl:fragment-shader 0x8b30)
-(defvar gl:vertex-shader 0x8b31)
-(load-symbol libgl (quote gl:create-shader) (quote glCreateShader)
-	     (type (fcn u32 (type u32))))
+(defvar gl:fragment-shader (cast 0x8b30 u32))
+(defvar gl:vertex-shader (cast 0x8b31 u32))
+(defvar gl:color-buffer-bit (cast 0x4000 i32))
+(load-symbol+ libgl gl:create-shader glCreateShader  (fcn u32 (type u32)))
+(load-symbol+ libgl gl:shader-source glShaderSource 
+	      (fcn void 
+		   (shader u32) 
+		   (count u32) 
+		   (shader-string (ptr (ptr char)))
+		   (length (ptr u32))))
+(load-symbol+ libgl gl:create-program glCreateProgram (fcn u32))
+(load-symbol+ libgl gl:compile-shader glCompileShader (fcn void (shader u32)))
 
-(load-symbol libgl (quote gl:shader-source) (quote glShaderSource)
-	     (type (fcn void 
-			(shader u32) 
-			(count u32) 
-			(shader-string (ptr (ptr char)))
-			(length (ptr u32)))))
-
+;;GL_SHADER_TYPE, GL_DELETE_STATUS, GL_COMPILE_STATUS, GL_INFO_LOG_LENGTH, GL_SHADER_SOURCE_LENGTH.
+(defvar gl:shader-type (cast 0x8B4F u32))
+(defvar gl:delete-status (cast 0x8B80 u32))
+(defvar gl:compile-status (cast 0x8B81 u32))
+(defvar gl:info-log-length (cast 0x8B84 u32))
+(defvar gl:shader-source-length (cast 0x8B88 u32))
+(defvar gl:true (cast 1 u32))
+(defvar gl:false (cast 0 u32))
+(load-symbol+ libgl gl:get-shader-info glGetShaderiv (fcn void (shader u32) (pname u32) (params (ptr u32))))
 (glfw:init)
 
 (defvar win (glfw:create-window 512 512 "test.." null null))
 
 (glfw:make-current win)
 (defvar sleeptime (cast 10000 i32))
-(defvar gl:color-buffer-bit (cast 0x4000 i32))
 (defvar r 0.0)
+(write-line "-- prog -- ")
+(defvar prog (gl:create-program))
+(defvar frag (gl:create-shader gl:fragment-shader))
+(defvar vert (gl:create-shader gl:vertex-shader))
+
+(defvar frag-src "
+void main(){
+  gl_FragColor = vec4(1.0,1.0,1.0,1.0);
+}
+")
+(defvar frag-src-len (strlen frag-src))
+
+(defvar vert-src "
+void main(){
+  gl_Position = vec4(0.0,0.0,0.0,1.0);
+}
+")
+(defvar vert-src-len (strlen vert-src))
+(gl:shader-source frag 1 (addrof frag-src) (addrof frag-src-len))
+(gl:compile-shader frag)
+(defvar glstatus (cast 0 u32))
+(gl:get-shader-info frag gl:compile-status (addrof glstatus))
+(if (eq glstatus gl:true)
+      (write-line "success!")
+      (write-line "fail!"))
+(exit 0)
 (progn
   (gl:clear-color 1.0  1.0 1.0  1.0 )
   (gl:clear gl:color-buffer-bit)

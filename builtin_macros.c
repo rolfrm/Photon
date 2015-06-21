@@ -469,7 +469,7 @@ type_def * defun_macro(c_block * block, c_value * value, expr name, expr args, e
   c_value val;
   with_symbols(&vars, &varcnt, lambda(void, (){
 	type_def * td = _compile_expr(blk,&val, body);
-	ASSERT(td == fcnt->fcn.ret);
+	ASSERT(fcnt->fcn.ret == &void_def || td == fcnt->fcn.ret);
       }));
   c_expr expr;
   if(fcnt->fcn.ret == &void_def){
@@ -518,6 +518,35 @@ type_def * if_macro(c_block * block, c_value * val, expr cnd, expr then, expr _e
   c_expr then_expr;
   then_expr.type = C_VALUE;
   type_def * then_t = _compile_expr(block,&then_expr.value,then);
+  if(then_t == &void_def){
+    // things get simpler
+    c_expr then_blk_expr;
+    then_blk_expr.type = C_BLOCK;
+    then_blk_expr.block = c_block_empty;
+    
+    then_t = _compile_expr(&then_blk_expr.block, &then_expr.value, then);
+    block_add(&then_blk_expr.block, then_expr);
+
+    c_expr elsexpr;
+    elsexpr.type = C_KEYWORD;
+    elsexpr.keyword = get_symbol("else");
+    c_expr else_blk_expr;
+    else_blk_expr.type = C_BLOCK;
+    else_blk_expr.block = c_block_empty;
+    c_expr else_expr;
+    else_expr.type = C_VALUE;
+    type_def * else_t = _compile_expr(&else_blk_expr.block, &else_expr.value, _else);
+    COMPILE_ASSERT(else_t == then_t);
+    block_add(&else_blk_expr.block, else_expr);
+
+    block_add(block, ifexpr);
+    block_add(block, cmpexpr);
+    block_add(block, then_blk_expr);
+    block_add(block, elsexpr);
+    block_add(block, else_blk_expr);
+    val->type = C_NOTHING;
+    return else_t;
+  }
   var_def tmpsym;
   tmpsym.name = get_symbol("_tmp");
   tmpsym.type = then_t;

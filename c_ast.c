@@ -26,7 +26,8 @@ void add_var_dep(symbol * vdeps, symbol newdep){
 void value_dep(type_def ** deps, symbol * vdeps, c_value val){
   var_def * var;
   switch(val.type){
-
+  case C_NOTHING:
+    break;
   case C_INLINE_VALUE:
     make_dependency_graph(deps, val.raw.type);
     break;
@@ -158,6 +159,8 @@ void print_value(c_value val){
     format(")");
     print_value(*val.cast.value);
     format(")");
+  case C_NOTHING:
+    break;
   }
 }
 
