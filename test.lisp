@@ -1,5 +1,10 @@
 ;; The following code runs / compiles
 (load "std.lisp")
+
+;(ptr+ "asddsa" 4)
+
+;(exit 0)
+
 ;; Constants
 1 
 "hello world!"
@@ -30,6 +35,7 @@
 (i64+ test8 test7)
 
 ;; Shallow comparison
+
 
 (defvar a 1)
 (defvar b 2)
@@ -69,6 +75,8 @@
 (cast 0.001 f32) ; Currently the only valid way of creating a float
 (cast 2.5 f64)
 
+
+
 ;; everything is symbol based
 (quote hello) ; creats a symbol named 'hello'
 (get-symbol "hello") ; creates a symbol from a string.
@@ -101,6 +109,7 @@
 (expand no-expr)
 
 
+
 ;; a macro is really just a function that takes exprs and compiles them to code.
 ;; unexpr is evaluated at 
 (defcmacro fun-expr (expr1 expr2)
@@ -125,33 +134,6 @@
 
 (deref "asd")
 
-;; Loading a library
-
-(defcmacro load-symbol+ (lib name cname _type)
-  (expr (load-symbol (unexpr lib) 
-		     (quote (unexpr name))
-		     (quote (unexpr cname))
-		     (type (unexpr _type)))))
-
-(defvar libm (load-lib "libm.so"))
-(load-symbol+ libm  cos cos  (fcn f64 (x f64)))
-(load-symbol+ libm  cosf cosf (fcn f32 (x f32)))
-(cos 3.14)
-(cosf 3.14)
-
-(defvar libc (load-lib "/lib/x86_64-linux-gnu/libc.so.6"))
-(defcmacro load-libc (name type)
-  (expr 
-     (load-symbol+ libc (unexpr name) (unexpr name) (unexpr type))))
-
-(load-libc printf (fcn void (fmt (ptr char)) (x i64)))
-(load-libc usleep (fcn void (time i32)))
-(load-libc malloc (fcn (ptr void) (bytes i64)))
-(load-libc free (fcn void (ptr (ptr void))))
-(load-libc realloc (fcn (ptr void) (ptr (ptr void)) (bytes u64)))
-(load-libc memcpy (fcn void (dst (ptr void)) (src (ptr void)) (bytes u64)))
-(load-libc exit  (fcn void (status i32)))
-(load-libc strlen (fcn u32 (str (ptr char))))
 
 (defvar teststr "asdaasd")
 (defvar testarray (malloc 10))
@@ -289,14 +271,7 @@ length
 glstatus
 (gl:use-program prog)
 
-(defcmacro ptr+ (ptr offset)
-  (var ((size_expr (number2expr (cast (size-of (ptr-inner (type-of ptr))) i64))))
-       (expr
-	(cast 
-	 (i64+ 
-	  (cast (unexpr ptr) i64)
-	  (i64* (unexpr offset) (unexpr size_expr)))
-	 (unexpr (type2expr (type-of ptr)))))))
+
 
 ;;; -- Load Vertex Buffer Object -- ;;;
 (defvar vbo (cast 0 u32))
@@ -325,6 +300,8 @@ uloc uloc uloc
 
 (defvar iteration 0)
 
+
+(ptr+ "asdasd" 2)
 (while (not (eq iteration 40))
   (progn
     (setf iteration (i64+ iteration 1))

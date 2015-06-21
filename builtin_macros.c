@@ -118,6 +118,7 @@ type_def * setf_macro(c_block * block, c_value * val, expr name, expr body){
 type_def * load_macro(c_block * block, c_value * val, expr file_name){
   COMPILE_ASSERT(is_string(file_name));
   char * filename = read_symbol(file_name);
+  logd("Loading: %s\n", filename); 
   lisp_run_script_file(filename);
   return _compile_expr(block, val, file_name);
 }
@@ -556,7 +557,8 @@ type_def * if_macro(c_block * block, c_value * val, expr cnd, expr then, expr _e
 
   c_expr then_blk_expr;
   then_blk_expr.type = C_BLOCK;
-  then_blk_expr.block = c_block_empty;
+  then_blk_expr.block.expr_cnt = 0;
+  then_blk_expr.block.exprs = NULL;
   
   then_t = setf_macro(&then_blk_expr.block, &then_expr.value, symbol_expr("_tmp"), then);
   block_add(&then_blk_expr.block, then_expr);
@@ -612,6 +614,8 @@ type_def * while_macro(c_block * block, c_value * val, expr cnd, expr body){
   type_def * body_t = _compile_expr(&blk, &tmp, body);
   c_expr bodyexpr;
   bodyexpr.type = C_BLOCK;
+  bodyexpr.block.exprs = NULL;
+  bodyexpr.block.expr_cnt = 0;
   c_expr valuexpr;
   valuexpr.type = C_VALUE;
   if( body_t != &void_def){

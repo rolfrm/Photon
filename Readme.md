@@ -49,7 +49,7 @@ V1 Release Checklist
  * [ ] -ldl related
  * [ ] -lm related
 * [ ] function overloading macro / varadic functions
-* [ ] macros that do not require 'expand'
+* [x] macros that do not require 'expand'
 * [ ] Fix massive memory leaks
 * [ ] Bugs / Stability
 * [ ] Propert error handling

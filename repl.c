@@ -48,7 +48,7 @@ bool check_expression(char * buffer){
   return true;
 }
 
-bool start_read_eval_print_loop(compiler_state * c){
+bool start_read_eval_print_loop(){
   log("PHOTON REPL\n");
   char * code = NULL;
   int expr_state = 0;
@@ -77,7 +77,7 @@ bool start_read_eval_print_loop(compiler_state * c){
     add_history(code);
     size_t exprcnt;
     expr * exprs = lisp_parse_all(code, &exprcnt);
-    lisp_run_exprs(c, exprs, exprcnt);
+    lisp_run_exprs( exprs, exprcnt);
     
   reset:
     dealloc(code);
@@ -90,6 +90,8 @@ bool start_read_eval_print_loop(compiler_state * c){
 void repl(){
   compiler_state * c = compiler_make();
   lisp_load_compiler(c);
-  start_read_eval_print_loop(c);
+  push_compiler(c);
+  start_read_eval_print_loop();
+  pop_compiler(c);
 }
 

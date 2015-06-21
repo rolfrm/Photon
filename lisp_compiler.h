@@ -40,7 +40,7 @@ compiler_state * compiler_make();
 var_def * lisp_compile_expr(expr ex);
 void * lisp_compile_and_run_expr(expr ex);
 void lisp_load_compiler(compiler_state * c);
-void lisp_run_exprs(compiler_state * c, expr * exprs, size_t exprcnt);
+void lisp_run_exprs(expr * exprs, size_t exprcnt);
 void lisp_run_script_string(char * code);
 // defines a variable pointer.
 void compiler_define_variable_ptr(symbol sym, type_def * t, void * ptr);

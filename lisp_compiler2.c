@@ -242,6 +242,8 @@ type_def * _compile_expr(c_block * block, c_value * val,  expr e ){
 }
 
 c_root_code compile_lisp_to_eval(expr exp){
+  logd("COMPILING\n");
+  print_expr(&exp);
   c_root_code r;
   c_fcndef * f = &r.fcndef;
   r.type = C_FUNCTION_DEF;
@@ -379,8 +381,6 @@ void compile_as_c(c_root_code * codes, size_t code_cnt){
 void lisp_load_compiler(compiler_state * c){
   push_compiler(c);
   
-  
-  
   // Types
   load_defs();
 
@@ -465,24 +465,21 @@ void lisp_run_expr(expr ex){
   }
 }
 
-void lisp_run_exprs(compiler_state * c, expr * exprs, size_t exprcnt){
-  lisp_load_compiler(c);
-  with_compiler(c,lambda(void, (){
-	for(size_t i = 0; i < exprcnt; i++){
-	  lisp_run_expr(exprs[i]);
-	}};));
+void lisp_run_exprs(expr * exprs, size_t exprcnt){
+  for(u32 i = 0; i < exprcnt; i++)
+    lisp_run_expr(exprs[i]);
 }
 
 void lisp_run_script_file(char * filepath){
   char * code = read_file_to_string(filepath);
   lisp_run_script_string(code);
-  dealloc(code);
+  // dealloc(code); //todo: fix leaks
 }
 
 void lisp_run_script_string(char * code){
   size_t exprcnt;
   expr * exprs = lisp_parse_all(code, &exprcnt);
-  lisp_run_exprs(get_compiler(), exprs, exprcnt);
+  lisp_run_exprs(exprs, exprcnt);
 }
 bool test_tcc();
 bool test_lisp2c(){
