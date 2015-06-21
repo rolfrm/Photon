@@ -42,6 +42,11 @@ u64 u64_sub(u64 a, u64 b){ return a - b; }
 u64 u64_mul(u64 a, u64 b){ return a * b; }
 u64 u64_div(u64 a, u64 b){ return a / b; }
 
+u32 u32_add(u32 a, u32 b){ return a + b; }
+u32 u32_sub(u32 a, u32 b){ return a - b; }
+u32 u32_mul(u32 a, u32 b){ return a * b; }
+u32 u32_div(u32 a, u32 b){ return a / b; }
+
 i32 i32_add(i32 a, i32 b) { return a + b; }
 type_def * type_of(expr * ex){
 c_block blk;
@@ -66,6 +71,11 @@ void load_functions(){
   defun("u64*",u64fcn_def , &u64_mul);
   defun("u64/",u64fcn_def , &u64_div);
 
+  type_def * u32fcn_def = str2type("(fcn u32 (a u32) (b u32))");
+  defun("u32+",u32fcn_def , &u32_add);
+  defun("u32-",u32fcn_def , &u32_sub);
+  defun("u32*",u32fcn_def , &u32_mul);
+  defun("u32/",u32fcn_def , &u32_div);
 
   defun("get-symbol", str2type("(fcn (ptr symbol) (a (ptr char)))"), get_symbol2);
   

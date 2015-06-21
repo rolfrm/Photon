@@ -230,51 +230,16 @@ add-test-cnt
 
 (defcmacro comment (_expr)
   (expr (write_line "lol..")))
-
-(defvar libglfw (load-lib "libglfw.so"))
-(load-symbol libglfw (quote glfw:init) (quote glfwInit) (type (fcn void)))
-(load-symbol libglfw (quote glfw:create-window) (quote glfwCreateWindow) 
-	     (type (fcn (ptr void) (width i32) (height i32) 
-			(title (ptr char)) (a (ptr void)) (b (ptr void)))))
-(load-symbol libglfw (quote glfw:swap-buffers) (quote glfwSwapBuffers) 
-	     (type (fcn void (a ( ptr void)))))
-(load-symbol libglfw (quote glfw:make-current) (quote glfwMakeContextCurrent) (type (fcn void (win (ptr void)))))
-
-(defvar libgl (load-lib "libGL.so"))
-(load-symbol+ libgl gl:clear glClear  (fcn void (mask i32)))
-(load-symbol+ libgl gl:clear-color  glClearColor (fcn void (r f32) (g f32) (b f32) (a f32)))
-(write_line "create-shader")
-(defvar gl:fragment-shader (cast 0x8b30 u32))
-(defvar gl:vertex-shader (cast 0x8b31 u32))
-(defvar gl:color-buffer-bit (cast 0x4000 i32))
-(load-symbol+ libgl gl:create-shader glCreateShader  (fcn u32 (type u32)))
-(load-symbol+ libgl gl:shader-source glShaderSource 
-	      (fcn void 
-		   (shader u32) 
-		   (count u32) 
-		   (shader-string (ptr (ptr char)))
-		   (length (ptr u32))))
-(load-symbol+ libgl gl:create-program glCreateProgram (fcn u32))
-(load-symbol+ libgl gl:compile-shader glCompileShader (fcn void (shader u32)))
-(load-symbol+ libgl gl:get-shader-info-log glGetShaderInfoLog 
-	      (fcn void (shader u32) (maxlength u32) (length (ptr u32)) (buffer (ptr char))))
-;;GL_SHADER_TYPE, GL_DELETE_STATUS, GL_COMPILE_STATUS, GL_INFO_LOG_LENGTH, GL_SHADER_SOURCE_LENGTH.
-(defvar gl:shader-type (cast 0x8B4F u32))
-(defvar gl:delete-status (cast 0x8B80 u32))
-(defvar gl:compile-status (cast 0x8B81 u32))
-(defvar gl:info-log-length (cast 0x8B84 u32))
-(defvar gl:shader-source-length (cast 0x8B88 u32))
-(defvar gl:true (cast 1 u32))
-(defvar gl:false (cast 0 u32))
-(load-symbol+ libgl gl:get-shader-info glGetShaderiv (fcn void (shader u32) (pname u32) (params (ptr u32))))
+(load "glfw.lisp")
+(load "gl.lisp")
 (glfw:init)
 
 (defvar win (glfw:create-window 512 512 "test.." null null))
 
 (glfw:make-current win)
-(defvar sleeptime (cast 10000 i32))
+(defvar sleeptime (cast 1000000 i32))
 (defvar r 0.0)
-(write-line "-- prog -- ")
+;;; -- Loa Shader Program -- ;;;
 (defvar prog (gl:create-program))
 (defvar frag (gl:create-shader gl:fragment-shader))
 (defvar vert (gl:create-shader gl:vertex-shader))
@@ -287,8 +252,9 @@ void main(){
 (defvar frag-src-len (strlen frag-src))
 
 (defvar vert-src "
+in vec2 vertex_position;
 void main(){
-  gl_Position = vec4(0.0,0.0,0.0,1.0);
+  gl_Position = vec4(vertex_position,0.0,1.0);
 }
 ")
 (defvar vert-src-len (strlen vert-src))
@@ -312,22 +278,48 @@ length
 (write-line "--- INFO LOG ---")
 (write-line buffer)
 (write-line "----------------")
-(exit 0)
+(gl:attach-shader prog frag)
+(gl:attach-shader prog vert)
+(gl:bind-attrib-location prog 0 "vertex_position")
+(gl:link-program prog)
+(gl:get-program-info prog gl:link-status (addrof glstatus))
+(write-line "status:")
+glstatus
+(gl:use-program prog)
+
+;;; -- Load Vertex Buffer Object -- ;;;
+(defvar vbo (cast 0 u32))
+(defvar vbo-data (cast (malloc (i64* 4 4)) (ptr f32))) ; 4 floats
+
+(gl:gen-buffers 1 (addrof vbo))
+(gl:bind-buffer gl:array-buffer vbo)
+
+(gl:buffer-data gl:array-buffer (u32* 4 4) (cast vbo-data (ptr void)) gl:static-draw)
+
+(gl:enable-vertex-attrib-array 0)
+(gl:bind-buffer gl:array-buffer vbo)
+(gl:vertex-attrib-pointer 0 3 gl:float gl:false 0 null) 
+(gl:get-error)
+;(exit 0)
 (progn
   (gl:clear-color 1.0  1.0 1.0  1.0 )
   (gl:clear gl:color-buffer-bit)
+  (gl:draw-arrays gl:points 0 4)
   (glfw:swap-buffers win)
   (usleep sleeptime)
   (gl:clear-color 1.0  0.0 1.0  1.0 )
   (gl:clear gl:color-buffer-bit)
+  (gl:draw-arrays gl:points 0 4)
   (glfw:swap-buffers win)
   (usleep sleeptime)
   (gl:clear-color 0.0  0.0 1.0  1.0 )
   (gl:clear gl:color-buffer-bit)
+  (gl:draw-arrays gl:points 0 4)
   (glfw:swap-buffers win)
   (usleep sleeptime)
   (gl:clear-color 0.0  0.0 0.0  1.0 )
   (gl:clear gl:color-buffer-bit)
+  (gl:draw-arrays gl:points 0 4)
   (glfw:swap-buffers win)
   (usleep sleeptime)
   (write_line "done..")
