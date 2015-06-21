@@ -614,30 +614,38 @@ type_def * while_macro(c_block * block, c_value * val, expr cnd, expr body){
   bodyexpr.type = C_BLOCK;
   c_expr valuexpr;
   valuexpr.type = C_VALUE;
-  var_def tmpsym;
-  tmpsym.name = get_symbol("_tmp");
-  tmpsym.type = body_t;
-  size_t cnt = 1;
-  var_def * tmpsymptr = &tmpsym;
-  push_symbols(&tmpsymptr, &cnt);
-
-  type_def * body_t2 = setf_macro(&bodyexpr.block, &valuexpr.value, symbol_expr("_tmp"), body);
-  COMPILE_ASSERT(body_t == body_t2);
+  if( body_t != &void_def){
+    var_def tmpsym;
+    tmpsym.name = get_symbol("_tmp");
+    tmpsym.type = body_t;
+    size_t cnt = 1;
+    var_def * tmpsymptr = &tmpsym;
+    push_symbols(&tmpsymptr, &cnt);
+    
+    setf_macro(&bodyexpr.block, &valuexpr.value, symbol_expr("_tmp"), body);
+  }else{
+    _compile_expr(&bodyexpr.block, &valuexpr.value, body);
+  }
   block_add(&bodyexpr.block, valuexpr);
-  c_expr tmp_expr;
-  tmp_expr.type = C_VAR;
-  tmp_expr.var.var.name = get_symbol("_tmp");
-  tmp_expr.var.var.type = body_t;
-  tmp_expr.var.value = NULL;
-  
-  block_add(block, tmp_expr);
+  if(body_t != &void_def){
+    c_expr tmp_expr;
+    tmp_expr.type = C_VAR;
+    tmp_expr.var.var.name = get_symbol("_tmp");
+    tmp_expr.var.var.type = body_t;
+    tmp_expr.var.value = NULL;
+    block_add(block, tmp_expr);
+  }
   block_add(block, whilexpr);
   block_add(block, cmpexpr);
   block_add(block, bodyexpr);
-
-  val->type = C_SYMBOL;
-  val->symbol = get_symbol("_tmp");
-  pop_symbols();
+  
+  if(body_t != &void_def){
+    val->type = C_SYMBOL;
+    val->symbol = get_symbol("_tmp");
+    pop_symbols();
+  }else{
+    val->type = C_NOTHING;
+  }
   return body_t;
 }
 

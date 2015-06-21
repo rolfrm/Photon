@@ -2,7 +2,7 @@
 #include "lisp_parser.h"
 #include "lisp_types.h"
 #include "lisp_compiler.h"
-
+#include "expr_utils.h"
 void defun(char * name, type_def * t, void * fcn){
   compiler_define_variable_ptr(get_symbol(name), t, fcn);
 }
@@ -14,6 +14,36 @@ void print_type(type_def * def){
 void write_line(char * str){
   logd("%s\n", str);
 }
+
+type_def * ptr_inner(type_def * ptr_def){
+  ASSERT(ptr_def->type == POINTER);
+  return ptr_def->ptr.inner;
+}
+
+expr _type2expr(type_def * type_def){
+  if(type_def->type == POINTER){
+    expr subs[2];
+    subs[0] = symbol_expr("ptr");
+    subs[1] = _type2expr(type_def->ptr.inner);
+    expr o;
+    o.type = EXPR;
+    o.sub_expr.exprs = clone(subs,sizeof(subs));
+    o.sub_expr.cnt = 2;
+    return o;
+  }
+  if(type_def->type == SIMPLE){
+    return symbol_expr2(type_def->simple.name);
+  }
+  ERROR("Not supported");
+  expr e;
+  return e;
+}
+
+expr * type2expr(type_def * ptr_def){
+  expr e = _type2expr(ptr_def);
+  return clone(&e, sizeof(e));
+}
+
 
 #include <dlfcn.h>
 void * load_lib(char * path){
@@ -90,6 +120,8 @@ void load_functions(){
   defun("load-lib",str2type("(fcn lib (libname (ptr char)))"), &load_lib);
   type_def * loadsymbol = str2type("(fcn (ptr void) (_lib lib) (sym (ptr symbol)) (name (ptr symbol)) (t (ptr type_def)))");
   defun("load-symbol", loadsymbol, &load_symbol);
-defun("type-of",str2type("(fcn (ptr type_def) (expr (ptr expr)))"), type_of);
-defun("print-expr", str2type("(fcn void (expr (ptr expr)))"), print_expr);
+  defun("type-of",str2type("(fcn (ptr type_def) (expr (ptr expr)))"), type_of);
+  defun("print-expr", str2type("(fcn void (expr (ptr expr)))"), print_expr);
+  defun("ptr-inner", str2type("(fcn (ptr type_def) (ptr (ptr type_def)))"),  ptr_inner);
+  defun("type2expr", str2type("(fcn (ptr expr) (t (ptr type_def)))"), type2expr);
 }

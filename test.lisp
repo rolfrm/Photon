@@ -237,7 +237,7 @@ add-test-cnt
 (defvar win (glfw:create-window 512 512 "test.." null null))
 
 (glfw:make-current win)
-(defvar sleeptime (cast 1000000 i32))
+(defvar sleeptime (cast 100000 i32))
 (defvar r 0.0)
 ;;; -- Loa Shader Program -- ;;;
 (defvar prog (gl:create-program))
@@ -253,8 +253,9 @@ void main(){
 
 (defvar vert-src "
 in vec2 vertex_position;
+uniform vec2 offset;
 void main(){
-  gl_Position = vec4(vertex_position,0.0,1.0);
+  gl_Position = vec4(vertex_position + offset,0.0,1.0);
 }
 ")
 (defvar vert-src-len (strlen vert-src))
@@ -287,43 +288,72 @@ length
 glstatus
 (gl:use-program prog)
 
+(defcmacro ptr+ (ptr offset)
+  (var ((size_expr (number2expr (cast (size-of (ptr-inner (type-of ptr))) i64))))
+       (expr
+	(cast 
+	 (i64+ 
+	  (cast (unexpr ptr) i64)
+	  (i64* (unexpr offset) (unexpr size_expr)))
+	 (unexpr (type2expr (type-of ptr)))))))
+
 ;;; -- Load Vertex Buffer Object -- ;;;
 (defvar vbo (cast 0 u32))
-(defvar vbo-data (cast (malloc (i64* 4 4)) (ptr f32))) ; 4 floats
-
+(defvar vbo-data (cast (malloc (i64* 8 4)) (ptr f32))) ; 4 floats
+(setf (deref (ptr+ vbo-data 2)) (cast 0.25 f32))
+(setf (deref (ptr+ vbo-data 4)) (cast 0.25 f32))
+(setf (deref (ptr+ vbo-data 5)) (cast 0.25 f32))
+(setf (deref (ptr+ vbo-data 7)) (cast 0.25 f32))
 (gl:gen-buffers 1 (addrof vbo))
 (gl:bind-buffer gl:array-buffer vbo)
 
-(gl:buffer-data gl:array-buffer (u32* 4 4) (cast vbo-data (ptr void)) gl:static-draw)
+(gl:buffer-data gl:array-buffer (u32* 8 4) (cast vbo-data (ptr void)) gl:static-draw)
 
 (gl:enable-vertex-attrib-array 0)
 (gl:bind-buffer gl:array-buffer vbo)
-(gl:vertex-attrib-pointer 0 3 gl:float gl:false 0 null) 
+(gl:vertex-attrib-pointer 0 2 gl:float gl:false 0 null) 
 (gl:get-error)
+
+
+
 ;(exit 0)
-(progn
-  (gl:clear-color 1.0  1.0 1.0  1.0 )
-  (gl:clear gl:color-buffer-bit)
-  (gl:draw-arrays gl:points 0 4)
-  (glfw:swap-buffers win)
-  (usleep sleeptime)
-  (gl:clear-color 1.0  0.0 1.0  1.0 )
-  (gl:clear gl:color-buffer-bit)
-  (gl:draw-arrays gl:points 0 4)
-  (glfw:swap-buffers win)
-  (usleep sleeptime)
-  (gl:clear-color 0.0  0.0 1.0  1.0 )
-  (gl:clear gl:color-buffer-bit)
-  (gl:draw-arrays gl:points 0 4)
-  (glfw:swap-buffers win)
-  (usleep sleeptime)
-  (gl:clear-color 0.0  0.0 0.0  1.0 )
-  (gl:clear gl:color-buffer-bit)
-  (gl:draw-arrays gl:points 0 4)
-  (glfw:swap-buffers win)
-  (usleep sleeptime)
-  (write_line "done..")
-  (i64+ 5 100))
+(defvar pts (cast 4 u32))
+(defvar drawtype gl:quads)
+(defvar uloc (gl:get-uniform-location prog "offset"));
+uloc uloc uloc
+
+(defvar iteration 0)
+
+(while (not (eq iteration 40))
+  (progn
+    (setf iteration (i64+ iteration 1))
+    (gl:clear-color 0.0  0.2 0.0  1.0 )
+    (gl:clear gl:color-buffer-bit)
+    (gl:uniform-2f uloc 0.0 0.0)
+    (gl:draw-arrays drawtype 0 pts)
+    (glfw:swap-buffers win)
+    
+    (usleep sleeptime)
+    (gl:clear-color 0.5  0.0 0.4  1.0 )
+    (gl:clear gl:color-buffer-bit)
+    (gl:uniform-2f uloc 0.2 0.2)
+    (gl:draw-arrays drawtype 0 pts)
+    (glfw:swap-buffers win)
+    (usleep sleeptime)
+    (gl:clear-color 0.0  0.0 0.2  1.0 )
+    (gl:clear gl:color-buffer-bit)
+    (gl:uniform-2f uloc 0.2 -0.2)
+    (gl:draw-arrays drawtype 0 pts)
+    
+    (glfw:swap-buffers win)
+    (usleep sleeptime)
+    
+    (gl:clear-color 0.0  0.0 0.0  1.0 )
+    (gl:clear gl:color-buffer-bit)
+    (gl:uniform-2f uloc -0.2 -0.2)
+    (gl:draw-arrays drawtype 0 pts)
+    (glfw:swap-buffers win)
+    (usleep sleeptime)))
 
 (defvar m (cast (malloc 100) (ptr char)))
 (setf (deref m) (deref "a"))

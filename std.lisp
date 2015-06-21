@@ -13,3 +13,12 @@
 (cos 3.14)
 (cosf 3.14)
 
+(defcmacro ptradd (ptr offset)
+  ptr)
+
+    ;; (var ((size_expr (number2expr (size-of (type-of ptr)))))
+    ;; 	 (progn
+    ;; 	   (write_line "expr:")
+    ;; 	   (print-expr size_expr)
+    ;; 	   size_expr))))
+    

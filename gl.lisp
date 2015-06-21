@@ -41,6 +41,11 @@
 	 (fcn void (index u32)))
 (gl-load gl:disable-vertex-attrib-array glDisableVertexAttribArray
 	 (fcn void (index u32)))							     
+
+;; gl uniformas
+(gl-load gl:get-uniform-location glGetUniformLocation (fcn i32 (program u32) (name (ptr char))))
+(gl-load gl:uniform-2f glUniform2f (fcn void (location i32) (v1 f32) (v2 f32)));
+
 ;; defines
 ;;GL_SHADER_TYPE, GL_DELETE_STATUS, GL_COMPILE_STATUS, GL_INFO_LOG_LENGTH, GL_SHADER_SOURCE_LENGTH.
 (defcmacro glvar (name value)
