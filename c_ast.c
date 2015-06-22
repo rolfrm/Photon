@@ -133,7 +133,14 @@ void print_value(c_value val){
     format("%s", val.raw.value);
     break;
   case C_FUNCTION_CALL:
-    format("%s(", get_c_name(val.call.name));
+    {
+      char * cname = get_c_name(val.call.name);
+      char * lname = symbol_name(val.call.name);
+      if(cname != lname){
+	format(" /*%s*/ %s(",symbol_name(val.call.name), cname);
+      }else{
+	format("%s(",symbol_name(val.call.name), cname);
+      }
     for(size_t i = 0; i < val.call.arg_cnt; i++){
       print_value(val.call.args[i]);
 
@@ -142,6 +149,7 @@ void print_value(c_value val){
       }
     }
     format(")");
+    }
     break;
   case C_OPERATOR:
     format("(");

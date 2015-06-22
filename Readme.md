@@ -44,10 +44,10 @@ V1 Release Checklist
 * [x] Lisp macros (tick/backtick syntax) choosen expr/unexpr equal of tick/backtick
 * [x] ffi
 * [x] literal hex values
-* [ ] Standard library - use ffi to bind c std lib
- * [ ] libc
- * [ ] -ldl related
- * [ ] -lm related
+* [x] Standard library - use ffi to bind c std lib
+ * [x] libc
+ * [x] -ldl related
+ * [x] -lm related
 * [ ] function overloading macro / varadic functions
 * [x] macros that do not require 'expand'
 * [ ] Fix massive memory leaks

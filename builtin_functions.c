@@ -34,6 +34,9 @@ expr _type2expr(type_def * type_def){
   if(type_def->type == SIMPLE){
     return symbol_expr2(type_def->simple.name);
   }
+  if(type_def->type == TYPEDEF){
+    return symbol_expr2(type_def->ctypedef.name);
+  }
   ERROR("Not supported");
   expr e;
   return e;

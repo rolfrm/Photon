@@ -7,6 +7,8 @@
 (defun write-line (void (str (ptr char)))
   (write_line str))
 
+
+
 (defvar libm (load-lib "libm.so"))
 (load-symbol libm (quote cos) (quote cos) (type (fcn f64 (x f64))))
 (load-symbol libm (quote cosf) (quote cosf) (type (fcn f32 (x f32))))
@@ -52,4 +54,55 @@
 	  (i64* (unexpr offset) (unexpr size_expr)))
 	 (unexpr (type2expr (type-of ptr)))))))
 (ptr+ "asdasd" 4)
-(write-line "------------ ASDASDASD --------")
+
+(defun add-to-list (void (list (ptr (ptr void)))
+		    (cnt (ptr u64)) (data (ptr void)) (elem-size u64))
+  (progn
+    (setf (deref list) 
+	  (realloc (deref list) (u64* elem-size (u64+ (deref cnt) 1))))
+    (memcpy (cast
+	     (u64+ (cast (deref list) u64) (u64* (deref cnt) elem-size))
+	     (ptr void))
+	    data
+	    elem-size)
+    (setf (deref cnt) (u64+ (deref cnt) 1))
+    ))
+
+(defcmacro add-to-list+ (lst cnt item)
+  (var ((size (size-of (type-of item))))
+       (var ((out-expr (expr 
+			(var ((lstptr (addrof (unexpr lst)))
+			      (cntptr (addrof (unexpr cnt)))
+			      (itemaddr (addrof (unexpr item))))
+			
+					(add-to-list (cast lstptr (ptr (ptr void)))
+						     cntptr
+						     (cast itemaddr (ptr void))
+						     (unexpr (number2expr (cast size i64))))
+					))))
+	    out-expr)))
+
+
+(defvar asserts (cast (malloc 0) (ptr (ptr expr))))
+(defvar asserts-cnt (cast 0 u64))
+(defvar last-assert :type (ptr expr))
+
+(defcmacro assert (_expr)
+  (progn
+    (add-to-list+ asserts asserts-cnt _expr)
+    (printf "--- %i\n" (cast asserts-cnt i64))
+    (expr
+     (if (not (unexpr _expr))
+  	 (progn
+  	   (write-line "ERROR")
+	    (print-expr 
+	     (deref 
+	      (ptr+ asserts 
+		    (unexpr (number2expr (cast (u64- asserts-cnt 1) i64))))))
+  	   (exit 1))
+  	 (write-line "OK")
+  	 ))))
+
+;(assert true)
+;(assert true)
+;(exit 0)

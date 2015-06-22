@@ -15,7 +15,7 @@
 
 ;; Defining functions
 (defun add (f64 (a f64) (b f64)) (f+ a b))
-(add (cast 45 f64) (cast 67 f64))
+(add 45 67)
 
 ;; Variables and functions can be named any unicode thing, except things starting with '('/')'
 ;; and they cannot contain whitespace either
@@ -140,18 +140,6 @@
 (memcpy testarray (cast teststr (ptr void)) 8)
 (write_line (cast testarray (ptr char)))
 
-(defun add-to-list (void (list (ptr (ptr void)))
-		    (cnt (ptr u64)) (data (ptr void)) (elem-size u64))
-  (progn
-     (setf (deref list) 
-	   (realloc (deref list) (u64* elem-size (u64+ (deref cnt) 1))))
-     (memcpy (cast
-	      (u64+ (cast (deref list) u64) (u64* (deref cnt) elem-size))
-	      (ptr void))
-	     data
-	     elem-size)
-     (setf (deref cnt) (u64+ (deref cnt) 1))
-     ))
 
 (defvar add-test (cast null (ptr i64)))
 (defvar add-test-cnt (cast 0 u64))
@@ -172,12 +160,9 @@
 	     (size-of (type i64)))
 (write_line "new deref:")
 (deref add-test)
-(deref (cast (u64+ (cast add-test u64)
-	     8) (ptr i64)))
-(deref (cast (u64+ (cast add-test u64)
-		   16) (ptr i64)))
+(deref (ptr+ add-test 1))
+(deref (ptr+ add-test 2))
 add-test-cnt
-
 (defcmacro show-type (exp)
   (progn
     (print_type (type-of exp))
@@ -186,19 +171,6 @@ add-test-cnt
 
 (show-type (addrof to-add))
 
-(defcmacro add-to-list+ (lst cnt item)
-  (var ((size (size-of (type-of item))))
-       (var ((out-expr (expr 
-			(var ((lstptr (addrof (unexpr lst)))
-			      (cntptr (addrof (unexpr cnt)))
-			      (itemaddr (addrof (unexpr item))))
-			
-					(add-to-list (cast lstptr (ptr (ptr void)))
-						     cntptr
-						     (cast itemaddr (ptr void))
-						     (unexpr (number2expr (cast size i64))))
-					))))
-	    out-expr)))
 
 (add-to-list+ add-test add-test-cnt to-add)
 (add-to-list+ add-test add-test-cnt to-add)

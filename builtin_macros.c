@@ -537,7 +537,7 @@ type_def * if_macro(c_block * block, c_value * val, expr cnd, expr then, expr _e
     c_expr else_expr;
     else_expr.type = C_VALUE;
     type_def * else_t = _compile_expr(&else_blk_expr.block, &else_expr.value, _else);
-    COMPILE_ASSERT(else_t == then_t);
+    UNUSED(else_t);
     block_add(&else_blk_expr.block, else_expr);
 
     block_add(block, ifexpr);
@@ -546,7 +546,7 @@ type_def * if_macro(c_block * block, c_value * val, expr cnd, expr then, expr _e
     block_add(block, elsexpr);
     block_add(block, else_blk_expr);
     val->type = C_NOTHING;
-    return else_t;
+    return then_t;
   }
   var_def tmpsym;
   tmpsym.name = get_symbol("_tmp");
@@ -674,7 +674,9 @@ type_def * addrof_macro(c_block * block, c_value * val, expr value){
 }
 
 expr * number2expr(i64 num){
+
   char * str = fmtstr("%i",num);
+  logd("number2expr: %s\n", str);
   expr e;
   e.type = VALUE;
   e.value.type = NUMBER;
