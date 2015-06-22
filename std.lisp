@@ -88,21 +88,44 @@
 (defvar last-assert :type (ptr expr))
 
 (defcmacro assert (_expr)
-  (progn
-    (add-to-list+ asserts asserts-cnt _expr)
-    (printf "--- %i\n" (cast asserts-cnt i64))
-    (expr
-     (if (not (unexpr _expr))
-  	 (progn
-  	   (write-line "ERROR")
-	    (print-expr 
-	     (deref 
-	      (ptr+ asserts 
-		    (unexpr (number2expr (cast (u64- asserts-cnt 1) i64))))))
-  	   (exit 1))
-  	 (write-line "OK")
-  	 ))))
+  (var ((n (number2expr (cast asserts-cnt i64))))
+       (progn
+	 (print-expr n)
+	 (add-to-list+ asserts asserts-cnt _expr)
+	 (printf "--- %i\n" (cast asserts-cnt i64))
+	 (expr
+	  (if (not (unexpr _expr))
+	      (progn
+		(write-line "ERROR")
+		(print-expr 
+		 (deref 
+		  (ptr+ asserts (unexpr n))))
+		(exit 1))
+	      (write-line "OK")
+	      )))))
+(defvar l:item-test (cast null (ptr i64)))
+(defvar l:item-cnt (cast 0 u64))
+(defvar l:test-item 1)
+
+(add-to-list+ l:item-test l:item-cnt l:test-item);
+(add-to-list+ l:item-test l:item-cnt l:test-item);
+(add-to-list+ l:item-test l:item-cnt l:test-item);
+(setf l:test-item 2)
+(add-to-list+ l:item-test l:item-cnt l:test-item);
+(add-to-list+ l:item-test l:item-cnt l:test-item);
+(add-to-list+ l:item-test l:item-cnt l:test-item);
+
+(deref (ptr+ l:item-test 0))
+(deref (ptr+ l:item-test 1))
+(deref (ptr+ l:item-test 2))
+(deref (ptr+ l:item-test 3))
+(deref (ptr+ l:item-test 4))
+(deref (ptr+ l:item-test 5))
 
 (assert true)
-;(assert true)
-;(exit 0)
+(assert true)
+(assert true)
+(assert true)
+(assert true)
+(assert true)
+ (exit 0)

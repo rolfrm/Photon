@@ -134,6 +134,7 @@ void print_value(c_value val){
     break;
   case C_FUNCTION_CALL:
     {
+      ASSERT(val.call.name.id != 0);
       char * cname = get_c_name(val.call.name);
       char * lname = symbol_name(val.call.name);
       if(cname != lname){
@@ -216,17 +217,18 @@ void print_block(c_block blk){
   var_cnt = 0;
 
   format("{\n");
-  with_symbols(&vars, &var_cnt, lambda(void, (){
-	for(size_t i = 0; i < blk.expr_cnt; i++){
-	  if(blk.exprs[i].type == C_VAR){
-	    vars[var_cnt].name = blk.exprs[i].var.var.name;
-	    vars[var_cnt].type = blk.exprs[i].var.var.type;
-	    vars[var_cnt].data = &blk.exprs[i].var.value;
-	    var_cnt += 1;
-	  }
-	  print_expr2(blk.exprs[i]);
-	}
-      }));
+  push_symbols(&vars, &var_cnt);
+
+  for(size_t i = 0; i < blk.expr_cnt; i++){
+    if(blk.exprs[i].type == C_VAR){
+      vars[var_cnt].name = blk.exprs[i].var.var.name;
+      vars[var_cnt].type = blk.exprs[i].var.var.type;
+      vars[var_cnt].data = &blk.exprs[i].var.value;
+      var_cnt += 1;
+    }
+    print_expr2(blk.exprs[i]);
+  }
+  pop_symbols();
   format("}\n");
 }
 
@@ -252,7 +254,9 @@ void print_fcn_code(c_fcndef fcndef){
     }
   }
   format(")");
-  with_symbols(&vars,&varcnt,lambda(void,(){print_block(fcndef.block);}));
+  push_symbols(&vars, &varcnt);
+  print_block(fcndef.block);
+  pop_symbols();
 }
 
 void print_c_code(c_root_code code){

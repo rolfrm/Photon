@@ -676,7 +676,7 @@ type_def * addrof_macro(c_block * block, c_value * val, expr value){
 expr * number2expr(i64 num){
 
   char * str = fmtstr("%i",num);
-  logd("number2expr: %s\n", str);
+  //logd("number2expr: %s\n", str);
   expr e;
   e.type = VALUE;
   e.value.type = NUMBER;

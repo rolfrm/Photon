@@ -242,8 +242,8 @@ type_def * _compile_expr(c_block * block, c_value * val,  expr e ){
 }
 
 c_root_code compile_lisp_to_eval(expr exp){
-  logd("COMPILING\n");
-  print_expr(&exp);
+  //  logd("COMPILING\n");
+  //print_expr(&exp);
   c_root_code r;
   c_fcndef * f = &r.fcndef;
   r.type = C_FUNCTION_DEF;
@@ -305,7 +305,11 @@ void go_write(type_def ** deps, symbol * vdeps, c_root_code * codes, size_t code
   for(size_t i = 0; vdeps[i].id != 0; i++){
       
     var_def * var = get_variable(vdeps[i]);
-    ASSERT(var != NULL);
+    if(var == NULL)
+      ERROR("Cannot find variable '%s'", symbol_name(vdeps[i]));
+      
+    
+    //ASSERT(var != NULL);
     decl dcl;
     dcl.name = var->name;
     dcl.type = var->type;
@@ -319,14 +323,24 @@ void go_write(type_def ** deps, symbol * vdeps, c_root_code * codes, size_t code
   }
 }
 
+void checkvdeps(symbol * vdep){
+  int it = 0;
+  while(vdep[it].id != 0){
+    if(symbol_name(*vdep) == NULL)
+      ERROR("Symbol NULL %i", it);
+    it++;
+  }
+}
+
 void compile_as_c(c_root_code * codes, size_t code_cnt){
-  type_def * deps[100];
-  symbol vdeps[100];
+  type_def * deps[1000];
+  symbol vdeps[1000];
   memset(deps, 0, sizeof(deps));
   memset(vdeps, 0, sizeof(vdeps));
   for(size_t i = 0; i < code_cnt; i++){
     c_root_code_dep(deps, vdeps, codes[i]);
   }
+  checkvdeps(vdeps);
   char * data = NULL;
  size_t cnt = 0;
   FILE * f = open_memstream(&data, &cnt);
