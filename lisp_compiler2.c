@@ -378,9 +378,7 @@ void compile_as_c(c_root_code * codes, size_t code_cnt){
   tcc_delete(tccs);
 }
 
-void lisp_load_compiler(compiler_state * c){
-  push_compiler(c);
-  
+void lisp_load_base(){
   // Types
   load_defs();
 
@@ -390,7 +388,6 @@ void lisp_load_compiler(compiler_state * c){
   // Functions
   load_functions();
 
-  pop_compiler();
 }
 
 var_def * lisp_compile_expr(expr ex){
@@ -472,6 +469,10 @@ void lisp_run_exprs(expr * exprs, size_t exprcnt){
 
 void lisp_run_script_file(char * filepath){
   char * code = read_file_to_string(filepath);
+  if(code == NULL)
+    ERROR("Could not read code from file %s", filepath);
+
+    
   lisp_run_script_string(code);
   // dealloc(code); //todo: fix leaks
 }
@@ -491,7 +492,7 @@ bool test_lisp2c(){
   str2type("(fcn (ptr expr) (a (ptr expr)))");
   logd("(fcn (ptr expr) (a (ptr expr)))");
 
-  lisp_load_compiler(c);
+  lisp_load_base();
   bool ret = TEST_SUCCESS;
   push_compiler(c);
   type_def * type = str2type("(fcn void (a (ptr type_def)))");

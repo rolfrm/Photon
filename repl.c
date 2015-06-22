@@ -89,8 +89,8 @@ bool start_read_eval_print_loop(){
 
 void repl(){
   compiler_state * c = compiler_make();
-  lisp_load_compiler(c);
   push_compiler(c);
+  lisp_load_base();
   start_read_eval_print_loop();
   pop_compiler(c);
 }

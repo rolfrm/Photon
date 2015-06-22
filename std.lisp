@@ -103,6 +103,6 @@
   	 (write-line "OK")
   	 ))))
 
-;(assert true)
+(assert true)
 ;(assert true)
 ;(exit 0)

@@ -15,18 +15,18 @@ void push_compiler(compiler_state * c){
   lisp_states[state_count] = lisp_state;
   lisp_state = c;
   state_count++;
+  push_symbols(&c->vars,&c->var_cnt);
 }
 
 void pop_compiler(){
   state_count--;
   lisp_state = lisp_states[state_count];
+  pop_symbols();
 }
 
 void with_compiler(compiler_state * c, void (* fcn)()){
   push_compiler(c);
-  push_symbols(&c->vars,&c->var_cnt);
   fcn();
-  pop_symbols();
   pop_compiler();
 }
 

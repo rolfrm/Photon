@@ -64,12 +64,13 @@ int main(int argc, char *argv[] ){
   }
 
   if(argc == 2){
-    compiler_state * c = compiler_make();\
-    lisp_load_compiler(c);
-    with_compiler(c, lambda(void, (){
-
-	  lisp_run_script_file(argv[1]);
-	}));
+    compiler_state * c = compiler_make();
+    push_compiler(c);
+    push_compiler(c);
+    lisp_load_base();
+    lisp_run_script_file(argv[1]);
+    //pop_compiler();
+    //pop_compiler();
     return 0;
   }
 
