@@ -183,6 +183,8 @@ type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se){
     }
   }else if(fvar->type->type == FUNCTION){
     type_def * td = fvar->type;
+    //logd("name: %s %i\n",symbol_name(name), fvar->name.id);
+    ASSERT(fvar->name.id != 0);
     COMPILE_ASSERT(td->fcn.cnt == argcnt);
 
     c_value fargs[argcnt];
@@ -212,7 +214,7 @@ type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se){
     c_function_call call;
     call.type = td;
     call.name = fvar->name;
-    
+
     call.args = clone(fargs,sizeof(fargs));
     value->type = C_FUNCTION_CALL;
     value->call = call;
@@ -220,7 +222,9 @@ type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se){
     
     return td->fcn.ret;
   }else if(fvar->type == macro_store_type()){
-    return expand_macro(block, value, se->exprs, se->cnt);
+    type_def * _t = expand_macro(block, value, se->exprs, se->cnt);
+    ASSERT(_t != &error_def);
+    return _t;
   }else{
 
     ERROR("Not supported.. %i\n", fvar->type->type);
@@ -242,8 +246,7 @@ type_def * _compile_expr(c_block * block, c_value * val,  expr e ){
 }
 
 c_root_code compile_lisp_to_eval(expr exp){
-  //  logd("COMPILING\n");
-  //print_expr(&exp);
+
   c_root_code r;
   c_fcndef * f = &r.fcndef;
   r.type = C_FUNCTION_DEF;
@@ -354,16 +357,9 @@ void compile_as_c(c_root_code * codes, size_t code_cnt){
   append_buffer_to_file(data,cnt,"compile_out.c");
   TCCState * tccs = mktccs();
   for(size_t i = 0; i < array_count(vdeps) && vdeps[i].id != 0; i++){
-
     var_def * var = get_variable(vdeps[i]);
-    if(var->type->type == FUNCTION){
-      int fail = tcc_add_symbol(tccs,get_c_name(var->name),var->data);
-      ASSERT(!fail);
-    }else{
-      char * vname = get_c_name(var->name);
-      int fail = tcc_add_symbol(tccs,vname,var->data);
-      ASSERT(!fail);
-    }
+    int fail = tcc_add_symbol(tccs,get_c_name(var->name),var->data);
+    ASSERT(!fail);
   }
   
   int fail = tcc_compile_string(tccs, data);
@@ -494,6 +490,11 @@ void lisp_run_script_file(char * filepath){
 void lisp_run_script_string(char * code){
   size_t exprcnt;
   expr * exprs = lisp_parse_all(code, &exprcnt);
+  logd(" ** FILE EXPRS **");
+  for(u32 i = 0; i < exprcnt; i++){
+    print_expr(exprs + i);logd("\n");
+  }
+  logd(" ******** FILE EXPRS ******");
   lisp_run_exprs(exprs, exprcnt);
 }
 bool test_tcc();

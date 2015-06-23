@@ -16,6 +16,7 @@
 const c_block c_block_empty = {0,0};
 
 void add_var_dep(symbol * vdeps, symbol newdep){
+  ASSERT(symbol_name(newdep) != NULL);
   for(;!symbol_cmp(*vdeps, symbol_empty); vdeps++){
     if(symbol_cmp(*vdeps, newdep))
       return;
@@ -135,8 +136,13 @@ void print_value(c_value val){
   case C_FUNCTION_CALL:
     {
       ASSERT(val.call.name.id != 0);
+      var_def * fvar = get_variable(val.call.name);
+      ASSERT(fvar != NULL);
+      ASSERT(fvar->name.id == val.call.name.id);
+
       char * cname = get_c_name(val.call.name);
       char * lname = symbol_name(val.call.name);
+      logd("FUNCTION NAME: %s %i\n", cname, val.call.name.id); 
       if(cname != lname){
 	format(" /*%s*/ %s(",symbol_name(val.call.name), cname);
       }else{

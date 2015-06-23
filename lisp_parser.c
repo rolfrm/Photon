@@ -268,7 +268,7 @@ char * value_type2str(value_type vt){
 }
 
 void print_expr(expr * expr1){
-
+  //logd("--- printing expr ---");
   void iprint(expr * expr2, int indent){
     value_expr value = expr2->value;
     sub_expr subexpr = expr2->sub_expr;

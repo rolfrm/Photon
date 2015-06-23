@@ -8,6 +8,13 @@
 #include "type_pool.h"
 #include "builtin_macros.h"
 #include "expr_utils.h"
+
+type_def * no_op(c_block * block, c_value * val){
+  UNUSED(block);
+  val->type = C_NOTHING;
+  return &void_def;
+}
+	  
 type_def * type_macro(c_block * block, c_value * value, expr e){
   UNUSED(block);
   static int typevarid = 0;
@@ -154,16 +161,6 @@ expr walk_expr(expr body){
     return body;
 
   sub_expr exp = body.sub_expr;
-  if(exp.cnt > 0 && is_symbol(exp.exprs[0]) 
-     && expr_symbol(exp.exprs[0]).id == get_symbol("unexpr").id){
-    ASSERT(exp.cnt == 2);
-    // it breaks here..
-    expr * exp2 = lisp_compile_and_run_expr(exp.exprs[1]);
-    logd("Expanded: "); print_expr(exp2);
-    
-    return *exp2;
-    // special case not handled yet.
-  }
   expr sub[exp.cnt];
   for(size_t i = 0; i < exp.cnt; i++){
     sub[i] = walk_expr(exp.exprs[i]);
@@ -252,7 +249,6 @@ expr recurse_expand(expr ex, expr ** exprs, int * cnt){
     int idx = *cnt;
     (*cnt)++;
     return *exprs[idx];
-    // special case not handled yet.
   }
   expr sexp[exp.cnt];
   for(size_t i = 0; i < exp.cnt; i++)
@@ -277,7 +273,8 @@ expr * expand_expr(expr * exprs, ...){
 
   va_end(vl);
   expr _new = recurse_expand(*first, list, &cnt);
-  return clone(&_new, sizeof(expr));
+  expr * __new = clone(&_new, sizeof(expr));
+  return __new;
 }
 
 symbol get_recurse_sym(int id, int cnt){
@@ -303,7 +300,7 @@ void recurse_expr(expr * ex, c_block * block, int id, int * cnt){
     exp.type = C_VAR;
     exp.var = var;
     block_add(block, exp);
-    // special case not handled yet.
+
   }else{
     for(size_t i = 0; i < exp.cnt; i++)
       recurse_expr(exp.exprs + i, block, id, cnt);    
@@ -312,20 +309,19 @@ void recurse_expr(expr * ex, c_block * block, int id, int * cnt){
 
 type_def * expr_macro(c_block * block, c_value * val, expr body){
   UNUSED(block);
-  
-  type_def * exprtd = opaque_expr();
-  char buf[30];
-  static int expr_idx = 0;
-  sprintf(buf,"_tmp_symbol_%i",expr_idx++);
-  
-  symbol tmp = get_symbol(buf);
-  //expr newbody = body;
-  expr * ex = clone(&body, sizeof(expr));
   static int id = 0;
-  int cnt = 0;
   id++;
+  type_def * exprtd = opaque_expr();	  
+
+  char buf[30];
+  sprintf(buf,"_tmp_symbol_%i",id);
+  symbol tmp = get_symbol(buf);
+  
+  expr * ex = walk_expr2(&body);
+
+  int cnt = 0;
   recurse_expr(ex, block, id, &cnt);
-  expr ** exx = alloc(sizeof(expr *));
+  expr ** exx = alloc0(sizeof(expr *));
   *exx = ex;
   compiler_define_variable_ptr(tmp, exprtd, exx);
   
@@ -343,22 +339,23 @@ type_def * expr_macro(c_block * block, c_value * val, expr body){
   cargs[0].type = C_SYMBOL;
   cargs[0].symbol = tmp;
   type_def * ftype2 = type_pool_get(&ftype);
-  char _expandname[18];
+  char _expandname[20];
   sprintf(_expandname, "___expand%i",cnt);
   symbol expandname = get_symbol(_expandname);
   if(get_variable(expandname) == NULL)
     defun(_expandname, ftype2, expand_expr);
+  ASSERT(expandname.id != 0);
   val->type = C_FUNCTION_CALL;
   val->call.name = expandname;
-  val->call.args = clone(cargs,sizeof(c_value) * (cnt + 2));
+  val->call.args = clone(cargs,sizeof(c_value) * (cnt + 1));
   val->call.arg_cnt = cnt + 1;
   val->call.type = ftype2;
-  val->call.args[0].type = C_SYMBOL;
-  val->call.args[0].symbol = tmp;
+
   return exprtd;
 }
 
 
+	 
 type_def * defcmacro_macro(c_block * block, c_value * val, expr e_name, expr args, expr body){
   UNUSED(block);
   COMPILE_ASSERT(is_symbol(e_name));
@@ -368,14 +365,10 @@ type_def * defcmacro_macro(c_block * block, c_value * val, expr e_name, expr arg
   expr * sexprs = args.sub_expr.exprs;
   symbol name = expr_symbol(e_name);
   logd("defining macro: '%s'\n", symbol_name(name));
-  //var_def _vars[argcnt];
   symbol argnames[argcnt];
   for(size_t i = 0; i < argcnt; i++){
     COMPILE_ASSERT(is_symbol(sexprs[i]));
     argnames[i] = expr_symbol(sexprs[i]);
-    //_vars[i].type = exprtd;
-    //_vars[i].name = argnames[i];
-    //_vars[i].data = NULL;
   }
 
   macro_store * macro = alloc0(sizeof(macro_store));
@@ -704,10 +697,10 @@ void builtin_macros_load(){
   define_macro("while", 2, while_macro);
   define_macro("deref", 1, deref_macro);
   define_macro("addrof", 1, addrof_macro);
+  define_macro("noop",0,no_op);
   opaque_expr();
-  compiler_define_variable_ptr(get_symbol("walk-expr"), 
-			       str2type("(fcn (ptr expr) (a (ptr expr)))"), walk_expr2);
-  compiler_define_variable_ptr(get_symbol("___expand"), str2type("(fcn (ptr expr) (e (ptr expr)))"),expand_expr);
+  defun("walk-expr",str2type("(fcn (ptr expr) (a (ptr expr)))"), walk_expr2);
+  //defun("___expand", str2type("(fcn (ptr expr) (e (ptr expr)))"),expand_expr);
   defun("number2expr",str2type("(fcn (ptr expr) (a i64))"), number2expr);
 			       
 }

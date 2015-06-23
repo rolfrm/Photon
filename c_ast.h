@@ -24,9 +24,9 @@ typedef enum{
 }c_expr_kind;
 
 typedef enum{
-  C_SUB_EXPR,
-  C_INLINE_VALUE,
-  C_FUNCTION_CALL,
+  C_SUB_EXPR = 11,
+  C_INLINE_VALUE = 12,
+  C_FUNCTION_CALL = 13,
   C_OPERATOR,
   C_DEREF,
   C_ADDRESS_OF,
