@@ -123,8 +123,26 @@ void print_cdecl(decl idecl){
   case OPAQUE_STRUCT:
   case SIMPLE:
   case POINTER:
-    print_min_type(def);
-    format(" %s",get_c_name(idecl.name));
+    {
+      int ptrs = 0;
+      type_def * inner = def;
+      while(inner->type == POINTER) {inner = inner->ptr.inner; ptrs++;};
+      if(inner->type == FUNCTION){
+	//logd("THIS HAPPENS!!!\n");
+	print_min_type(def->fcn.ret);
+	format(" (%.*%s %s)(",ptrs,"*",get_c_name(idecl.name));
+	for(i64 i = 0; i < def->fcn.cnt; i++){
+	  print_min_type(def->fcn.args[i]);
+	  if(i + 1 != def->fcn.cnt)
+	    format(", ");
+	}
+	format(")");
+	return;
+      }
+
+      print_min_type(def);
+      format(" %s",get_c_name(idecl.name));
+    }
     break;
   case FUNCTION:
     print_min_type(def->fcn.ret);

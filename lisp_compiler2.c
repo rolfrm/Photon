@@ -295,6 +295,13 @@ void go_write(type_def ** deps, symbol * vdeps, c_root_code * codes, size_t code
 
   write_dependencies(deps);
   for(size_t i = 0; deps[i] != NULL; i++){
+    type_def * t = deps[i];
+    while(t->type == POINTER){
+      t = t->ptr.inner;
+    }
+    if(t->type == FUNCTION){
+      continue;
+    }
     if(deps[i]->type == TYPEDEF){
       continue;
       print_def(deps[i]->ctypedef.inner);
@@ -307,6 +314,13 @@ void go_write(type_def ** deps, symbol * vdeps, c_root_code * codes, size_t code
   for(size_t i = 0; vdeps[i].id != 0; i++){
       
     var_def * var = get_variable(vdeps[i]);
+    type_def * t = var->type;
+    while(t->type == POINTER){
+      t = t->ptr.inner;
+    }
+    if(t->type == FUNCTION){
+      //continue;
+    }
     if(var == NULL)
       ERROR("Cannot find variable '%s'", symbol_name(vdeps[i]));
    

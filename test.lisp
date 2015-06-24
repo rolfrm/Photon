@@ -269,10 +269,16 @@ uloc uloc uloc
 
 (defvar iteration 0)
 
+(defun mouse-callback (void (win-ptr (ptr void)) (button i32) (action i32) (mods i32))
+  (write-line "mouse callback!"))
+(progn
+  (glfw:set-mouse-button-callback win (cast (addrof mouse-callback) (ptr void)))
+  1)
 
 (ptr+ "asdasd" 2)
 (while (not (eq iteration 40))
   (progn
+    (glfw:poll-events)
     (setf iteration (i64+ iteration 1))
     (gl:clear-color 0.0  0.2 0.0  1.0 )
     (gl:clear gl:color-buffer-bit)

@@ -49,7 +49,9 @@ V1 Release Checklist
  * [x] -ldl related
  * [x] -lm related
 * [ ] function overloading macro / varadic functions
+* [ ] proper function printing (needed for callback functions).
 * [x] macros that do not require 'expand'
+
 * [ ] Fix massive memory leaks
 * [ ] Bugs / Stability
 * [ ] Propert error handling
