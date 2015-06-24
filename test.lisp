@@ -1,9 +1,6 @@
 ;; The following code runs / compiles
 (load "std.lisp")
-
-;(ptr+ "asddsa" 4)
-
-;(exit 0)
+(assert (eq 1 1))
 
 ;; Constants
 1 

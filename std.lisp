@@ -7,8 +7,6 @@
 (defun write-line (void (str (ptr char)))
   (write_line str))
 
-
-
 (defvar libm (load-lib "libm.so"))
 (load-symbol libm (quote cos) (quote cos) (type (fcn f64 (x f64))))
 (load-symbol libm (quote cosf) (quote cosf) (type (fcn f32 (x f32))))
@@ -85,70 +83,28 @@
 	    out-expr)))
 
 
-;; (defvar asserts (cast null (ptr (ptr expr))))
-;; (defvar asserts-cnt (cast 0 u64))
-;; (defvar last-assert :type (ptr expr))
+(defvar asserts (cast null (ptr (ptr expr))))
+(defvar asserts-cnt (cast 0 u64))
+(defvar last-assert :type (ptr expr))
 
-;; (defcmacro assert (_expr)
-;;   (var ((n (number2expr (cast asserts-cnt i64))))
-;;        (progn
-;; 	 (print-expr n)
-;; 	 (add-to-list+ asserts asserts-cnt _expr)
-;; 	 (printf "--- %i\n" (cast asserts-cnt i64))
-;; 	 (expr
-;; 	  (if (unexpr _expr)
-;; 	      (progn
-;; 		;(write-line "ERROR")
-;; 		;(print-expr 
-;; 		 (deref 
-;; 		  (ptr+ asserts (unexpr n))
-;; 		  )
-;; 		 ;)
-;; 		;(exit 1)
-;; 		1
-;; 		)
-;; 	      2
-;; 	      )))))
-(defvar l:item-test (cast (malloc 10) (ptr i64)))
-(defvar l:item-cnt (cast 0 u64))
-(defvar l:test-item 1)
+(defcmacro assert (_expr)
+  (var ((n (number2expr (cast asserts-cnt i64))))
+       (progn
+	 (add-to-list+ asserts asserts-cnt _expr)
+	 (printf "assert idx: %i\n" (cast asserts-cnt i64))
+	 (expr
+	  (if (unexpr _expr)
+	      (progn
+		(write-line "OK")
+		2)
+	      (progn
+		(write-line "\n**** ERROR *****")
+		(print-expr (deref (ptr+ asserts (unexpr n))))	
+		(write-line "****  *****\n")	
+		(exit 1)
+		1
+		)
 
-(add-to-list+ l:item-test l:item-cnt l:test-item);
-(add-to-list+ l:item-test l:item-cnt l:test-item);
-(add-to-list+ l:item-test l:item-cnt l:test-item);
-(setf l:test-item 2)
-(add-to-list+ l:item-test l:item-cnt l:test-item);
-(add-to-list+ l:item-test l:item-cnt l:test-item);
-(add-to-list+ l:item-test l:item-cnt l:test-item);
+		
+	      )))))
 
-(deref (ptr+ l:item-test 0))
-(deref (ptr+ l:item-test 1))
-(deref (ptr+ l:item-test 2))
-(deref (ptr+ l:item-test 3))
-(deref (ptr+ l:item-test 4))
-(deref (ptr+ l:item-test 5))
-
-(printf "::: %i\n" (deref (ptr+ l:item-test 0)))
-(write-line "asd")
-(write-line "asd")
-(write-line "asd")
-(write-line "asd")
-;(write-line "asd")
-;; (assert true)
-;; (assert true)
-;; (assert (progn false true))
-;; (assert true)
-;; (assert true)
-;; (assert true)
-;; this works
-;; (var ((a+ (ptr+ asserts 2)))
-;;      (print-expr (deref a+)))
-
-;; (var ((eexpr (deref (ptr+ asserts 2))))
-;;      (print-expr eexpr))
-;; ;; this does not
-;; (write-line "print expr\n")
-;; (print-expr (deref (ptr+ asserts 2)))
-;; (write-line "print expr\n")
-
-; (exit 0)
