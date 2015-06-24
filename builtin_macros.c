@@ -110,8 +110,6 @@ type_def * setf_macro(c_block * block, c_value * val, expr name, expr body){
 
   c_value * vr = alloc0(sizeof(c_value));
   c_value * vl = alloc0(sizeof(c_value));
-  //vl->type = C_SYMBOL;
-  //vl->symbol = sym;
   type_def * t1 = _compile_expr(block, vl, name);
   type_def * t = _compile_expr(block, vr, body);
   TEST_ASSERT(t1 == t);
@@ -520,9 +518,7 @@ type_def * if_macro(c_block * block, c_value * val, expr cnd, expr then, expr _e
     // things get simpler
     c_expr then_blk_expr;
     then_blk_expr.type = C_BLOCK;
-    then_blk_expr.block = c_block_empty;
-    
-    then_t = _compile_expr(&then_blk_expr.block, &then_expr.value, then);
+    then_blk_expr.block = blk;
     block_add(&then_blk_expr.block, then_expr);
 
     c_expr elsexpr;
@@ -554,10 +550,19 @@ type_def * if_macro(c_block * block, c_value * val, expr cnd, expr then, expr _e
 
   c_expr then_blk_expr;
   then_blk_expr.type = C_BLOCK;
-  then_blk_expr.block.expr_cnt = 0;
-  then_blk_expr.block.exprs = NULL;
+  then_blk_expr.block = blk;
   
-  then_t = setf_macro(&then_blk_expr.block, &then_expr.value, symbol_expr("_tmp"), then);
+  //then_t = setf_macro(&then_blk_expr.block, &then_expr.value, symbol_expr("_tmp"), then);
+  c_value * val2 = clone(&then_expr.value, sizeof(c_value));
+  c_value * to_set = alloc0(sizeof(c_value));
+  to_set->type = C_SYMBOL;
+  to_set->symbol = get_symbol("_tmp");
+  then_expr.type = C_VALUE;
+  then_expr.value.type = C_OPERATOR;
+  then_expr.value.operator.operator = "=";
+  then_expr.value.operator.left = to_set;
+  then_expr.value.operator.right = val2;
+
   block_add(&then_blk_expr.block, then_expr);
 
   c_expr elsexpr;
