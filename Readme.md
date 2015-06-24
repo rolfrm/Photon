@@ -34,7 +34,7 @@ V1 Release Checklist
 * [x] conditionals "if"
 * [x] loops (while expr body) result is the output of the last item.
 * [x] a better REPL (history, multi-line, line-edit)
-* [ ] proper literal strings
+* [ ] proper interned literal strings (checkout tries)
 * [x] Structs
  * [x] Defining - structs can be defined using the type macro
  * [ ] member access

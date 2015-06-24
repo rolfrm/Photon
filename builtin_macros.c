@@ -105,9 +105,6 @@ type_def * defvar_macro(c_block * block, c_value * val, expr * exprs, size_t cnt
 }
 
 type_def * setf_macro(c_block * block, c_value * val, expr name, expr body){
-  //COMPILE_ASSERT(is_symbol(name));
-  //symbol sym = expr_symbol(name);
-
   c_value * vr = alloc0(sizeof(c_value));
   c_value * vl = alloc0(sizeof(c_value));
   type_def * t1 = _compile_expr(block, vl, name);
@@ -129,7 +126,6 @@ type_def * load_macro(c_block * block, c_value * val, expr file_name){
 }
 
 type_def * progn_macro(c_block * block, c_value * val, expr * expressions, size_t expr_cnt){
-  // todo: requires varadic macros.
   type_def * d;
   for(size_t i = 0; i < expr_cnt; i++){
     c_value _val = c_value_empty;
@@ -494,6 +490,7 @@ type_def * eq_macro(c_block * block, c_value * val, expr item1, expr item2){
   comp->operator.right = val2;
   return val->cast.type;
 }
+
 	  
 type_def * if_macro(c_block * block, c_value * val, expr cnd, expr then, expr _else){
   c_expr ifexpr;
