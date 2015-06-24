@@ -50,6 +50,8 @@ void compiler_reg_type(compiler_state *c, symbol name, type_def * t);
 void compiler_load_types(compiler_state *);
 
 comp_state comp_state_make();
+
+// warning: The returned variable will eventually get invalidated by defining new variables.
 var_def * get_variable(symbol s);
 
 cmacro_def * get_cmacro_def(symbol s);

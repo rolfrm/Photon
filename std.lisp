@@ -151,4 +151,4 @@
 ;; (print-expr (deref (ptr+ asserts 2)))
 ;; (write-line "print expr\n")
 
- (exit 0)
+; (exit 0)

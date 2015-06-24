@@ -145,7 +145,6 @@ bool is_float_literal(expr ex){
 }
 
 type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se){
-  UNUSED(value);
   if(se->cnt == 0)
     ERROR("sub expressio count 0");
   expr name_expr = se->exprs[0];
@@ -183,11 +182,10 @@ type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se){
     }
   }else if(fvar->type->type == FUNCTION){
     type_def * td = fvar->type;
-    //logd("name: %s %i\n",symbol_name(name), fvar->name.id);
     ASSERT(fvar->name.id != 0);
     COMPILE_ASSERT(td->fcn.cnt == argcnt);
-
     c_value fargs[argcnt];
+    memset(fargs,0,sizeof(c_value) * argcnt);
     type_def * farg_types[argcnt];
     for(i64 i = 0; i < argcnt; i++){
       farg_types[i] = _compile_expr(block, fargs + i, args[i]);
@@ -210,15 +208,15 @@ type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se){
 	}
       }
     }
-    
+
     c_function_call call;
     call.type = td;
-    call.name = fvar->name;
-
+    call.name = name;
     call.args = clone(fargs,sizeof(fargs));
+    call.arg_cnt = argcnt;
+
     value->type = C_FUNCTION_CALL;
     value->call = call;
-    value->call.arg_cnt = argcnt;
     
     return td->fcn.ret;
   }else if(fvar->type == macro_store_type()){
@@ -254,6 +252,7 @@ c_root_code compile_lisp_to_eval(expr exp){
   f->block.expr_cnt = 0;
   f->block.exprs = NULL; 
   c_value val;
+  val.type = 0;
   type_def * t = _compile_expr(&f->block, &val, exp);
   type_def td;
   td.type = FUNCTION;
@@ -310,9 +309,7 @@ void go_write(type_def ** deps, symbol * vdeps, c_root_code * codes, size_t code
     var_def * var = get_variable(vdeps[i]);
     if(var == NULL)
       ERROR("Cannot find variable '%s'", symbol_name(vdeps[i]));
-      
-    
-    //ASSERT(var != NULL);
+   
     decl dcl;
     dcl.name = var->name;
     dcl.type = var->type;
@@ -345,7 +342,7 @@ void compile_as_c(c_root_code * codes, size_t code_cnt){
   }
   checkvdeps(vdeps);
   char * data = NULL;
- size_t cnt = 0;
+  size_t cnt = 0;
   FILE * f = open_memstream(&data, &cnt);
   push_format_out(f);
   go_write(deps, vdeps, codes, code_cnt);
@@ -481,20 +478,19 @@ void lisp_run_script_file(char * filepath){
   char * code = read_file_to_string(filepath);
   if(code == NULL)
     ERROR("Could not read code from file %s", filepath);
-
-    
+  
   lisp_run_script_string(code);
+  char * code2 = read_file_to_string(filepath);
+  ASSERT(strcmp(code,code2) == 0);
+  dealloc(code2);
+  
   // dealloc(code); //todo: fix leaks
 }
 
 void lisp_run_script_string(char * code){
   size_t exprcnt;
   expr * exprs = lisp_parse_all(code, &exprcnt);
-  logd(" ** FILE EXPRS **");
-  for(u32 i = 0; i < exprcnt; i++){
-    print_expr(exprs + i);logd("\n");
-  }
-  logd(" ******** FILE EXPRS ******");
+
   lisp_run_exprs(exprs, exprcnt);
 }
 bool test_tcc();

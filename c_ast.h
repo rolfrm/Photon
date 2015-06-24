@@ -119,7 +119,7 @@ void block_dep(type_def ** deps, symbol * vdeps, c_block blk);
 void block_add(c_block * blk, c_expr expr);
 
 extern const c_block c_block_empty;
-
+extern const c_value c_value_empty;
 // format out the c-code
 void print_c_code(c_root_code code);
 

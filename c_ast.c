@@ -14,7 +14,7 @@
 #include "lisp_types.h"
 #include "lisp_compiler.h"
 const c_block c_block_empty = {0,0};
-
+const c_value c_value_empty = {0};
 void add_var_dep(symbol * vdeps, symbol newdep){
   ASSERT(symbol_name(newdep) != NULL);
   for(;!symbol_cmp(*vdeps, symbol_empty); vdeps++){
@@ -142,7 +142,7 @@ void print_value(c_value val){
 
       char * cname = get_c_name(val.call.name);
       char * lname = symbol_name(val.call.name);
-      logd("FUNCTION NAME: %s %i\n", cname, val.call.name.id); 
+      //logd("FUNCTION NAME: %s %i\n", cname, val.call.name.id); 
       if(cname != lname){
 	format(" /*%s*/ %s(",symbol_name(val.call.name), cname);
       }else{

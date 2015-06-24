@@ -52,7 +52,6 @@ void compiler_define_variable_ptr(symbol name, type_def * t, void * ptr){
   vdef.type = t;
   vdef.data = ptr;
   list_add((void **)&lisp_state->vars, &lisp_state->var_cnt, &vdef, sizeof(var_def));
-  logd("::::::::: %p\n", lisp_state->vars);
 }
 
 void define_macro(char * name, int nargs, void * fcn){

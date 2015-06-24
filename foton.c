@@ -55,10 +55,13 @@ int main(int argc, char *argv[] ){
   
   if(argc == 2 && strcmp(argv[1],"--test") == 0){
     log("Running tests...\n");
+    compiler_state * c = compiler_make();
+    push_compiler(c);
     TEST(test_lisp_parser);
     TEST(test_type_pool);
     TEST(test_lisp2c);
     TEST(test_symbols);
+    pop_compiler();
 
     return 0;
   }
@@ -66,11 +69,9 @@ int main(int argc, char *argv[] ){
   if(argc == 2){
     compiler_state * c = compiler_make();
     push_compiler(c);
-    push_compiler(c);
     lisp_load_base();
     lisp_run_script_file(argv[1]);
-    //pop_compiler();
-    //pop_compiler();
+    pop_compiler();
     return 0;
   }
 

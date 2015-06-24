@@ -134,7 +134,7 @@ type_def * progn_macro(c_block * block, c_value * val, expr * expressions, size_
   // todo: requires varadic macros.
   type_def * d;
   for(size_t i = 0; i < expr_cnt; i++){
-    c_value _val;
+    c_value _val = c_value_empty;
     d = _compile_expr(block, &_val, expressions[i]);
     if(i == expr_cnt -1){
       *val = _val;
@@ -295,12 +295,11 @@ void recurse_expr(expr * ex, c_block * block, int id, int * cnt){
     c_var var;
     var.var.name = get_recurse_sym(id,(*cnt)++);
     var.var.type = t;
-    var.value = clone(&cval,sizeof(cval));
+    var.value = clone(&cval, sizeof(cval));
     c_expr exp;
     exp.type = C_VAR;
     exp.var = var;
     block_add(block, exp);
-
   }else{
     for(size_t i = 0; i < exp.cnt; i++)
       recurse_expr(exp.exprs + i, block, id, cnt);    
@@ -309,15 +308,16 @@ void recurse_expr(expr * ex, c_block * block, int id, int * cnt){
 
 type_def * expr_macro(c_block * block, c_value * val, expr body){
   UNUSED(block);
-  static int id = 0;
-  id++;
+  static int _id = 0;
+  _id++;
+  int id = _id; 
   type_def * exprtd = opaque_expr();	  
 
   char buf[30];
   sprintf(buf,"_tmp_symbol_%i",id);
   symbol tmp = get_symbol(buf);
   
-  expr * ex = walk_expr2(&body);
+  expr * ex = clone(&body, sizeof(expr));
 
   int cnt = 0;
   recurse_expr(ex, block, id, &cnt);
@@ -345,6 +345,8 @@ type_def * expr_macro(c_block * block, c_value * val, expr body){
   if(get_variable(expandname) == NULL)
     defun(_expandname, ftype2, expand_expr);
   ASSERT(expandname.id != 0);
+
+  ASSERT(val->type == 0)
   val->type = C_FUNCTION_CALL;
   val->call.name = expandname;
   val->call.args = clone(cargs,sizeof(c_value) * (cnt + 1));
@@ -460,7 +462,7 @@ type_def * defun_macro(c_block * block, c_value * value, expr name, expr args, e
   }
   
   // ** Compile body with symbols registered ** //
-  c_value val;
+  c_value val = c_value_empty;
   with_symbols(&vars, &varcnt, lambda(void, (){
 	type_def * td = _compile_expr(blk,&val, body);
 	ASSERT(fcnt->fcn.ret == &void_def || td == fcnt->fcn.ret);
@@ -479,9 +481,9 @@ type_def * defun_macro(c_block * block, c_value * value, expr name, expr args, e
 }
 
 type_def * eq_macro(c_block * block, c_value * val, expr item1, expr item2){
-  c_value * val1 = alloc(sizeof(c_value));
-  c_value * val2 = alloc(sizeof(c_value));
-  c_value * comp = alloc(sizeof(c_value));
+  c_value * val1 = alloc0(sizeof(c_value));
+  c_value * val2 = alloc0(sizeof(c_value));
+  c_value * comp = alloc0(sizeof(c_value));
   type_def * t1 = _compile_expr(block, val1, item1);
   type_def * t2 = _compile_expr(block, val2, item2);
   COMPILE_ASSERT(t1 != &error_def && t1 == t2 && t1 != &void_def);
@@ -501,9 +503,10 @@ type_def * if_macro(c_block * block, c_value * val, expr cnd, expr then, expr _e
   ifexpr.keyword = get_symbol("if");
   
   c_expr cmpexpr;
+  cmpexpr.value = c_value_empty;
   c_value * cmp_value = &cmpexpr.value;
   cmp_value->type = C_SUB_EXPR;
-  c_value * inner_value = alloc(sizeof(c_value));
+  c_value * inner_value = alloc0(sizeof(c_value));
   cmp_value->value = inner_value;
   cmpexpr.type = C_VALUE_UNENDED;
   type_def * cmp = _compile_expr(block, inner_value, cnd);
@@ -593,22 +596,20 @@ type_def * while_macro(c_block * block, c_value * val, expr cnd, expr body){
   whilexpr.keyword = get_symbol("while");
  
   c_expr cmpexpr;
+  cmpexpr.value = c_value_empty;
   c_value * cmp_value = &cmpexpr.value;
   cmp_value->type = C_SUB_EXPR;
   cmpexpr.type = C_VALUE_UNENDED;
-  c_value * inner_value = alloc(sizeof(c_value));
+  c_value * inner_value = alloc0(sizeof(c_value));
   cmp_value->value = inner_value;
   type_def * cmp = _compile_expr(block, inner_value, cnd);
   COMPILE_ASSERT(cmp == &bool_def);
-  c_value tmp;
-  c_block blk;
-  blk.exprs = NULL;
-  blk.expr_cnt = 0;
+  c_value tmp = c_value_empty;
+  c_block blk = c_block_empty;
   type_def * body_t = _compile_expr(&blk, &tmp, body);
   c_expr bodyexpr;
   bodyexpr.type = C_BLOCK;
-  bodyexpr.block.exprs = NULL;
-  bodyexpr.block.expr_cnt = 0;
+  bodyexpr.block = c_block_empty;
   c_expr valuexpr;
   valuexpr.type = C_VALUE;
   if( body_t != &void_def){
@@ -667,9 +668,7 @@ type_def * addrof_macro(c_block * block, c_value * val, expr value){
 }
 
 expr * number2expr(i64 num){
-
   char * str = fmtstr("%i",num);
-  //logd("number2expr: %s\n", str);
   expr e;
   e.type = VALUE;
   e.value.type = NUMBER;

@@ -170,6 +170,21 @@ bool test_symbol_table(){
   TEST_ASSERT(symbol_cmp(s2, s4) && symbol_cmp(s, s3) && !symbol_cmp(s, s2));
   TEST_ASSERT(strcmp(symbol_name(s3), "test") == 0);
   TEST_ASSERT(strcmp(symbol_name(s4), "__TEST__") == 0);
+  int scnt = 1000;
+  symbol * symbols = alloc(sizeof(symbol) * scnt);
+  for(int i = 0; i < scnt; i++){
+    char buf[20];
+    sprintf(buf, "s%i", i);
+    symbols[i] = get_symbol(buf);
+  }					       
+  u64 lastid = -1;
+  for(int i = 0; i < scnt; i++){
+    char buf[20];
+    sprintf(buf, "s%i", i);
+    TEST_ASSERT(get_symbol(buf).id == symbols[i].id);
+    TEST_ASSERT(get_symbol(buf).id != lastid);
+    lastid = get_symbol(buf).id;
+  }
   return TEST_SUCCESS;
 }
 
