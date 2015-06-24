@@ -1,6 +1,6 @@
 ;; The following code runs / compiles
 (load "std.lisp")
-(assert (eq 1 1))
+(assert (eq false (eq 0 1)))
 
 ;; Constants
 1 

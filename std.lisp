@@ -93,10 +93,7 @@
 	 (add-to-list+ asserts asserts-cnt _expr)
 	 (printf "assert idx: %i\n" (cast asserts-cnt i64))
 	 (expr
-	  (if (unexpr _expr)
-	      (progn
-		(write-line "OK")
-		2)
+	  (if (not (unexpr _expr))
 	      (progn
 		(write-line "\n**** ERROR *****")
 		(print-expr (deref (ptr+ asserts (unexpr n))))	
@@ -104,6 +101,9 @@
 		(exit 1)
 		1
 		)
+	      (progn
+		(write-line "OK")
+		2)
 
 		
 	      )))))

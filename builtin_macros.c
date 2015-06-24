@@ -514,7 +514,8 @@ type_def * if_macro(c_block * block, c_value * val, expr cnd, expr then, expr _e
 
   c_expr then_expr;
   then_expr.type = C_VALUE;
-  type_def * then_t = _compile_expr(block,&then_expr.value,then);
+  c_block blk = c_block_empty;
+  type_def * then_t = _compile_expr(&blk,&then_expr.value,then);
   if(then_t == &void_def){
     // things get simpler
     c_expr then_blk_expr;
