@@ -293,7 +293,6 @@ uloc uloc uloc
 (ptr+ "asdasd" 2)
 (glfw:joystick-present? 1)
 
-
 (while (not (eq iteration 40))
   (progn
     (glfw:poll-events)

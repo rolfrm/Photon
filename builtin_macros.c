@@ -680,7 +680,32 @@ expr * number2expr(i64 num){
   return clone(&e, sizeof(e));
 }
 
+static int test(){
+  return ((1 )&& (2));
+}
+
+type_def * boolean_operator(char * operator, c_block * blk, c_value * val, expr left, expr right){
+  c_value left_value, right_value;
+  type_def * left_t = _compile_expr(blk,&left_value,left);
+  type_def * right_t = _compile_expr(blk,&right_value,right);
+  COMPILE_ASSERT(left_t == &bool_def && left_t == right_t);
+  val->type = C_OPERATOR;
+  val->operator.left = clone(&left_value, sizeof(c_value));
+  val->operator.right = clone(&right_value, sizeof(c_value));
+  val->operator.operator = operator;
+  return left_t;
+}
+
+type_def * and_macro(c_block * blk, c_value * val, expr left, expr right){
+  return boolean_operator("&&", blk, val, left, right);
+}
+
+type_def * or_macro(c_block * blk, c_value * val, expr left, expr right){
+  return boolean_operator("||", blk, val, left, right);
+}
+
 void builtin_macros_load(){
+  test();
   // Macros
   define_macro("type", 1, type_macro);
   define_macro("defun", 3, defun_macro);
@@ -700,6 +725,9 @@ void builtin_macros_load(){
   define_macro("deref", 1, deref_macro);
   define_macro("addrof", 1, addrof_macro);
   define_macro("noop",0,no_op);
+  define_macro("and",2,and_macro);
+  define_macro("or",2,or_macro);
+
   opaque_expr();
   defun("walk-expr",str2type("(fcn (ptr expr) (a (ptr expr)))"), walk_expr2);
   //defun("___expand", str2type("(fcn (ptr expr) (e (ptr expr)))"),expand_expr);
