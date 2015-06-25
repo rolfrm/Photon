@@ -320,11 +320,12 @@ void go_write(type_def ** deps, symbol * vdeps, c_root_code * codes, size_t code
     if(t->type == FUNCTION){
       continue;
     }
-    if(deps[i]->type == TYPEDEF){
+    if(t->type == TYPEDEF){
       continue;
-      print_def(deps[i]->ctypedef.inner);
+      print_def(t->ctypedef.inner);
+
     }else{
-      print_def(deps[i]);
+      print_def(t);
     }
     format(";\n");
   }
@@ -373,6 +374,7 @@ void compile_as_c(c_root_code * codes, size_t code_cnt){
     c_root_code_dep(deps, vdeps, codes[i]);
   }
   checkvdeps(vdeps);
+  
   char * data = NULL;
   size_t cnt = 0;
   FILE * f = open_memstream(&data, &cnt);

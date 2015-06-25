@@ -249,7 +249,7 @@ void _make_dependency_graph(type_def ** defs, type_def * def, bool nested){
     *defs_it = def;
     return true;
   }
-  type_def * inner;
+  type_def * inner = NULL;;
   if(check() == false) return;
   switch(def->type){
   case UNION:
@@ -269,15 +269,27 @@ void _make_dependency_graph(type_def ** defs, type_def * def, bool nested){
     break;
   case POINTER:
     //*defs_it = def;
-    //def = def->ptr.inner;
-    _make_dependency_graph(defs,def->ptr.inner,true);
+    inner = def;
+    while(inner->type == POINTER || inner->type == TYPEDEF){
+      if(inner->type == POINTER)
+	inner = inner->ptr.inner;
+      else
+	inner = inner->ctypedef.inner;
+    }
+    if(inner->type == STRUCT){
+      logd("THIS HAPPENS\n");
+      _make_dependency_graph(defs,get_opaque(inner), nested);
+    }
+    
+    //check_add();    
+    //_make_dependency_graph(defs,def->ptr.inner,true);
     break;
   case TYPEDEF:
     //if(nested) break;
     inner = def->ctypedef.inner; 
-    if(inner->type == STRUCT){
-      inner = get_opaque(inner);
-    }
+    //if(inner->type == STRUCT){
+    //  inner = get_opaque(inner);
+    //}
     _make_dependency_graph(defs,inner, nested);
     check_add();    
     break;

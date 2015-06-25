@@ -21,7 +21,7 @@
 	      (memcpy buffer (cast a (ptr void)) a-len)
 	      (memcpy (ptr+ buffer (cast a-len i64)) (cast b (ptr void)) b-len)
 	      (cast buffer (ptr char))))))
-(write-line "WTF")
+
 (string-concat "hello" "world")
 
 
@@ -36,12 +36,22 @@
 (symbol-combine (quote a) (quote b))
 
 
+
+(print_type (type overload))
+(defvar prototype :type overload)
+;overload
 (exit 0)
+
+;; (defcmacro make (type)
+;;   (var ((item :type type))
+;;        item))
+
 (defcmacro defoverloaded (fcn-name)
   (expr
    (defvar (symbol-combine (quote (unexpr fcn-name)) (quote -info))
      (make overload :members (cast null (ptr overload-info)) :member-cnt 0))))
 
+(exit 0)
 
 
 (symbol-name (quote asd))

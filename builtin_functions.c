@@ -8,7 +8,7 @@ void defun(char * name, type_def * t, void * fcn){
 }
 
 void print_type(type_def * def){
-  logd("type: '")print_def(def); logd("'\n");
+  logd("type: '"); print_def(def); logd("'\n");
 }
 
 void write_line(char * str){

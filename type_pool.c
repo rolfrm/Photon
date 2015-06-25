@@ -146,6 +146,7 @@ type_def * get_opaque(type_def * t){
   type_def d = *t;
   d.type = OPAQUE_STRUCT;
   return type_pool_get(&d);
+  // add handling of typedef pointing to an opaque type.
 }
 
 void type_pool_reg_static(type_def * lookup){
