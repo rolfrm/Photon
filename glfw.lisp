@@ -50,6 +50,13 @@
 							(scroll-y f64))))))
 (glfw:load-sym glfw:joystick-present? glfwJoystickPresent
 	       (fcn bool (joy-idx i32)))
+
 (glfw:load-sym glfw:get-joystick-axes glfwGetJoystickAxes (fcn (ptr f32) (joy i32) (axis-count (ptr i32))))
 (glfw:load-sym glfw:get-joystick-buttons glfwGetJoystickButtons (fcn (ptr u8) (joy i32) (button-count (ptr i32))))
-
+(glfw:load-sym glfw:get-joystick-name glfwGetJoystickName (fcn (ptr char) (joy i32)))
+(glfw:load-sym glfw:get-time glfwGetTime (fcn f64))
+(glfw:load-sym glfw:set-time glfwSetTime (fcn void (time f64)))
+(glfw:load-sym glfw:get-current-context glfwGetCurrentContext (fcn (ptr void)))
+(glfw:load-sym glfw:swap-interval glfwSwapInterval (fcn void (interval i32)))
+(glfw:load-sym glfw:set-window-close-callback glfwSetWindowCloseCallback 
+	       (fcn (ptr void) (cb (ptr (fcn void (win (ptr void)))))))
