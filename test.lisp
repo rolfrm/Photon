@@ -188,6 +188,7 @@ add-test-cnt
 (defvar win (glfw:create-window 512 512 "test.." null null))
 
 (glfw:make-current win)
+(glfw:set-clipboard-string win "clipboard test!")
 (defvar sleeptime (cast 100000 i32))
 (defvar r 0.0)
 ;;; -- Loa Shader Program -- ;;;
@@ -271,8 +272,17 @@ uloc uloc uloc
 
 (defun mouse-callback (void (win-ptr (ptr void)) (button i32) (action i32) (mods i32))
   (write-line "mouse callback!"))
-(glfw:set-mouse-button-callback win (addrof mouse-callback))
+(defun key-callback (void (win-ptr (ptr void)) (key i32) (scancode i32) (action i32) (mods i32))
+  (printf "KEY: %c\n" (cast key i64)))
+(defun cursor-pos-callback (void (win-ptr (ptr void)) (x f64) (y f64))
+  (write-line "cursor pos"));
+(defun error-callback (void (code i32) (str (ptr char)))
+  (write-line str))
 
+(glfw:set-mouse-button-callback win (addrof mouse-callback))
+(glfw:set-key-callback win (addrof key-callback))
+(glfw:set-cursor-pos-callback win (addrof cursor-pos-callback))
+(glfw:set-error-callback (addrof error-callback))
 (ptr+ "asdasd" 2)
 (while (not (eq iteration 40))
   (progn
@@ -322,3 +332,4 @@ uloc uloc uloc
     (free (realloc (malloc 1000) 2000))
     10
     ))
+

@@ -154,11 +154,18 @@ type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se){
   i64 argcnt = se->cnt - 1;
 
   symbol name = expr_symbol(name_expr);
-
-  var_def * fvar = get_variable(name);
-  if(fvar == NULL) COMPILE_ERROR("unknown symbol '%s'", symbol_name(name));
-  if(fvar->type == type_pool_get(&cmacro_def_def)){
-    cmacro_def * macro = fvar->data;
+  ASSERT(name.id != 0);
+  void * var_data;
+  type_def * var_type;
+  {
+    var_def * fvar = get_variable(name);
+    if(fvar == NULL) COMPILE_ERROR("unknown symbol '%s'", symbol_name(name));
+    var_data = fvar->data;
+    var_type = fvar->type;
+  }
+  
+  if(var_type == type_pool_get(&cmacro_def_def)){
+    cmacro_def * macro = var_data;
 
     if(macro->arg_cnt != argcnt && macro->arg_cnt != -1)
       ERROR("Unsupported number of arguments %i for %s",argcnt, macro->name);
@@ -180,9 +187,9 @@ type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se){
     default:
       ERROR("Number of macro arguments not supported: %i", argcnt);
     }
-  }else if(fvar->type->type == FUNCTION){
-    type_def * td = fvar->type;
-    ASSERT(fvar->name.id != 0);
+  }else if(var_type->type == FUNCTION){
+    type_def * td = var_type;
+
     COMPILE_ASSERT(td->fcn.cnt == argcnt);
     c_value fargs[argcnt];
     memset(fargs,0,sizeof(c_value) * argcnt);
@@ -227,16 +234,15 @@ type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se){
     call.arg_cnt = argcnt;
 
     value->type = C_FUNCTION_CALL;
-    value->call = call;
-    
+    value->call = call;   
     return td->fcn.ret;
-  }else if(fvar->type == macro_store_type()){
+  }else if(var_type == macro_store_type()){
     type_def * _t = expand_macro(block, value, se->exprs, se->cnt);
     ASSERT(_t != &error_def);
     return _t;
   }else{
 
-    ERROR("Not supported.. %i\n", fvar->type->type);
+    ERROR("Not supported.. %i\n", var_type->type);
   }
   return &error_def;
 }
