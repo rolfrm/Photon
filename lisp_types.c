@@ -112,6 +112,34 @@ void print_min_type(type_def * type){
   }
 }
 
+type_def * get_fcn_ptr_function(type_def * td, int * _ptrs){
+  int ptrs = 0;
+  while(td->type == POINTER){td = td->ptr.inner; ptrs++;}
+  if(td->type == FUNCTION){
+    *_ptrs = ptrs;
+    return td;
+  }
+  return NULL;
+}
+
+void print_function_decl(int ptrs, type_def * def, symbol name){
+  ASSERT(def->type == FUNCTION);
+  print_min_type(def->fcn.ret);
+  format(" (%.*s %s)(",ptrs,"*",get_c_name(name));
+  for(i64 i = 0; i < def->fcn.cnt; i++){
+    int fptr_ptrs;
+    type_def * fptr = get_fcn_ptr_function(def->fcn.args[i], &fptr_ptrs);
+    if(fptr != NULL){
+      char name[10];
+      sprintf(name, "arg%i", i);
+      print_function_decl(fptr_ptrs,fptr, get_symbol(name));
+    }else print_min_type(def->fcn.args[i]);
+    if(i + 1 != def->fcn.cnt)
+      format(", ");
+  }
+  format(")");
+}
+
 void print_cdecl(decl idecl){
   
   type_def * def = idecl.type;
@@ -124,35 +152,18 @@ void print_cdecl(decl idecl){
   case SIMPLE:
   case POINTER:
     {
-      int ptrs = 0;
-      type_def * inner = def;
-      while(inner->type == POINTER) {inner = inner->ptr.inner; ptrs++;};
-      if(inner->type == FUNCTION){
-	//logd("THIS HAPPENS!!!\n");
-	print_min_type(def->fcn.ret);
-	format(" (%.*%s %s)(",ptrs,"*",get_c_name(idecl.name));
-	for(i64 i = 0; i < def->fcn.cnt; i++){
-	  print_min_type(def->fcn.args[i]);
-	  if(i + 1 != def->fcn.cnt)
-	    format(", ");
-	}
-	format(")");
-	return;
+      int inner_ptrs;
+      type_def * fptr = get_fcn_ptr_function(def, &inner_ptrs);
+      if(fptr != NULL){
+	print_function_decl(inner_ptrs, fptr, idecl.name);
+      }else{
+	print_min_type(def);
+	format(" %s",get_c_name(idecl.name));
       }
-
-      print_min_type(def);
-      format(" %s",get_c_name(idecl.name));
     }
     break;
   case FUNCTION:
-    print_min_type(def->fcn.ret);
-    format(" %s(",get_c_name(idecl.name));
-    for(i64 i = 0; i < def->fcn.cnt; i++){
-      print_min_type(def->fcn.args[i]);
-      if(i + 1 != def->fcn.cnt)
-	format(", ");
-    }
-    format(")");
+    print_function_decl(0, def, idecl.name);
     break;
   case type_def_kind_cnt:
     ERROR("Not supported: '%i'\n", def->type);

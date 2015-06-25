@@ -271,9 +271,7 @@ uloc uloc uloc
 
 (defun mouse-callback (void (win-ptr (ptr void)) (button i32) (action i32) (mods i32))
   (write-line "mouse callback!"))
-(progn
-  (glfw:set-mouse-button-callback win (cast (addrof mouse-callback) (ptr void)))
-  1)
+(glfw:set-mouse-button-callback win (addrof mouse-callback))
 
 (ptr+ "asdasd" 2)
 (while (not (eq iteration 40))

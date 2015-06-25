@@ -200,9 +200,20 @@ type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se){
 	  
 	}else{
 	  logd("ERROR: got '");
-	  print_min_type(farg_types[i]);
+	  int ptrs1;
+	  type_def * t1i = get_fcn_ptr_function(farg_types[i], &ptrs1);
+	  if(t1i != NULL){
+	    logd("(function %.*s)", ptrs1, "*");
+	  }else{
+	    print_min_type(farg_types[i]);
+	  }
 	  logd("' expected '");
-	  print_min_type(td->fcn.args[i]);
+	  t1i = get_fcn_ptr_function(td->fcn.args[i], &ptrs1);
+	  if(t1i != NULL){
+	    logd("(function %.*s)", ptrs1, "*");
+	  }else{
+	    print_min_type(td->fcn.args[i]);
+	  }
 	  logd("'\n");
 	  ERROR("Non matching types");
 	}

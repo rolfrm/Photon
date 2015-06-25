@@ -106,3 +106,4 @@ void print_def(type_def * type);
 void print_min_type(type_def * type);
 type_def * str2type(char * str);
 void print_decl(type_def * t, symbol name);
+type_def * get_fcn_ptr_function(type_def * td, int * out_ptrs);

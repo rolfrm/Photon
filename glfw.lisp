@@ -11,4 +11,4 @@
 
 (load-symbol libglfw (quote glfw:set-mouse-button-callback) (quote glfwSetMouseButtonCallback)
 	     (type (fcn void (win-ptr (ptr void)) 
-			(fcn (ptr void)))));(ptr (fcn void (win (ptr void)) (button i32) (action i32) (mods i32)))))))
+			(fcn (ptr (fcn void (win (ptr void)) (button i32) (action i32) (mods i32)))))))
