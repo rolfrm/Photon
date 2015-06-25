@@ -39,3 +39,17 @@
 (glfw:load-sym glfw:set-cursor-pos-callback glfwSetCursorPosCallback
 	       (fcn void (win (ptr void)) 
 		    (callback (ptr (fcn void (win (ptr void)) (x f64) (y f64))))))
+
+(glfw:load-sym glfw:set-cursor-enter-callback glfwSetCursorEnterCallback
+	       (fcn void (win (ptr void)) (callback (ptr (fcn void (win (ptr void)) (entered i32))))))
+
+(glfw:load-sym glfw:set-char-callback glfwSetCharCallback 
+	       (fcn void (win (ptr void)) (cb (ptr (fcn void (win (ptr void)) (chr char))))))
+(glfw:load-sym glfw:set-scroll-callback glfwSetScrollCallback
+	       (fcn void (win (ptr void)) (cb (ptr (fcn void (win (ptr void)) (scroll-x f64)
+							(scroll-y f64))))))
+(glfw:load-sym glfw:joystick-present? glfwJoystickPresent
+	       (fcn bool (joy-idx i32)))
+(glfw:load-sym glfw:get-joystick-axes glfwGetJoystickAxes (fcn (ptr f32) (joy i32) (axis-count (ptr i32))))
+(glfw:load-sym glfw:get-joystick-buttons glfwGetJoystickButtons (fcn (ptr u8) (joy i32) (button-count (ptr i32))))
+

@@ -275,15 +275,25 @@ uloc uloc uloc
 (defun key-callback (void (win-ptr (ptr void)) (key i32) (scancode i32) (action i32) (mods i32))
   (printf "KEY: %c\n" (cast key i64)))
 (defun cursor-pos-callback (void (win-ptr (ptr void)) (x f64) (y f64))
-  (write-line "cursor pos"));
+  (noop));
+
 (defun error-callback (void (code i32) (str (ptr char)))
   (write-line str))
+
+(defun cursor-enter (void (win (ptr void)) (enter i32))
+  (if (eq enter (cast 1 i32))
+      (write-line "ENTER")
+      (write-line "LEAVE")))
 
 (glfw:set-mouse-button-callback win (addrof mouse-callback))
 (glfw:set-key-callback win (addrof key-callback))
 (glfw:set-cursor-pos-callback win (addrof cursor-pos-callback))
 (glfw:set-error-callback (addrof error-callback))
+(glfw:set-cursor-enter-callback win (addrof cursor-enter))
 (ptr+ "asdasd" 2)
+(glfw:joystick-present? 1)
+
+
 (while (not (eq iteration 40))
   (progn
     (glfw:poll-events)
