@@ -35,13 +35,21 @@
 
 (load-libc printf (fcn void (fmt (ptr char)) (x i64)))
 (load-libc usleep (fcn void (time i32)))
-(load-libc malloc (fcn (ptr void) (bytes i64)))
-(load-libc free (fcn void (ptr (ptr void))))
+;(load-libc malloc (fcn (ptr void) (bytes i64)))
+;(load-libc free (fcn void (ptr (ptr void))))
+(load-symbol+ libc alloc malloc (fcn (ptr void) (bytes u64)))
+(load-symbol+ libc dealloc free (fcn void (ptr (ptr void))))
 (load-libc realloc (fcn (ptr void) (ptr (ptr void)) (bytes u64)))
 (load-libc memcpy (fcn void (dst (ptr void)) (src (ptr void)) (bytes u64)))
+(load-libc memset (fcn void (dst (ptr void)) (c u8) (bytes u64)))
 (load-libc exit  (fcn void (status i32)))
-(load-libc strlen (fcn u32 (str (ptr char))))
+(load-libc strlen (fcn i64 (str (ptr char))))
 
+(defun alloc0 ((ptr void) (size u64))
+  (var ((buffer (alloc size)))
+       (progn
+	 (memset buffer 0 size)
+	 buffer)))
 
 (defcmacro ptr+ (ptr offset)
   (var ((size_expr (number2expr (cast (size-of (ptr-inner (type-of ptr))) i64))))

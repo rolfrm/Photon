@@ -222,6 +222,7 @@ type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se){
 	    print_min_type(td->fcn.args[i]);
 	  }
 	  logd("'\n");
+	  logd("for function '%s'\n", symbol_name(name));
 	  ERROR("Non matching types");
 	}
       }

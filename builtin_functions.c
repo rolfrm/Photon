@@ -81,12 +81,17 @@ u32 u32_mul(u32 a, u32 b){ return a * b; }
 u32 u32_div(u32 a, u32 b){ return a / b; }
 
 i32 i32_add(i32 a, i32 b) { return a + b; }
+
 type_def * type_of(expr * ex){
-c_block blk;
-blk.exprs = NULL;
-blk.expr_cnt = 0;
-c_value val;
-return _compile_expr(&blk, &val, *ex);
+  c_block blk;
+  blk.exprs = NULL;
+  blk.expr_cnt = 0;
+  c_value val;
+  return _compile_expr(&blk, &val, *ex);
+}
+
+char * symbol_name2(symbol * sym){
+  return symbol_name(*sym);
 }
 
 void load_functions(){
@@ -127,4 +132,5 @@ void load_functions(){
   defun("print-expr", str2type("(fcn void (theexpr (ptr expr)))"), print_expr);
   defun("ptr-inner", str2type("(fcn (ptr type_def) (ptr (ptr type_def)))"),  ptr_inner);
   defun("type2expr", str2type("(fcn (ptr expr) (t (ptr type_def)))"), type2expr);
+  defun("symbol-name", str2type("(fcn (ptr char) (sym (ptr symbol)))"), symbol_name2);
 }

@@ -133,7 +133,7 @@
 
 
 (defvar teststr "asdaasd")
-(defvar testarray (malloc 10))
+(defvar testarray (alloc 10))
 (memcpy testarray (cast teststr (ptr void)) 8)
 (write_line (cast testarray (ptr char)))
 
@@ -181,6 +181,11 @@ add-test-cnt
 
 (defcmacro comment (_expr)
   (expr (write_line "lol..")))
+
+(load "overload.lisp")
+
+(exit 0)
+
 (load "glfw.lisp")
 (load "gl.lisp")
 (glfw:init)
@@ -225,7 +230,7 @@ void main(){
 (if (eq glstatus gl:true)
       (write-line "success!")
       (write-line "fail!"))
-(defvar buffer (cast (malloc 1000) (ptr char)))
+(defvar buffer (cast (alloc 1000) (ptr char)))
 (defvar length (cast 0 u32))
 (gl:get-shader-info-log vert 1000 (addrof length) buffer)
 length
@@ -245,7 +250,7 @@ glstatus
 
 ;;; -- Load Vertex Buffer Object -- ;;;
 (defvar vbo (cast 0 u32))
-(defvar vbo-data (cast (malloc (i64* 8 4)) (ptr f32))) ; 4 floats
+(defvar vbo-data (cast (alloc (i64* 8 4)) (ptr f32))) ; 4 floats
 (setf (deref (ptr+ vbo-data 2)) (cast 0.25 f32))
 (setf (deref (ptr+ vbo-data 4)) (cast 0.25 f32))
 (setf (deref (ptr+ vbo-data 5)) (cast 0.25 f32))
@@ -293,6 +298,7 @@ uloc uloc uloc
 (ptr+ "asdasd" 2)
 (glfw:joystick-present? 1)
 
+
 (while (not (eq iteration 40))
   (progn
     (glfw:poll-events)
@@ -325,11 +331,9 @@ uloc uloc uloc
     (glfw:swap-buffers win)
     (usleep sleeptime)))
 
-(defvar m (cast (malloc 100) (ptr char)))
+(defvar m (cast (alloc 100) (ptr char)))
 (setf (deref m) (deref "a"))
 (setf (deref m) (deref "œ"))
-
-;(load "overload.lisp")
 
 "SUCCESS!"
 
@@ -338,7 +342,7 @@ uloc uloc uloc
 (while (not (eq a 1000))
   (progn
     (setf a (i64+ a 1))
-    (free (realloc (malloc 1000) 2000))
+    (dealloc (realloc (alloc 1000) 2000))
     10
     ))
 
