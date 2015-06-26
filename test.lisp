@@ -177,15 +177,14 @@ add-test-cnt
 (add-to-list+ add-test add-test-cnt to-add)
 (write_line "asd")
 (printf "test: %i\n" (cast add-test-cnt i64))
-(write_line "the following works if libglfw is installed")
+
 
 (defcmacro comment (_expr)
   (expr (write_line "lol..")))
 
-(load "overload.lisp")
+;(load "overload.lisp")
 
-(exit 0)
-
+(write_line "the following works if libglfw is installed")
 (load "glfw.lisp")
 (load "gl.lisp")
 (glfw:init)
@@ -206,7 +205,6 @@ void main(){
   gl_FragColor = vec4(1.0,1.0,1.0,1.0);
 }
 ")
-(defvar frag-src-len (strlen frag-src))
 
 (defvar vert-src "
 #version 130
@@ -216,7 +214,8 @@ void main(){
   gl_Position = vec4(vertex_position + offset,0.0,1.0);
 }
 ")
-(defvar vert-src-len (strlen vert-src))
+(defvar frag-src-len (cast (strlen frag-src) u32))
+(defvar vert-src-len (cast (strlen vert-src) u32))
 (gl:shader-source frag 1 (addrof frag-src) (addrof frag-src-len))
 (gl:compile-shader frag)
 (defvar glstatus (cast 0 u32))
@@ -250,7 +249,7 @@ glstatus
 
 ;;; -- Load Vertex Buffer Object -- ;;;
 (defvar vbo (cast 0 u32))
-(defvar vbo-data (cast (alloc (i64* 8 4)) (ptr f32))) ; 4 floats
+(defvar vbo-data (cast (alloc (u64* 8 4)) (ptr f32))) ; 4 floats
 (setf (deref (ptr+ vbo-data 2)) (cast 0.25 f32))
 (setf (deref (ptr+ vbo-data 4)) (cast 0.25 f32))
 (setf (deref (ptr+ vbo-data 5)) (cast 0.25 f32))
