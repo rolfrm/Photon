@@ -36,8 +36,7 @@
 (symbol-combine (quote a) (quote b))
 
 
-
-(print_type (type overload))
+;(print_type (type overload))
 (defvar prototype :type overload)
 ;overload
 (exit 0)
