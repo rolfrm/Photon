@@ -268,28 +268,10 @@ void _make_dependency_graph(type_def ** defs, type_def * def, bool nested){
     if(!symbol_cmp(def->cstruct.name, symbol_empty) && !nested) check_add();;
     break;
   case POINTER:
-    //*defs_it = def;
-    inner = def;
-    while(inner->type == POINTER || inner->type == TYPEDEF){
-      if(inner->type == POINTER)
-	inner = inner->ptr.inner;
-      else
-	inner = inner->ctypedef.inner;
-    }
-    if(inner->type == STRUCT){
-      logd("THIS HAPPENS\n");
-      _make_dependency_graph(defs,get_opaque(inner), nested);
-    }
-    
-    //check_add();    
-    //_make_dependency_graph(defs,def->ptr.inner,true);
+    check_add();    
     break;
   case TYPEDEF:
-    //if(nested) break;
-    inner = def->ctypedef.inner; 
-    //if(inner->type == STRUCT){
-    //  inner = get_opaque(inner);
-    //}
+    inner = def->ctypedef.inner;
     _make_dependency_graph(defs,inner, nested);
     check_add();    
     break;
@@ -352,14 +334,84 @@ u64 size_of(type_def * t){
   return 0;
 }
 
+
+
 // if the code depends on *def it also depends on a number of other 
 // types. This is however only what needs to be forward declared.
 void make_dependency_graph(type_def ** defs, type_def * def){
   _make_dependency_graph(defs,def,false);
 }
 
+void get_no_size_dependencies(type_def ** defs, type_def * def){
+  bool check(){
+    type_def ** defs_it = defs;
+    for(; *defs_it != NULL; defs_it++){
+      if(*defs_it == def)
+	return false;
+    }
+    return true;
+  }
+  
+  bool check_add(){
+    type_def ** defs_it = defs;
+    for(; *defs_it != NULL; defs_it++){
+      if(*defs_it == def)
+	return false;
+    }
+    *defs_it = def;
+    return true;
+  }
+  if(check() == false) return;
+  switch(def->type){
+  case UNION:
+    check_add();
+    break;
+  case STRUCT:
+    check_add();
+    break;
+  case POINTER:
+    get_no_size_dependencies(defs, def->ptr.inner);
+    break;
+  case TYPEDEF:
+    get_no_size_dependencies(defs, def->ctypedef.inner);
+    check_add();    
+    break;
+    
+  case FUNCTION:
+    get_no_size_dependencies(defs, def->fcn.ret);
+    for(int i = 0; i < def->fcn.cnt; i++)
+      get_no_size_dependencies(defs, def->fcn.args[i]);
+    break;
+  case OPAQUE_STRUCT:
+  case ENUM:
+    check_add();
+    break;
+  case SIMPLE:
+    break;
+  case type_def_kind_cnt:
+    ERROR("Unknown type: %i",def->type);
+    break;
+  }
+}
+
 void write_dependencies(type_def ** deps){
   format("#include \"cstd_header.h\"\n");
+  // first forward declare.
+  type_def * lo_deps[1000];
+  memset(lo_deps,0,sizeof(lo_deps));
+  uint i;
+  for(i = 0; i < array_count(lo_deps);i++){
+    if(deps[i] == NULL) break;
+    get_no_size_dependencies(lo_deps,deps[i]);
+  }
+  
+  for(i = 0; i < array_count(lo_deps);i++){
+    if(lo_deps[i] == NULL) break;
+    if(lo_deps[i]->type == STRUCT){
+      ERROR("HAPPENS");
+    }
+  }
+  logd("I: %i\n", i);
   for(; *deps != NULL; deps++){
     type_def * t = *deps;
     if(t->type == STRUCT || t->type == OPAQUE_STRUCT){

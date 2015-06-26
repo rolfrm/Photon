@@ -309,14 +309,31 @@ TCCState * mktccs(){
   return tccs;
 }
 
-void go_write(type_def ** deps, symbol * vdeps, c_root_code * codes, size_t code_cnt){
 
+void go_write(type_def ** deps, symbol * vdeps, c_root_code * codes, size_t code_cnt){
+  
   write_dependencies(deps);
   for(size_t i = 0; deps[i] != NULL; i++){
     type_def * t = deps[i];
-    while(t->type == POINTER){
-      t = t->ptr.inner;
+    if(t->type == POINTER){
+      logd("this happens..\n");
+      while(t->type == POINTER){
+	t = t->ptr.inner;
+      }
+      if(t->type == STRUCT){
+	t = get_opaque(t);
+      }
+
+      if(t->type == OPAQUE_STRUCT){
+	print_def(t); format(";\n");
+      }if(t->type == TYPEDEF){
+	//print_min_type(t); format("\n");
+      }else{
+	logd("this also %i\n", t->type);
+      }
+      continue;
     }
+    if(t->type == SIMPLE) continue;
     if(t->type == FUNCTION){
       continue;
     }
@@ -374,7 +391,7 @@ void compile_as_c(c_root_code * codes, size_t code_cnt){
     c_root_code_dep(deps, vdeps, codes[i]);
   }
   checkvdeps(vdeps);
-  
+ 
   char * data = NULL;
   size_t cnt = 0;
   FILE * f = open_memstream(&data, &cnt);
