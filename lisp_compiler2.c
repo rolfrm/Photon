@@ -508,17 +508,16 @@ void lisp_run_expr(expr ex){
     logd("%i\n",v);
   }else if(ret == &error_def){
     
+  }else if(ret == SIMPLE){
+
+    void * (* fcn)() = evaldef->data;
+    void * v = fcn();
+    logd("try %p\n", v);
   }else{
+    logd("Cannot execute function");
 
-    //void (* fcn)() = evaldef->data;
-
-    //fcn();
-    
-    //logd("try %p\n", v);
   }
-  print_expr(&ex);
-    checktypepool();
-  
+  checktypepool();
 }
 
 void lisp_run_exprs(expr * exprs, size_t exprcnt){

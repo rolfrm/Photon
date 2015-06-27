@@ -40,19 +40,20 @@
 
 (defvar prototype :type overload)
 ;(check-type-pool)
-(setf (member prototype member-cnt) 10)
+(memset (cast (addrof prototype) (ptr void)) 0 (size-of (type overload)))
 (member prototype member-cnt)
+(setf (member prototype member-cnt) 10)
+(setf (member prototype member-cnt) (i64* (member prototype member-cnt) (member prototype member-cnt)))
+(member prototype member-cnt)
+(size-of (type overload))
+
 (exit 0)
-
-;; (defcmacro make (type)
-;;   (var ((item :type type))
-;;        item))
-
 (defcmacro defoverloaded (fcn-name)
   (expr
-   (defvar (symbol-combine (quote (unexpr fcn-name)) (quote -info))
-     (make overload :members (cast null (ptr overload-info)) :member-cnt 0))))
-
+   (defvar (symbol-combine (quote  fcn-name)) (quote -info))
+     (var ((overload prototype))
+	  overload))))
+(defoverloaded +test)
 (exit 0)
 
 

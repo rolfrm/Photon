@@ -754,6 +754,5 @@ void builtin_macros_load(){
   defun("walk-expr",str2type("(fcn (ptr expr) (a (ptr expr)))"), walk_expr2);
   //defun("___expand", str2type("(fcn (ptr expr) (e (ptr expr)))"),expand_expr);
   defun("number2expr",str2type("(fcn (ptr expr) (a i64))"), number2expr);
-  defun("check-type-pool", str2type("(fcn void)"), checktypepool);
 			       
 }
