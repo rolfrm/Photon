@@ -39,17 +39,34 @@
 ;(print_type (type overload))
 
 (defvar prototype :type overload)
-;(check-type-pool)
 (memset (cast (addrof prototype) (ptr void)) 0 (size-of (type overload)))
-(member prototype member-cnt)
-(setf (member prototype member-cnt) 10)
-(setf (member prototype member-cnt) (i64* (member prototype member-cnt) (member prototype member-cnt)))
-(member prototype member-cnt)
-(size-of (type overload))
+
+(defcmacro defoverloaded (fcn-name)
+  (var ((s (symbol-combine (expr2symbol fcn-name) (quote -info))))
+       (progn
+	 (printstr "|")
+	 (printstr (symbol-name s))
+	 (printstr "|\n")
+	 (expr (progn
+		 (defcmacro (unexpr fcn-name) (a b)
+		   (expr (noop)))
+		 (defvar (unexpr (symbol2expr s)) prototype)
+		 (noop))))))
+
+(defcmacro overload (name type body)
+  (expr (noop)))
+
+(defoverloaded +)       
+
+(overload + (fcn i64 (a i64) (b i64))
+	  (i64+ a b))
+(overload + (fcn i32 (a i32) (b i32))
+	  (i32+ a b))
+(+ 1 2)
+(+ (cast 1 i32) (cast 2 i32))
 
 (exit 0)
-(defcmacro defoverloaded (fcn-name)
-  (expr
+(expr
    (defvar (symbol-combine (quote  fcn-name)) (quote -info))
      (var ((overload prototype))
 	  overload))))

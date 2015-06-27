@@ -726,6 +726,22 @@ type_def * member_macro(c_block * blk, c_value * val, expr object, expr member){
   return memtype;
 }
 
+symbol * expr2symbol(expr * e){
+  char buffer[e->value.strln + 1];
+  memcpy(buffer, e->value.value, e->value.strln);
+  buffer[e->value.strln] = 0;
+  return get_symbol2(buffer);
+}
+
+expr * symbol2expr(symbol * s){
+  expr * out = alloc(sizeof(expr));
+  out->type = VALUE;
+  out->value.type = SYMBOL;
+  out->value.value = symbol_name(*s);
+  out->value.strln = strlen(symbol_name(*s));
+  return out;
+}
+
 void builtin_macros_load(){
   // Macros
   define_macro("type", 1, type_macro);
@@ -754,5 +770,6 @@ void builtin_macros_load(){
   defun("walk-expr",str2type("(fcn (ptr expr) (a (ptr expr)))"), walk_expr2);
   //defun("___expand", str2type("(fcn (ptr expr) (e (ptr expr)))"),expand_expr);
   defun("number2expr",str2type("(fcn (ptr expr) (a i64))"), number2expr);
-			       
+  defun("expr2symbol", str2type("(fcn (ptr symbol) (a (ptr expr)))"), expr2symbol);
+  defun("symbol2expr", str2type("(fcn (ptr expr) (a (ptr symbol)))"), symbol2expr);
 }
