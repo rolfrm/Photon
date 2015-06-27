@@ -37,8 +37,11 @@
 
 
 ;(print_type (type overload))
+
 (defvar prototype :type overload)
-;overload
+;(check-type-pool)
+(setf (member prototype member-cnt) 10)
+(member prototype member-cnt)
 (exit 0)
 
 ;; (defcmacro make (type)

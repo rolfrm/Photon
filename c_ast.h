@@ -32,7 +32,8 @@ typedef enum{
   C_ADDRESS_OF,
   C_SYMBOL,
   C_CAST,
-  C_NOTHING
+  C_NOTHING,
+  C_MEMBER
 }c_value_kind;
 
 struct _c_value;
@@ -66,6 +67,12 @@ typedef struct{
   type_def * type;
 }c_function_call;
 
+typedef struct{
+  symbol name;
+  c_value * item;
+  type_def * type;
+}c_member;
+
 struct _c_value{
   c_value_kind type;
   union{
@@ -75,6 +82,7 @@ struct _c_value{
     c_value * value;//sub expr, deref
     c_function_call call;
     c_operator operator;
+    c_member member;
   };  
 };
 

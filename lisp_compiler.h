@@ -81,3 +81,4 @@ void with_symbols(var_def ** vars, size_t * vars_cnt, void (*fcn)());
 void push_symbols(var_def ** vars, size_t * vars_cnt);
 void pop_symbols();
 bool test_lisp2c();
+void checktypepool();

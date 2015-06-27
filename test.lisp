@@ -2,6 +2,7 @@
 (load "std.lisp")
 (assert (eq false (eq 0 1)))
 
+
 ;; Constants
 1 
 "hello world!"
@@ -9,6 +10,8 @@
 ;; Function calls
 (write_line "hello world!")
 (i64+ 10 10)
+
+;(defvar i65+ (cast (addrof i64+) (fcn i8 (a i8) (b i8))))
 
 ;; Defining functions
 (defun add (f64 (a f64) (b f64)) (f+ a b))
@@ -182,8 +185,8 @@ add-test-cnt
 (defcmacro comment (_expr)
   (expr (write_line "lol..")))
 
-;(load "overload.lisp")
-
+(load "overload.lisp")
+(exit 0)
 (write_line "the following works if libglfw is installed")
 (load "glfw.lisp")
 (load "gl.lisp")
@@ -279,7 +282,13 @@ uloc uloc uloc
 (defun key-callback (void (win-ptr (ptr void)) (key i32) (scancode i32) (action i32) (mods i32))
   (printf "KEY: %c\n" (cast key i64)))
 (defun cursor-pos-callback (void (win-ptr (ptr void)) (x f64) (y f64))
-  (noop));
+  (progn
+    (printstr "(")
+    (printf64 x)
+    (printstr " ")
+    (printf64 y)
+    (printstr ")\n")
+    (noop)))
 
 (defun error-callback (void (code i32) (str (ptr char)))
   (write-line str))
@@ -307,7 +316,7 @@ uloc uloc uloc
     (gl:uniform-2f uloc 0.0 0.0)
     (gl:draw-arrays drawtype 0 pts)
     (glfw:swap-buffers win)
-    
+    (glfw:poll-events)    
     (usleep sleeptime)
     (gl:clear-color 0.5  0.0 0.4  1.0 )
     (gl:clear gl:color-buffer-bit)
@@ -321,6 +330,7 @@ uloc uloc uloc
     (gl:draw-arrays drawtype 0 pts)
     
     (glfw:swap-buffers win)
+    (glfw:poll-events)
     (usleep sleeptime)
     
     (gl:clear-color 0.0  0.0 0.0  1.0 )
@@ -328,6 +338,7 @@ uloc uloc uloc
     (gl:uniform-2f uloc -0.2 -0.2)
     (gl:draw-arrays drawtype 0 pts)
     (glfw:swap-buffers win)
+    (glfw:poll-events)
     (usleep sleeptime)))
 
 (defvar m (cast (alloc 100) (ptr char)))

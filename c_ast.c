@@ -46,7 +46,7 @@ void value_dep(type_def ** deps, symbol * vdeps, c_value val){
   case C_SUB_EXPR:
   case C_DEREF:
   case C_ADDRESS_OF:
-    value_dep(deps, vdeps, *val.value);
+     value_dep(deps, vdeps, *val.value);
     break;
   case C_SYMBOL:
     var = get_variable(val.symbol);
@@ -57,6 +57,10 @@ void value_dep(type_def ** deps, symbol * vdeps, c_value val){
     }
     add_var_dep(vdeps, val.symbol);
     make_dependency_graph(deps, var->type);
+    break;
+  case C_MEMBER:
+    //make_dependency_graph(deps, val.member.type);
+    value_dep(deps, vdeps, *val.member.item);
     break;
   case C_CAST:
     make_dependency_graph(deps, val.cast.type);
@@ -122,6 +126,11 @@ void print_value(c_value val){
   case C_ADDRESS_OF:
     format("&");
     print_value(*val.value);
+    break;
+  case C_MEMBER:
+    format("(");
+    print_value(*val.member.item);
+    format(".%s)", get_c_name(val.member.name));;
     break;
   case C_DEREF:
     format("*");

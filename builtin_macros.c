@@ -70,12 +70,13 @@ type_def * var_macro(c_block * block, c_value * val, expr vars, expr body){
 }
 
 type_def * defvar_macro(c_block * block, c_value * val, expr * exprs, size_t cnt){
+
   COMPILE_ASSERT(cnt == 2 || cnt == 3);
   expr name = exprs[0];
   COMPILE_ASSERT(is_symbol(name));
   symbol sym = expr_symbol(name);
   type_def * t;
- 
+
   if(is_keyword(exprs[1]) && expr_symbol(exprs[1]).id == get_symbol("type").id && cnt == 3){
     
     t = _type_macro(exprs[2]);
@@ -94,13 +95,15 @@ type_def * defvar_macro(c_block * block, c_value * val, expr * exprs, size_t cnt
     val->operator.right = vr;
     val->operator.operator = "=";
   }
-
+  
   c_root_code var_root;
   var_root.type = C_VAR_DEF;
   var_root.var.var.name = sym;
   var_root.var.var.type = t;
   var_root.var.value = NULL;
+
   compile_as_c(&var_root,1);
+
   return t;
 }
 
@@ -680,10 +683,6 @@ expr * number2expr(i64 num){
   return clone(&e, sizeof(e));
 }
 
-static int test(){
-  return ((1 )&& (2));
-}
-
 type_def * boolean_operator(char * operator, c_block * blk, c_value * val, expr left, expr right){
   c_value left_value, right_value;
   type_def * left_t = _compile_expr(blk,&left_value,left);
@@ -704,8 +703,30 @@ type_def * or_macro(c_block * blk, c_value * val, expr left, expr right){
   return boolean_operator("||", blk, val, left, right);
 }
 
+type_def * member_macro(c_block * blk, c_value * val, expr object, expr member){
+  //checktypepool();
+  ASSERT(is_symbol(member));
+  val->type = C_MEMBER;
+  val->member.name = expr_symbol(member);
+  val->member.item = alloc0(sizeof(c_value));
+  type_def * obj_type = _compile_expr(blk, val->member.item, object);
+  if(obj_type->type == TYPEDEF) obj_type = obj_type->ctypedef.inner;
+  ASSERT(obj_type->type == STRUCT);
+  type_def * memtype = NULL;
+  for(int i = 0; i < obj_type->cstruct.cnt; i++){
+    decl member = obj_type->cstruct.members[i];
+    if(member.name.id == val->member.name.id){
+      memtype = member.type;
+    }
+  }
+  
+  if(memtype == NULL)
+    ERROR("Unable to find member '%s' on struct", symbol_name(val->member.name));
+  val->member.type = memtype;
+  return memtype;
+}
+
 void builtin_macros_load(){
-  test();
   // Macros
   define_macro("type", 1, type_macro);
   define_macro("defun", 3, defun_macro);
@@ -727,10 +748,12 @@ void builtin_macros_load(){
   define_macro("noop",0,no_op);
   define_macro("and",2,and_macro);
   define_macro("or",2,or_macro);
+  define_macro("member", 2, member_macro);
 
   opaque_expr();
   defun("walk-expr",str2type("(fcn (ptr expr) (a (ptr expr)))"), walk_expr2);
   //defun("___expand", str2type("(fcn (ptr expr) (e (ptr expr)))"),expand_expr);
   defun("number2expr",str2type("(fcn (ptr expr) (a i64))"), number2expr);
+  defun("check-type-pool", str2type("(fcn void)"), checktypepool);
 			       
 }

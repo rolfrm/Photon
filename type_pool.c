@@ -141,6 +141,14 @@ type_def * type_pool_get(type_def * lookup){
   return _type_pool_get(lookup, false);
 }
 
+void checktypepool(){
+  size_t c = known_types_cnt[TYPEDEF];
+  type_def ** td = known_types[TYPEDEF];
+  for(u32 i = 0; i < c;i++){
+    ASSERT(td[i]->ctypedef.name.id != 0);
+  }
+}
+	  
 type_def * get_opaque(type_def * t){
   ASSERT(t->type == STRUCT);
   type_def d = *t;
@@ -154,7 +162,7 @@ void type_pool_reg_static(type_def * lookup){
 }
 
 
-type_def * type_pool_simple(symbol s){
+type_def * _type_pool_simple(symbol s){
   type_def_kind valid_kinds[] = {SIMPLE, TYPEDEF, STRUCT, UNION, ENUM};
   for(size_t j = 0; j < array_count(valid_kinds); j++){
     size_t c = known_types_cnt[valid_kinds[j]];
@@ -165,8 +173,8 @@ type_def * type_pool_simple(symbol s){
 	if(td[i]->simple.name.id == s.id) return td[i];
       break;
     case TYPEDEF:
-      for(size_t i = 0; i < c; i++)
-	if(td[i]->ctypedef.name.id == s.id) return td[i];
+      for(size_t i = 0; i < c; i++)     
+	if(td[i]->ctypedef.name.id == s.id) return td[i];  
       break;
     case OPAQUE_STRUCT:
     case STRUCT:
@@ -189,6 +197,10 @@ type_def * type_pool_simple(symbol s){
   return NULL;
 }
 
+type_def * type_pool_simple(symbol sym){
+  return _type_pool_simple(sym);
+}
+	  
 	  
 bool test_type_pool(){
   //type_def * td = str2type("(ptr i64)");

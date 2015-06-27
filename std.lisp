@@ -45,6 +45,16 @@
 (load-libc exit  (fcn void (status i32)))
 (load-libc strlen (fcn i64 (str (ptr char))))
 
+(load-symbol+ libc std:print_f64 printf (fcn (ptr void) (fmt (ptr char)) (x f64)))
+(defun printf64 (void (x f64))
+  (std:print_f64 "%f" x))
+
+(defun printf32 (void (x f32))
+  (std:print_f64 "%f" (cast x f64)))
+
+(defun printstr (void (x (ptr char)))
+  (std:print_f64 x 0.0))
+
 (defun alloc0 ((ptr void) (size u64))
   (var ((buffer (alloc size)))
        (progn
@@ -61,7 +71,6 @@
 	    (cast (unexpr ptr) i64)
 	    (i64* (unexpr offset) (unexpr size_expr)))
 	   (unexpr (type2expr (type-of ptr))))))))
-(ptr+ "asdasd" 4)
 
 (defun add-to-list (void (list (ptr (ptr void)))
 		    (cnt (ptr u64)) (data (ptr void)) (elem-size u64))
@@ -107,12 +116,8 @@
 		(print-expr (deref (ptr+ asserts (unexpr n))))	
 		(write-line "****  *****\n")	
 		(exit 1)
-		1
+		(noop)
 		)
-	      (progn
-		(write-line "OK")
-		2)
-
-		
+	      (noop)		
 	      )))))
 

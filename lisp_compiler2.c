@@ -123,7 +123,6 @@ type_def * _type_macro(expr typexpr){
     }
   }else{
     type_def * td = type_pool_simple(expr_symbol(typexpr));
-    td = type_pool_get(td);
     COMPILE_ASSERT(td != NULL);
     return td;
   }
@@ -462,7 +461,10 @@ void * lisp_compile_and_run_expr(expr ex){
 
 
 void lisp_run_expr(expr ex){
+
+
   var_def * evaldef = lisp_compile_expr(ex);
+
   if(evaldef == NULL) return; //to do: make better.
   ASSERT(evaldef != NULL);
   print_def(evaldef->type->fcn.ret); logd(" :: ");
@@ -507,10 +509,16 @@ void lisp_run_expr(expr ex){
   }else if(ret == &error_def){
     
   }else{
-    void * (* fcn)() = evaldef->data;
-    void * v = fcn();
-    logd("try %p\n", v);
+
+    //void (* fcn)() = evaldef->data;
+
+    //fcn();
+    
+    //logd("try %p\n", v);
   }
+  print_expr(&ex);
+    checktypepool();
+  
 }
 
 void lisp_run_exprs(expr * exprs, size_t exprcnt){
