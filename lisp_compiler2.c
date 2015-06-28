@@ -189,7 +189,9 @@ type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se){
   }else if(var_type->type == FUNCTION){
     type_def * td = var_type;
 
-    COMPILE_ASSERT(td->fcn.cnt == argcnt);
+    if(td->fcn.cnt != argcnt){
+      ERROR("Too few arguments to function '%s' got %i expected %i.", symbol_name(name), argcnt, td->fcn.cnt);
+    }
     c_value fargs[argcnt];
     memset(fargs,0,sizeof(c_value) * argcnt);
     type_def * farg_types[argcnt];

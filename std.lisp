@@ -45,15 +45,23 @@
 (load-libc exit  (fcn void (status i32)))
 (load-libc strlen (fcn i64 (str (ptr char))))
 
-(load-symbol+ libc std:print_f64 printf (fcn (ptr void) (fmt (ptr char)) (x f64)))
+(load-symbol+ libc std:print-f64 printf (fcn (ptr void) (fmt (ptr char)) (x f64)))
+(load-symbol+ libc std:print-i64 printf (fcn (ptr void) (fmt (ptr char)) (x i64)))
+
 (defun printf64 (void (x f64))
-  (std:print_f64 "%f" x))
+  (std:print-f64 "%f" x))
 
 (defun printf32 (void (x f32))
-  (std:print_f64 "%f" (cast x f64)))
+  (std:print-f64 "%f" (cast x f64)))
+
+(defun printi64 (void (x i64))
+  (std:print-i64 "%i" x))
+
+(defun printi32 (void (x i32))
+  (std:print-i64 "%i" (cast x i64)))
 
 (defun printstr (void (x (ptr char)))
-  (std:print_f64 x 0.0))
+  (std:print-f64 x 0.0))
 
 (defun print-symbol (void (x (ptr symbol)))
   (printstr (symbol-name x)))
@@ -90,17 +98,24 @@
 
 (defcmacro add-to-list+ (lst cnt item)
   (var ((size (size-of (type-of item))))
-       (var ((out-expr 
-	      (expr 
-	       (var ((lstptr (addrof (unexpr lst)))
-		     (cntptr (addrof (unexpr cnt)))
-		     (itemaddr (addrof (unexpr item))))
-		    (add-to-list (cast lstptr (ptr (ptr void)))
-				 cntptr
-				 (cast itemaddr (ptr void))
-				 (unexpr (number2expr (cast size i64))))))))
+       (progn
+	 ;; (printstr "size of")
+	 ;; (print_type (type-of item))
+	 ;; (print-expr item)
+	 ;; (printstr " : ")
+	 ;; (printi64 (cast size i64))
+	 ;; (printstr "\n")
+	 (var ((out-expr 
+		(expr 
+		 (var ((lstptr (addrof (unexpr lst)))
+		       (cntptr (addrof (unexpr cnt)))
+		       (itemaddr (addrof (unexpr item))))
+		      (add-to-list (cast lstptr (ptr (ptr void)))
+				   cntptr
+				   (cast itemaddr (ptr void))
+				   (unexpr (number2expr (cast size i64))))))))
 		    
-	    out-expr)))
+	      out-expr))))
 
 
 (defvar asserts (cast null (ptr (ptr expr))))
@@ -111,7 +126,6 @@
   (var ((n (number2expr (cast asserts-cnt i64))))
        (progn
 	 (add-to-list+ asserts asserts-cnt _expr)
-	 (printf "assert idx: %i\n" (cast asserts-cnt i64))
 	 (expr
 	  (if (not (unexpr _expr))
 	      (progn

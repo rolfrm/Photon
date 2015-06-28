@@ -38,7 +38,7 @@ void load_defs(){
   r2(&i16_def);
   i8_def = make_simple("i8",sizeof(i8));
   r2(&i8_def);
-  u64_def = make_simple("u64", sizeof(u64));
+  u64_def = make_simple("u64", 8);
   r2(&u64_def);
   u32_def = make_simple("u32", sizeof(u32));
   r2(&u32_def);

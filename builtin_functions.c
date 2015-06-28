@@ -94,6 +94,23 @@ char * symbol_name2(symbol * sym){
   return symbol_name(*sym);
 }
 
+type_def * var_type(symbol * sym){
+  var_def * var = get_variable(*sym);
+  if(var != NULL)
+    return var->type;
+  return NULL;
+}
+
+type_def ** fcn_arg_types(type_def * td){
+  ASSERT(td->type == FUNCTION);
+  return td->fcn.args;
+}
+
+u64 fcn_arg_cnt(type_def * td){
+  ASSERT(td->type == FUNCTION);
+  return td->fcn.cnt;
+}
+
 void load_functions(){
   defun("print_type", str2type("(fcn void (a (ptr type_def)))"), print_type);
   defun("write_line", str2type("(fcn void (a (ptr char)))"), &write_line);
@@ -133,4 +150,9 @@ void load_functions(){
   defun("ptr-inner", str2type("(fcn (ptr type_def) (ptr (ptr type_def)))"),  ptr_inner);
   defun("type2expr", str2type("(fcn (ptr expr) (t (ptr type_def)))"), type2expr);
   defun("symbol-name", str2type("(fcn (ptr char) (sym (ptr symbol)))"), symbol_name2);
+  defun("var-type", str2type("(fcn (ptr type_def) (variable (ptr symbol)))"), var_type);
+
+  defun("fcn-arg-types", str2type("(fcn (ptr (ptr type_def)) (t (ptr type_def)))"), fcn_arg_types);
+  defun("fcn-arg-cnt", str2type("(fcn u64 (t (ptr type_def)))"), fcn_arg_cnt);
+
 }

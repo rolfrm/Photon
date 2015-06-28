@@ -307,16 +307,17 @@ u64 size_of(type_def * t){
       s = MAX(size_of(t->cunion.members[i].type), s);
     return s;
   case STRUCT:
-    for(int i = 0; i < t->cunion.cnt ; i++){
+    for(int i = 0; i < t->cstruct.cnt ; i++){
+      
 	u64 thiss  = size_of(t->cstruct.members[i].type);
-	u64 size_left = 4 - (s % 4); // size_left in 4 byte align block.
+	u64 size_left = 0;//4 - (s % 4); // size_left in 4 byte align block.
 	if(thiss > size_left){
 	  s += size_left + thiss;
 	}
 	else{
 	  s += thiss;
 	}
-	//logd("size: %i %i\n",s, thiss);
+	logd("size: %i %i %i\n",i, s, thiss);
       }
     return s;
   case FUNCTION:
