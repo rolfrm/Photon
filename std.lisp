@@ -152,3 +152,35 @@
 (vararg-test 1 2 3 4 5)
 
 (assert (eq 4 (vararg-test 1 2 3 4 5)))
+
+(defcmacro let (vars &rest args)
+  (var ((sexprs (cast
+		 (alloc (u64* (cast (size-of (type (ptr expr))) u64)
+			      (u64+ 1 (sub-expr.cnt args)))) (ptr (ptr expr))))
+	(i (cast 0 u64)))
+       (progn
+	 (setf (deref sexprs) (symbol2expr (quote progn)))
+	 (while (not (eq  i (sub-expr.cnt args)))
+	   (progn
+	     (setf (deref (ptr+ sexprs (i64+ 1 (cast i i64)))) (sub-expr.expr args i))
+	     (setf i (u64+ i 1))))
+	 (var ((sub-expr (make-sub-expr sexprs (cast (u64+ i 1) u64))))
+	      (expr
+	       (var (unexpr vars)
+		    (unexpr sub-expr)))))))
+
+(let ((a 10) (b 20))
+  (i64+ a b)
+  (i64+ a b)
+  (i64+ a b)
+  (i64+ (i64+ a b) 30))
+(exit 0)
+
+	  ;; 	(expr 
+	  ;; 	 (var (unexpr vars)
+	  ;; 	      (progn
+	  ;; (unexpr 
+	  ;;  (if (eq (sub-expr.cnt arg) 1)
+	  ;;      (sub-expr.expr arg 0)
+	       
+	  ;;  ( args)

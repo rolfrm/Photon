@@ -517,7 +517,8 @@ type_def * eq_macro(c_block * block, c_value * val, expr item1, expr item2){
   c_value * comp = alloc0(sizeof(c_value));
   type_def * t1 = _compile_expr(block, val1, item1);
   type_def * t2 = _compile_expr(block, val2, item2);
-  COMPILE_ASSERT(t1 != &error_def && t1 == t2 && t1 != &void_def);
+  COMPILE_ASSERT(t1 != &error_def && t1 != &void_def);
+  COMPILE_ASSERT(t1 == t2);
   val->type = C_CAST;
   val->cast.value = comp;
   val->cast.type = str2type("bool");
@@ -790,6 +791,16 @@ expr * get_sub_expr(expr * e, u64 idx){
   return NULL;
 }
 
+expr * make_sub_expr (expr ** exprs, u64 cnt){
+  expr * e = new(expr);
+  e->type = EXPR;
+  e->sub_expr.cnt = cnt;
+  e->sub_expr.exprs = alloc(sizeof(expr) * cnt);
+  for(u32 i = 0; i < cnt ; i++)
+    e->sub_expr.exprs[i] = *exprs[i];
+  return e;
+}
+
 void builtin_macros_load(){
   // Macros
   define_macro("type", 1, type_macro);
@@ -824,4 +835,5 @@ void builtin_macros_load(){
   defun("is-sub-expr", str2type("(fcn bool (expr (ptr expr)))"), is_sub_expr);
   defun("sub-expr.cnt", str2type("(fcn u64 (expr (ptr expr)))"), get_sub_expr_cnt);
   defun("sub-expr.expr", str2type("(fcn (ptr expr) (expr (ptr expr)) (idx u64))"), get_sub_expr);
+  defun("make-sub-expr", str2type("(fcn (ptr expr) (exprs (ptr (ptr expr))) (cnt u64))"), make_sub_expr);
 }
