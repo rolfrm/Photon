@@ -35,7 +35,7 @@ expr string_expr(char * name){
 }
 
 bool is_symbol(expr exp){
-  return exp.type == VALUE && exp.value.type == SYMBOL;
+  return exp.type == VALUE && (exp.value.type == SYMBOL);
 }
 
 bool is_string(expr exp){

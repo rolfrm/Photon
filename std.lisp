@@ -55,6 +55,9 @@
 (defun printstr (void (x (ptr char)))
   (std:print_f64 x 0.0))
 
+(defun print-symbol (void (x (ptr symbol)))
+  (printstr (symbol-name x)))
+
 (defun alloc0 ((ptr void) (size u64))
   (var ((buffer (alloc size)))
        (progn
@@ -121,3 +124,31 @@
 	      (noop)		
 	      )))))
 
+
+(defun string-concat ((ptr char) (a (ptr char)) (b (ptr char)))
+  (var ((a-len (cast (strlen a) u64))
+	(b-len (cast (strlen b) u64)))
+       (var ((buffer (alloc0 (u64+ 1 (u64+ a-len b-len)))))
+	    (progn
+	      (memcpy buffer (cast a (ptr void)) a-len)
+	      (memcpy (ptr+ buffer (cast a-len i64)) (cast b (ptr void)) b-len)
+	      (cast buffer (ptr char))))))
+
+(string-concat "hello" "world")
+
+(defun symbol-combine ((ptr symbol) (a (ptr symbol)) (b (ptr symbol)))
+  (var ((aname (symbol-name a)) (bname (symbol-name b)))
+       (var ((combined (string-concat aname bname)))
+	    (var ((sym (get-symbol combined)))
+		 (progn
+		   (dealloc (cast combined (ptr void)))
+		   sym)))))
+
+(symbol-combine (quote a) (quote b))
+
+(defcmacro vararg-test (a b &rest c)
+  (sub-expr.expr c 1))
+
+(vararg-test 1 2 3 4 5)
+
+(assert (eq 4 (vararg-test 1 2 3 4 5)))

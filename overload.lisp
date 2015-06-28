@@ -2,8 +2,7 @@
 (type 
  (alias 
   (struct _overload-info
-	  (type (ptr type_def))
-	  (body (ptr expr)))
+	  (sym (ptr symbol)))
   overload-info))
 
 (type
@@ -13,33 +12,21 @@
 	  (member-cnt i64))
   overload))
 
-(defun string-concat ((ptr char) (a (ptr char)) (b (ptr char)))
-  (var ((a-len (cast (strlen a) u64))
-	(b-len (cast (strlen b) u64)))
-       (var ((buffer (alloc0 (u64+ 1 (u64+ a-len b-len)))))
-	    (progn
-	      (memcpy buffer (cast a (ptr void)) a-len)
-	      (memcpy (ptr+ buffer (cast a-len i64)) (cast b (ptr void)) b-len)
-	      (cast buffer (ptr char))))))
-
-(string-concat "hello" "world")
-
-
-(defun symbol-combine ((ptr symbol) (a (ptr symbol)) (b (ptr symbol)))
-  (var ((aname (symbol-name a)) (bname (symbol-name b)))
-       (var ((combined (string-concat aname bname)))
-	    (var ((sym (get-symbol combined)))
-		 (progn
-		   (dealloc (cast combined (ptr void)))
-		   sym)))))
-
-(symbol-combine (quote a) (quote b))
-
-
-;(print_type (type overload))
 
 (defvar prototype :type overload)
+(defvar ol-item :type overload-info)
 (memset (cast (addrof prototype) (ptr void)) 0 (size-of (type overload)))
+(memset (cast (addrof ol-item) (ptr void)) 0 (size-of (type overload-info)))
+
+(defun mk-ol-item (overload-info (a (ptr symbol)))
+  (var ((item ol-item))
+       (progn
+	 (setf (member item sym) a)
+	 item)))
+(progn
+  (defvar ol-item-test (mk-ol-item (quote i32)))
+  (print-symbol (member ol-item-test sym))
+  (noop))
 
 (defcmacro defoverloaded (fcn-name)
   (var ((s (symbol-combine (expr2symbol fcn-name) (quote -info))))
@@ -53,17 +40,25 @@
 		 (defvar (unexpr (symbol2expr s)) prototype)
 		 (noop))))))
 
-(defcmacro overload (name type body)
-  (expr (noop)))
+(defcmacro overload (name fcn)
+  (var ((s (symbol2expr (symbol-combine (expr2symbol name) (quote -info)))))
+       (expr 
+	(var ((item (mk-ol-item (quote (unexpr fcn)))))
+	     (add-to-list+ (member (unexpr s) members)
+			   (cast (member (unexpr s) member-cnt) u64)
+			   item)))))
 
 (defoverloaded +)       
 
-(overload + (fcn i64 (a i64) (b i64))
-	  (i64+ a b))
-(overload + (fcn i32 (a i32) (b i32))
-	  (i32+ a b))
-(+ 1 2)
-(+ (cast 1 i32) (cast 2 i32))
+(overload + i64+)
+(overload + i32+)
+(overload + i16+)
+(overload + i8+)
+(overload + u64+)
+(overload + u32+)
+(overload + u16+)
+(overload + u8+)
+(member +-info member-cnt)
 
 (exit 0)
 (expr

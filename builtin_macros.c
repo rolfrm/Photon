@@ -185,19 +185,53 @@ type_def * macro_store_type(){
 }
 
 expr * expand_macro_store(macro_store * ms, expr * exprs, size_t cnt){
-  ASSERT(ms->arg_cnt == cnt);
-  var_def vars[cnt];
+  symbol rest = get_symbol("&rest");
   type_def * exprtd = opaque_expr();
-  expr * exprv[cnt];
-  for(size_t i = 0; i < cnt; i++){
+  size_t min_args = 0;
+  bool is_varadic = false;
+  for(u32 i = 0; i < ms->arg_cnt; i++){
+    if(ms->args[i].id != rest.id){
+      min_args++;
+    }else{
+      is_varadic = true;
+      break;
+    }
+  }
+  
+  if(is_varadic){
+    ASSERT(cnt >= min_args);
+    ASSERT(ms->arg_cnt == min_args + 2);
+  }else{
+    ASSERT(cnt == min_args);
+  }
+  
+  size_t var_cnt = min_args + (is_varadic ? 1 : 0);
+  
+  var_def vars[var_cnt];
+  expr * exprv[var_cnt];
+  
+  for(size_t i = 0; i < min_args; i++){
+    symbol name = ms->args[i];
     exprv[i] = exprs + i;
     vars[i].type = exprtd;
-    vars[i].name = ms->args[i];
+    vars[i].name = name;
+    vars[i].data = exprv + i;
+  }
+
+  if(is_varadic){
+
+    int i = min_args;
+    exprv[i] = alloc(sizeof(expr));
+    exprv[i]->type = EXPR;
+    exprv[i]->sub_expr.exprs = exprs + i;
+    exprv[i]->sub_expr.cnt = cnt - i;
+    vars[i].type = exprtd;
+    vars[i].name = ms->args[i + 1];
     vars[i].data = exprv + i;
   }
   var_def * __vars = vars;
   var_def ** _vars = &__vars;
-  push_symbols(_vars, &cnt);
+  push_symbols(_vars, &var_cnt);
   expr * exp2 = lisp_compile_and_run_expr(ms->exp);
   pop_symbols();
   return exp2;
@@ -742,6 +776,20 @@ expr * symbol2expr(symbol * s){
   return out;
 }
 
+bool is_sub_expr(expr * e){
+  return e->type == EXPR;
+}
+
+u64 get_sub_expr_cnt(expr * e){
+  return e->sub_expr.cnt;
+}
+
+expr * get_sub_expr(expr * e, u64 idx){
+  if(e->type == EXPR && e->sub_expr.cnt > idx)
+    return e->sub_expr.exprs + idx;
+  return NULL;
+}
+
 void builtin_macros_load(){
   // Macros
   define_macro("type", 1, type_macro);
@@ -772,4 +820,8 @@ void builtin_macros_load(){
   defun("number2expr",str2type("(fcn (ptr expr) (a i64))"), number2expr);
   defun("expr2symbol", str2type("(fcn (ptr symbol) (a (ptr expr)))"), expr2symbol);
   defun("symbol2expr", str2type("(fcn (ptr expr) (a (ptr symbol)))"), symbol2expr);
+
+  defun("is-sub-expr", str2type("(fcn bool (expr (ptr expr)))"), is_sub_expr);
+  defun("sub-expr.cnt", str2type("(fcn u64 (expr (ptr expr)))"), get_sub_expr_cnt);
+  defun("sub-expr.expr", str2type("(fcn (ptr expr) (expr (ptr expr)) (idx u64))"), get_sub_expr);
 }
