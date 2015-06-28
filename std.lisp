@@ -75,7 +75,7 @@
 (defcmacro ptr+ (ptr offset)
   (var ((size_expr (number2expr (cast (size-of (ptr-inner (type-of ptr))) i64))))
        (progn
-	 (printf "size_expr: %i\n" (cast (size-of (ptr-inner (type-of ptr))) i64))
+	 ;(printf "size_expr: %i\n" (cast (size-of (ptr-inner (type-of ptr))) i64))
 	 (expr
 	  (cast 
 	   (i64+ 

@@ -341,25 +341,25 @@ expr lisp_parse1(char * code){
   return expr;  
 }
 
-expr _clone_expr(expr body){
-
-  if(body.type == VALUE)
-    return body;
+expr clone_expr2(expr body){
+  print_expr(&body);
+  if(body.type == VALUE) return body;
   sub_expr exp = body.sub_expr;
-  expr sub[exp.cnt];
-  for(size_t i = 0; i < exp.cnt; i++){
-    sub[i] = _clone_expr(exp.exprs[i]);
-  }
+  expr * sub = alloc0(sizeof(expr) * exp.cnt);
+  for(size_t i = 0; i < exp.cnt; i++)
+    sub[i] = clone_expr2(exp.exprs[i]);
+  
   expr nexpr;
   nexpr.type = EXPR;
-  nexpr.sub_expr.exprs = clone(sub,sizeof(sub));
+  nexpr.sub_expr.exprs = sub;
   nexpr.sub_expr.cnt = exp.cnt;
   return nexpr;
 }
 
+
 expr * clone_expr(expr * tree){
   expr * root = alloc(sizeof(expr));
-  *root = _clone_expr(*tree);
+  *root = clone_expr2(*tree);
   return root;
 }
 

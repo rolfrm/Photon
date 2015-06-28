@@ -263,6 +263,11 @@ int recurse_count(expr ex){
     return 1;
   }
   
+  if(exp.cnt > 0 && is_symbol(exp.exprs[0]) && expr_symbol(exp.exprs[0]).id == get_symbol("expr").id){
+    ASSERT(exp.cnt == 2);
+    return 0;
+  }
+
   int cnt = 0;
   for(size_t i = 0; i < exp.cnt; i++)
     cnt += recurse_count(exp.exprs[i]);    
@@ -280,6 +285,9 @@ expr recurse_expand(expr ex, expr ** exprs, int * cnt){
     int idx = *cnt;
     (*cnt)++;
     return *exprs[idx];
+  }else if(exp.cnt > 0 && is_symbol(exp.exprs[0]) 
+	   && expr_symbol(exp.exprs[0]).id == get_symbol("expr").id){
+    return ex;
   }
   expr sexp[exp.cnt];
   for(size_t i = 0; i < exp.cnt; i++)
@@ -331,6 +339,9 @@ void recurse_expr(expr * ex, c_block * block, int id, int * cnt){
     exp.type = C_VAR;
     exp.var = var;
     block_add(block, exp);
+  }else if(exp.cnt > 0 && is_symbol(exp.exprs[0]) 
+	   && expr_symbol(exp.exprs[0]).id == get_symbol("expr").id){
+    
   }else{
     for(size_t i = 0; i < exp.cnt; i++)
       recurse_expr(exp.exprs + i, block, id, cnt);    
@@ -405,7 +416,8 @@ type_def * defcmacro_macro(c_block * block, c_value * val, expr e_name, expr arg
   }
 
   macro_store * macro = alloc0(sizeof(macro_store));
-  macro->exp = *clone_expr(&body);
+  print_expr(&body);
+  macro->exp = clone_expr2(body);
   macro->args = clone(&argnames,sizeof(argnames));
   macro->arg_cnt = argcnt;
   compiler_define_variable_ptr(name, macro_store_type() , macro);
