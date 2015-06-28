@@ -174,7 +174,6 @@
   (i64+ a b)
   (i64+ a b)
   (i64+ (i64+ a b) 30))
-(exit 0)
 
 	  ;; 	(expr 
 	  ;; 	 (var (unexpr vars)

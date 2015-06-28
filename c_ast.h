@@ -73,16 +73,22 @@ typedef struct{
   type_def * type;
 }c_member;
 
+typedef struct{
+  c_value * inner;
+  type_def * return_type;
+}c_deref;
+
 struct _c_value{
   c_value_kind type;
   union{
     c_cast cast;
     c_raw_value raw;
     symbol symbol;
-    c_value * value;//sub expr, deref
+    c_value * value;//sub expr
     c_function_call call;
     c_operator operator;
     c_member member;
+    c_deref deref;
   };  
 };
 

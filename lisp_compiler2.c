@@ -312,37 +312,7 @@ TCCState * mktccs(){
 void go_write(type_def ** deps, symbol * vdeps, c_root_code * codes, size_t code_cnt){
   
   write_dependencies(deps);
-  for(size_t i = 0; deps[i] != NULL; i++){
-    type_def * t = deps[i];
-    if(t->type == POINTER){
-      while(t->type == POINTER){
-	t = t->ptr.inner;
-      }
-      if(t->type == STRUCT){
-	t = get_opaque(t);
-      }
-
-      if(t->type == OPAQUE_STRUCT){
-	print_def(t); format(";\n");
-      }
-      continue;
-    }
-    if(t->type == SIMPLE) continue;
-    if(t->type == FUNCTION){
-      continue;
-    }
-    if(t->type == TYPEDEF){
-      continue;
-      print_def(t->ctypedef.inner);
-
-    }else{
-      print_def(t);
-    }
-    format(";\n");
-  }
-    
   for(size_t i = 0; vdeps[i].id != 0; i++){
-      
     var_def * var = get_variable(vdeps[i]);
     type_def * t = var->type;
     while(t->type == POINTER){
@@ -361,10 +331,9 @@ void go_write(type_def ** deps, symbol * vdeps, c_root_code * codes, size_t code
     print_cdecl(dcl);format(";\n");
   }
   
-  for(size_t i = 0; i < code_cnt; i++){
-    c_root_code_dep(deps, vdeps, codes[i]);
+  for(size_t i = 0; i < code_cnt; i++)
     print_c_code(codes[i]);
-  }
+  
 }
 
 void checkvdeps(symbol * vdep){
@@ -381,9 +350,9 @@ void compile_as_c(c_root_code * codes, size_t code_cnt){
   symbol vdeps[1000];
   memset(deps, 0, sizeof(deps));
   memset(vdeps, 0, sizeof(vdeps));
-  for(size_t i = 0; i < code_cnt; i++){
+  for(size_t i = 0; i < code_cnt; i++)
     c_root_code_dep(deps, vdeps, codes[i]);
-  }
+  
   checkvdeps(vdeps);
   char * data = NULL;
   size_t cnt = 0;

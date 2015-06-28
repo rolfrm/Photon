@@ -693,7 +693,8 @@ type_def * deref_macro(c_block * block, c_value * val, expr ptr){
   type_def * td = _compile_expr(block, _val, ptr);
   COMPILE_ASSERT(td->type == POINTER);
   val->type = C_DEREF;
-  val->value = _val;
+  val->deref.inner = _val;
+  val->deref.return_type = td->ptr.inner;
   return td->ptr.inner;
 }
 

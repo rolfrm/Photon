@@ -24,6 +24,7 @@ void add_var_dep(symbol * vdeps, symbol newdep){
   *vdeps = newdep;
 }
 
+#include "type_pool.h"
 void value_dep(type_def ** deps, symbol * vdeps, c_value val){
   var_def * var;
   switch(val.type){
@@ -43,10 +44,13 @@ void value_dep(type_def ** deps, symbol * vdeps, c_value val){
     value_dep(deps, vdeps, *val.operator.left);
     value_dep(deps, vdeps, *val.operator.right);
     break;
-  case C_SUB_EXPR:
   case C_DEREF:
+    value_dep(deps, vdeps, *val.deref.inner);
+    make_dependency_graph(deps, val.deref.return_type);
+    break;
+  case C_SUB_EXPR:
   case C_ADDRESS_OF:
-     value_dep(deps, vdeps, *val.value);
+    value_dep(deps, vdeps, *val.value);
     break;
   case C_SYMBOL:
     var = get_variable(val.symbol);
@@ -59,7 +63,7 @@ void value_dep(type_def ** deps, symbol * vdeps, c_value val){
     make_dependency_graph(deps, var->type);
     break;
   case C_MEMBER:
-    //make_dependency_graph(deps, val.member.type);
+    make_dependency_graph(deps, val.member.type);
     value_dep(deps, vdeps, *val.member.item);
     break;
   case C_CAST:
@@ -134,6 +138,10 @@ void print_value(c_value val){
     break;
   case C_DEREF:
     format("*");
+    format("(");
+    print_value(*val.deref.inner);
+    format(")");
+    break;
   case C_SUB_EXPR:
     format("(");
     print_value(*val.value);

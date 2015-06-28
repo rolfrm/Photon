@@ -92,7 +92,7 @@ void print_min_type(type_def * type){
   case UNION:  
   case STRUCT:
   case OPAQUE_STRUCT:
-    format("%s", get_c_name(type->cstruct.name));
+    format("struct %s", get_c_name(type->cstruct.name));
     break;
   case POINTER:
     print_min_type(type->ptr.inner);
@@ -218,7 +218,7 @@ void print_def(type_def * type){
     inner = type->ctypedef.inner;
     format("typedef ");
     print_def(inner);
-    format(" %s;\n", symbol_name(type->ctypedef.name));
+    format(" %s;\n", get_c_name(type->ctypedef.name));
     break;
   case FUNCTION:
     ERROR("Cannot print function definition, only as decleration (named) ");
@@ -249,8 +249,8 @@ void _make_dependency_graph(type_def ** defs, type_def * def, bool nested, bool 
     *defs_it = def;
     return true;
   }
-  type_def * inner = NULL;;
-  if(check() == false) return;
+  
+  if(def->type != TYPEDEF && check() == false) return;
   switch(def->type){
   case UNION:
     for(i64 i = 0; i < def->cunion.cnt; i++){
@@ -276,9 +276,8 @@ void _make_dependency_graph(type_def ** defs, type_def * def, bool nested, bool 
     check_add();    
     break;
   case TYPEDEF:
-    inner = def->ctypedef.inner;
-    _make_dependency_graph(defs,inner, nested, is_sizeless);
-    check_add();    
+    _make_dependency_graph(defs,def->ctypedef.inner, nested, is_sizeless);
+    check_add();
     break;
     
   case FUNCTION:
@@ -402,13 +401,16 @@ void make_dependency_graph(type_def ** defs, type_def * def){
 void write_dependencies(type_def ** deps){
   format("#include \"cstd_header.h\"\n");
   // first forward declare.
+
   for(; *deps != NULL; deps++){
+    for(type_def ** deps2 = deps + 1; *deps2 != NULL; deps2++){
+      ASSERT(*deps != *deps2);
+    }
     type_def * t = *deps;
+    
     if(t->type == STRUCT || t->type == OPAQUE_STRUCT){
-      char * name = get_c_name(t->cstruct.name);
-      if(name != NULL){
-	format("struct %s;\n", name);
-      }
+      print_def(t);
+      format(";\n");
     }
     if(t->type == ENUM){
       ERROR("Should not happen");
@@ -424,10 +426,12 @@ void write_dependencies(type_def ** deps){
 	format("}%s;\n", get_c_name(t->ctypedef.name));
       
       }else{
+	//print_min_def(t);format(";\n");
+	ASSERT(inner->type == STRUCT || inner->type == OPAQUE_STRUCT || (inner->type == POINTER && (inner->ptr.inner->type == STRUCT || inner->ptr.inner->type == OPAQUE_STRUCT)));
 	decl dcl;
 	dcl.name = t->ctypedef.name;
-	dcl.type = t->ctypedef.inner;
-	format("typedef struct ");
+	dcl.type = inner;
+	format("typedef ");
 	print_cdecl(dcl);
 	format(";\n");
       }

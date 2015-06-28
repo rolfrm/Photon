@@ -2,7 +2,9 @@
 (type 
  (alias 
   (struct _overload-info
-	  (sym (ptr symbol)))
+	  (sym (ptr symbol))
+	  (arg-types (ptr (ptr type_def)))
+	  (arg-cnt u64))
   overload-info))
 
 (type
@@ -18,15 +20,32 @@
 (memset (cast (addrof prototype) (ptr void)) 0 (size-of (type overload)))
 (memset (cast (addrof ol-item) (ptr void)) 0 (size-of (type overload-info)))
 
-(defun mk-ol-item (overload-info (a (ptr symbol)))
+(defun mk-ol-item (overload-info (a (ptr symbol)) (fcn_type (ptr type_def)) (cnt i64))
   (var ((item ol-item))
        (progn
 	 (setf (member item sym) a)
+	 (setf (member item arg-types) (addrof fcn_type))
+	 (setf (member item arg-cnt) (cast cnt u64))
 	 item)))
 (progn
-  (defvar ol-item-test (mk-ol-item (quote i32)))
+  (defvar ol-item-test (mk-ol-item (quote i32) (cast null (ptr type_def)) 0))
   (print-symbol (member ol-item-test sym))
   (noop))
+
+(defun find-overload ((ptr symbol) (ol overload) (a1 (ptr type_def)) (a2 (ptr type_def)))
+  (let ((i 0) (out (cast null (ptr symbol))))
+    (while (and (eq out (cast null (ptr symbol)) )
+		(not (eq i (member ol member-cnt))))
+      (let ((mem (deref (ptr+ (member ol members) i))))
+	(let ((types (member mem arg-types)))
+	  (if (and 
+	       (eq (deref types) a1)
+	       (eq (deref (ptr+ types 1)) a2))
+	      (setf out (member mem sym))
+	      (member mem sym)))))
+    out))
+
+(exit 0)
 
 (defcmacro defoverloaded (fcn-name)
   (var ((s (symbol-combine (expr2symbol fcn-name) (quote -info))))
@@ -36,7 +55,9 @@
 	 (printstr "|\n")
 	 (expr (progn
 		 (defcmacro (unexpr fcn-name) (a b)
-		   (expr (noop)))
+		   (let ((a-type (type-of a))
+			 (b-type (type-of b)))
+		     (expr (noop)))
 		 (defvar (unexpr (symbol2expr s)) prototype)
 		 (noop))))))
 
