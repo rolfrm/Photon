@@ -115,6 +115,7 @@
 (+ "hello " "world")
 (+ (cast 1.0 f64) (cast 2.0 f64))
 (+ (quote something) (quote -else))
+(+ 1 2 3)
 ;; (overload + i32+)
 ;; (overload + i16+)
 ;; (overload + i8+)
