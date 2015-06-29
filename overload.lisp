@@ -96,8 +96,6 @@
 	   (cast (addrof item) (ptr void))
 	   24)))))
 
-
-
 (defoverloaded +)       
 
 (defun add3i64 (i64 (a i64) (b i64) (c i64))
@@ -116,6 +114,22 @@
 (+ (cast 1.0 f64) (cast 2.0 f64))
 (+ (quote something) (quote -else))
 (+ 1 2 3)
+
+(defoverloaded print)
+(overload print printi64)
+(overload print printf64)
+(overload print printi64)
+(overload print printi32)
+(overload print printstr)
+(overload print print-symbol)
+(progn
+  (print 10) 
+  (print "\n")
+  (print (cast 1.0 f64))
+  (print "\n")
+  (print (quote hello!))
+  (print "\n"))
+
 ;; (overload + i32+)
 ;; (overload + i16+)
 ;; (overload + i8+)
