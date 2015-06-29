@@ -96,10 +96,15 @@
 	   (cast (addrof item) (ptr void))
 	   24)))))
 
+
+
 (defoverloaded +)       
 
-(overload + i64+)
+(defun add3i64 (i64 (a i64) (b i64) (c i64))
+  (i64+ a (i64+ b c)))
 
+(overload + i64+)
+(overload + add3i64)
 (overload + u64+)
 (overload + u32+)
 (overload + f+)
