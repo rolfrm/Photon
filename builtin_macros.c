@@ -112,7 +112,14 @@ type_def * setf_macro(c_block * block, c_value * val, expr name, expr body){
   c_value * vl = alloc0(sizeof(c_value));
   type_def * t1 = _compile_expr(block, vl, name);
   type_def * t = _compile_expr(block, vr, body);
-  TEST_ASSERT(t1 == t);
+  if(t1 != t){
+    loge("same types required for setf. got '");
+    print_min_type(t1);
+    loge("' and '");
+    print_min_type(t);
+    loge("'.\n");
+    ERROR("cannot implicitly convert type");
+  }
   val->type = C_OPERATOR;
   val->operator.left = vl;
   val->operator.right = vr;

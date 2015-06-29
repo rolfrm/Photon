@@ -46,10 +46,12 @@
 	      (let ((j (cast 0 u64))
 		    (same true))
 		(while (not (eq j arg-cnt))
-		  (if (eq (deref (ptr+ types (cast j i64))) 
-			  (deref (ptr+ arg-types (cast j i64))))
-		      (noop)
-		      (setf same false)))
+		  (progn
+		    (if (eq (deref (ptr+ types (cast j i64))) 
+			    (deref (ptr+ arg-types (cast j i64))))
+			(noop)
+			(setf same false))
+		    (setf j (u64+ j 1))))
 		(if same
 		    (progn
 		      (setf out (member mem sym))
@@ -60,15 +62,25 @@
     out))
 
 (defcmacro defoverloaded (fcn-name)
-  (let ((s (symbol2expr (symbol-combine (expr2symbol fcn-name) (quote -info))))
-	(fcn-type (var-type (expr2symbol fcn-name))))
+  (let ((s (symbol2expr (symbol-combine (expr2symbol fcn-name) (quote -info)))))
     (expr 
      (progn
-       (defcmacro (unexpr fcn-name) (a b)
-	 (let ((fcn-type (var-type (quote (unexpr s)))))
-	   (let ((ol (find-overload  (unexpr s) (fcn-arg-types fcn-type) (fcn-arg-cnt fcn-type))))
-	     ;(expr ((unexpr (symbol2expr ol)) (unexpr a) (unexpr b)))
+       (defcmacro (unexpr fcn-name) (&rest d)
+	 (let ((arg-type (cast (alloc (u64* (sub-expr.cnt d) (size-of (type (ptr type_def)))))
+			       (ptr (ptr type_def))))
+	       (_i (cast 0 u64)))
+	
+	   (while (not (eq _i (sub-expr.cnt d)))
+	     (progn
+	       (setf (deref (ptr+ arg-type (cast _i i64)))
+		     (type-of (sub-expr.expr d _i)))
+
+	       (setf _i (u64+ _i 1))))
+
+	   (let ((ol (find-overload  (unexpr s) arg-type (sub-expr.cnt d))))
+	     (unfold-body (symbol2expr ol) d)
 	     )))
+       
        (defvar (unexpr s) prototype)
        (noop)
        ))))
@@ -85,7 +97,9 @@
 	   24)))))
 
 (defoverloaded +)       
+
 (overload + i64+)
+
 (overload + u64+)
 (overload + u32+)
 (overload + f+)
