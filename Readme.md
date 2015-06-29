@@ -34,10 +34,10 @@ V1 Release Checklist
 * [x] conditionals "if"
 * [x] loops (while expr body) result is the output of the last item.
 * [x] a better REPL (history, multi-line, line-edit)
-* [ ] proper interned literal strings (checkout tries)
+* [ ] proper interned literal strings (checkout tries. no probably to hash tables instead.)
 * [x] Structs
  * [x] Defining - structs can be defined using the type macro
- * [ ] member access
+ * [x] member access
 * [x] Arrays / pointers - c-style deref
 * [x] address off. (ref obj)
 * [x] sizeof macro - size calculated at compile time.
@@ -48,7 +48,7 @@ V1 Release Checklist
  * [x] libc
  * [x] -ldl related
  * [x] -lm related
-* [ ] function overloading macro / varadic functions
+* [x] function overloading macro / varadic functions
 * [ ] proper function printing (needed for callback functions).
 * [x] macros that do not require 'expand'
 
