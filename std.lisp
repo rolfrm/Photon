@@ -167,6 +167,19 @@
 
 (assert (eq 4 (vararg-test 1 2 3 4 5)))
 
+(defun unfold-body ((ptr expr) (header (ptr expr)) (args (ptr expr)))
+  (var ((sexprs (cast
+		 (alloc (u64* (cast (size-of (type (ptr expr))) u64)
+			      (u64+ 1 (sub-expr.cnt args)))) (ptr (ptr expr))))
+	(i (cast 0 u64)))
+       (progn
+	 (setf (deref sexprs) header)
+	 (while (not (eq  i (sub-expr.cnt args)))
+	   (progn
+	     (setf (deref (ptr+ sexprs (i64+ 1 (cast i i64)))) (sub-expr.expr args i))
+	     (setf i (u64+ i 1))))
+	 (make-sub-expr sexprs (cast (u64+ i 1) u64)))))
+
 (defcmacro let (vars &rest args)
   (var ((sexprs (cast
 		 (alloc (u64* (cast (size-of (type (ptr expr))) u64)
@@ -182,6 +195,13 @@
 	      (expr
 	       (var (unexpr vars)
 		    (unexpr sub-expr)))))))
+(defcmacro for (_var _varval _expr _incr &rest _body)
+  (expr 
+   (var (((unexpr _var) (unexpr _varval)))
+	(while (unexpr _expr)
+	  (progn
+	    (unexpr (unfold-body (expr progn) _body))
+	    (setf (unexpr _var) (unexpr _incr)))))))
 
 (let ((a 10) (b 20))
   (i64+ a b)
@@ -189,6 +209,12 @@
   (i64+ a b)
   (i64+ (i64+ a b) 30))
 
+(for it 0 (eq it 10) (i64+ it 1)
+     (printstr "\n")
+     (printi64 it))
+
+
+(exit 0)
 	  ;; 	(expr 
 	  ;; 	 (var (unexpr vars)
 	  ;; 	      (progn
