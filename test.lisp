@@ -176,10 +176,11 @@ add-test-cnt
   (expr (write_line "lol..")))
 
 (type 
- (alias vec2f
+ (alias 
 	(struct _vec2f 
 		(x f64)
-		(y f64))))
+		(y f64))
+	vec2f))
 (defvar vec2f-prototype :type vec2f)
 (exit 0)
 

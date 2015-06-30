@@ -440,6 +440,7 @@ void lisp_run_expr(expr ex){
   ASSERT(evaldef != NULL);
   print_def(evaldef->type->fcn.ret); logd(" :: ");
   type_def * ret = evaldef->type->fcn.ret;
+  size_t ret_size = size_of(ret);
   if(ret == &void_def){
     logd("()\n");
     void (* fcn)() = evaldef->data;
@@ -479,14 +480,22 @@ void lisp_run_expr(expr ex){
     logd("%i\n",v);
   }else if(ret == &error_def){
     
-  }else if(ret == SIMPLE || size_of(ret) <= 8){
+  }else if(ret == SIMPLE || ret_size  <= 8){
 
     void * (* fcn)() = evaldef->data;
     void * v = fcn();
     logd("try %p\n", v);
+  /*}else if(ret_size <= 16){
+    struct obj16{i64 x; i64 y;};
+    struct obj16 (* fcn)() = evaldef->data;
+    fcn();
+    
+  }else if( ret_size <= 24){
+    struct obj16{i64 x; i64 y; i64 z;};
+    struct obj16 (* fcn)() = evaldef->data;
+    fcn();*/
   }else{
-    logd("Cannot execute function");
-
+    ERROR("Cannot execute function");
   }
   checktypepool();
 }
