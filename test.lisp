@@ -1,5 +1,6 @@
 ;; The following code runs / compiles
 (load "std.lisp")
+(load "overload.lisp")
 (assert (eq false (eq 0 1)))
 
 
@@ -35,8 +36,6 @@
 (i64+ test8 test7)
 
 ;; Shallow comparison
-
-
 (defvar a 1)
 (defvar b 2)
 (eq a b)
@@ -83,15 +82,6 @@
 
 ;; files can be loaded and executed
 (load "test2.lisp")
-
-
-;; (defcmacro overload (void (sym expr) (fcn expr))
-;;   (progn
-;;     (assert (is-symbol fcn))
-;;     (assert (is-symbol sym))
-;;     (register-overload (get-symbol sym) (get-function (get-symbol fcn)))))
-;; (overload + f+)
-;; (overload + i64+)
 
 (var ((a (expr "?/hello??")))
      (print-expr (expr (write_line (unexpr a)))))
@@ -185,9 +175,9 @@ add-test-cnt
 (defcmacro comment (_expr)
   (expr (write_line "lol..")))
 
-(load "overload.lisp")
-(exit 0)
+
 (write_line "the following works if libglfw is installed")
+
 (load "glfw.lisp")
 (load "gl.lisp")
 (glfw:init)
@@ -196,7 +186,7 @@ add-test-cnt
 
 (glfw:make-current win)
 (glfw:set-clipboard-string win "clipboard test!")
-(defvar sleeptime (cast 100000 i32))
+(defvar sleeptime (cast 10000 i32))
 (defvar r 0.0)
 ;;; -- Loa Shader Program -- ;;;
 (defvar prog (gl:create-program))
@@ -267,16 +257,10 @@ glstatus
 (gl:vertex-attrib-pointer 0 2 gl:float gl:false 0 null) 
 (gl:get-error)
 
-
-
-;(exit 0)
 (defvar pts (cast 4 u32))
 (defvar drawtype gl:quads)
 (defvar uloc (gl:get-uniform-location prog "offset"));
-uloc uloc uloc
-
 (defvar iteration 0)
-
 (defun mouse-callback (void (win-ptr (ptr void)) (button i32) (action i32) (mods i32))
   (write-line "mouse callback!"))
 (defun key-callback (void (win-ptr (ptr void)) (key i32) (scancode i32) (action i32) (mods i32))
@@ -303,11 +287,9 @@ uloc uloc uloc
 (glfw:set-cursor-pos-callback win (addrof cursor-pos-callback))
 (glfw:set-error-callback (addrof error-callback))
 (glfw:set-cursor-enter-callback win (addrof cursor-enter))
-(ptr+ "asdasd" 2)
 (glfw:joystick-present? 1)
 
-
-(while (not (eq iteration 40))
+(while (not (eq iteration 400))
   (progn
     (glfw:poll-events)
     (setf iteration (i64+ iteration 1))

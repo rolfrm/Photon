@@ -146,4 +146,3 @@
 ;; (overload + u8+)
 (when false (write-line "when true!"))
 (unless true (write-line "when false!"))
-(exit 0)

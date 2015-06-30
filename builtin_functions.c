@@ -47,7 +47,6 @@ expr * type2expr(type_def * ptr_def){
   return clone(&e, sizeof(e));
 }
 
-
 #include <dlfcn.h>
 void * load_lib(char * path){
   return dlopen(path, RTLD_LAZY);
@@ -140,11 +139,11 @@ void load_functions(){
   defun("f/", d2t, double_div);
   defun("f*", d2t, double_mul);
 
-  defun("size-of",str2type("(fcn u64 (type (ptr type_def)))"), &size_of);
+  defun("size-of",str2type("(fcn u64 (type (ptr type_def)))"), size_of);
   str2type("(alias (ptr (opaque-struct _lib)) lib)"); // declare the lib tyoedef
-  defun("load-lib",str2type("(fcn lib (libname (ptr char)))"), &load_lib);
+  defun("load-lib",str2type("(fcn lib (libname (ptr char)))"), load_lib);
   type_def * loadsymbol = str2type("(fcn (ptr void) (_lib lib) (sym (ptr symbol)) (name (ptr symbol)) (t (ptr type_def)))");
-  defun("load-symbol", loadsymbol, &load_symbol);
+  defun("load-symbol", loadsymbol, load_symbol);
   defun("type-of",str2type("(fcn (ptr type_def) (expr (ptr expr)))"), type_of);
   defun("print-expr", str2type("(fcn void (theexpr (ptr expr)))"), print_expr);
   defun("ptr-inner", str2type("(fcn (ptr type_def) (ptr (ptr type_def)))"),  ptr_inner);

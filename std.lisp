@@ -177,7 +177,7 @@
 	(i (cast 0 u64)))
        (progn
 	 (setf (deref sexprs) header)
-	 (while (not (eq  i (sub-expr.cnt args)))
+	 (loop-while (not (eq  i (sub-expr.cnt args)))
 	   (progn
 	     (setf (deref (ptr+ sexprs (i64+ 1 (cast i i64)))) (sub-expr.expr args i))
 	     (setf i (u64+ i 1))))
@@ -191,10 +191,16 @@
 (defcmacro for (_var _varval _expr _incr &rest _body)
   (expr 
    (var (((unexpr _var) (unexpr _varval)))
-	(while (unexpr _expr)
+	(loop-while (unexpr _expr)
 	  (progn
 	    (unexpr (unfold-body (expr progn) _body))
 	    (setf (unexpr _var) (unexpr _incr)))))))
+
+(defcmacro while (_expr &rest _body)
+  (expr
+   (loop-while (unexpr _expr)
+      (unexpr (unfold-body (expr progn)
+			   _body)))))
 
 (let ((a 10) (b 20))
   (i64+ a b)

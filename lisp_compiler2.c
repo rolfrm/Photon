@@ -479,7 +479,7 @@ void lisp_run_expr(expr ex){
     logd("%i\n",v);
   }else if(ret == &error_def){
     
-  }else if(ret == SIMPLE){
+  }else if(ret == SIMPLE || size_of(ret) <= 8){
 
     void * (* fcn)() = evaldef->data;
     void * v = fcn();

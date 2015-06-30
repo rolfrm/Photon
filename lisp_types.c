@@ -327,7 +327,7 @@ u64 size_of(type_def * t){
   case TYPEDEF:
     return size_of(t->ctypedef.inner);
   case OPAQUE_STRUCT:
-    ERROR("opq");
+    ERROR("cannot get size of opaque struct");
     break;
   case SIMPLE:
     return t->simple.size;

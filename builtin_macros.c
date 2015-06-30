@@ -837,7 +837,7 @@ void builtin_macros_load(){
   define_macro("expr", 1, expr_macro);
   define_macro("eq", 2, eq_macro);
   define_macro("if", 3, if_macro);
-  define_macro("while", 2, while_macro);
+  define_macro("loop-while", 2, while_macro);
   define_macro("deref", 1, deref_macro);
   define_macro("addrof", 1, addrof_macro);
   define_macro("noop",0,no_op);
