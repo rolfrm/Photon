@@ -78,6 +78,11 @@
 	       (setf _i (u64+ _i 1))))
 
 	   (let ((ol (find-overload  (unexpr s) arg-type (sub-expr.cnt d))))
+	     (when (eq null (cast ol (ptr void)))
+		  (printstr "Error no matching overload found")
+		  (exit 0))
+		  
+	     
 	     (unfold-body (symbol2expr ol) d)
 	     )))
        
@@ -123,12 +128,14 @@
 (overload print printstr)
 (overload print print-symbol)
 (progn
+  (print "********** TEST PRINT OVERLOAD ***********\n")
   (print 10) 
   (print "\n")
   (print (cast 1.0 f64))
   (print "\n")
   (print (quote hello!))
-  (print "\n"))
+  (print "\n")
+  (print "**********  ***********\n"))
 
 ;; (overload + i32+)
 ;; (overload + i16+)
@@ -137,5 +144,6 @@
 ;; (overload + u32+)
 ;; (overload + u16+)
 ;; (overload + u8+)
-
+(when false (write-line "when true!"))
+(unless true (write-line "when false!"))
 (exit 0)

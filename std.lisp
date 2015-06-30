@@ -7,6 +7,9 @@
 (defun write-line (void (str (ptr char)))
   (write_line str))
 
+
+
+
 (defvar libm (load-lib "libm.so"))
 (load-symbol libm (quote cos) (quote cos) (type (fcn f64 (x f64))))
 (load-symbol libm (quote cosf) (quote cosf) (type (fcn f32 (x f32))))
@@ -204,6 +207,25 @@
      (printi64 it)
      (printstr "\n"))
 
+(defcmacro when (test &rest body)
+  (expr
+   (if (unexpr test)
+       (progn
+	 (unexpr (unfold-body (expr progn)
+			      body))
+	 (noop))
+       (noop))))
+(defcmacro unless (test &rest body)
+  (expr 
+   (if (unexpr test)
+       (noop)
+       (progn
+	 (unexpr (unfold-body (expr progn)
+			      body))
+	 ))))
+
+(unless false
+  (write-line "hej!"))
 
 ;(exit 0)
 	  ;; 	(expr 
