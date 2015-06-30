@@ -175,16 +175,6 @@ add-test-cnt
 (defcmacro comment (_expr)
   (expr (write_line "lol..")))
 
-(type 
- (alias 
-	(struct _vec2f 
-		(x f64)
-		(y f64))
-	vec2f))
-(defvar vec2f-prototype :type vec2f)
-(exit 0)
-
-
 (write_line "the following works if libglfw is installed")
 
 (load "glfw.lisp")
@@ -195,7 +185,7 @@ add-test-cnt
 
 (glfw:make-current win)
 (glfw:set-clipboard-string win "clipboard test!")
-(defvar sleeptime (cast 10000 i32))
+(defvar sleeptime (cast 100000 i32))
 (defvar r 0.0)
 ;;; -- Loa Shader Program -- ;;;
 (defvar prog (gl:create-program))

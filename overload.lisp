@@ -19,7 +19,8 @@
 
 (progn
   (defvar prototype :type overload)
-  (defvar ol-item :type overload-info))
+  (defvar ol-item :type overload-info)
+  (noop))
 
 (memset (cast (addrof prototype) (ptr void)) 0 (size-of (type overload)))
 (memset (cast (addrof ol-item) (ptr void)) 0 (size-of (type overload-info)))

@@ -441,6 +441,8 @@ void lisp_run_expr(expr ex){
   print_def(evaldef->type->fcn.ret); logd(" :: ");
   type_def * ret = evaldef->type->fcn.ret;
   size_t ret_size = size_of(ret);
+
+
   if(ret == &void_def){
     logd("()\n");
     void (* fcn)() = evaldef->data;
@@ -485,16 +487,10 @@ void lisp_run_expr(expr ex){
     void * (* fcn)() = evaldef->data;
     void * v = fcn();
     logd("try %p\n", v);
-  /*}else if(ret_size <= 16){
-    struct obj16{i64 x; i64 y;};
-    struct obj16 (* fcn)() = evaldef->data;
+  }/*else if(ret_size > 8){
+    void (* fcn)() = evaldef->data; // i need to do some kind of stack padding.
     fcn();
-    
-  }else if( ret_size <= 24){
-    struct obj16{i64 x; i64 y; i64 z;};
-    struct obj16 (* fcn)() = evaldef->data;
-    fcn();*/
-  }else{
+    }*/else{
     ERROR("Cannot execute function");
   }
   checktypepool();
@@ -565,7 +561,6 @@ bool test_lisp2c(){
   logd("sizes: %i %i\n",sizeof(struct _s1), size_of(d2));
   TEST_ASSERT(sizeof(struct _s1) == size_of(d2));
   TEST_ASSERT(sizeof(struct _s1 *) == size_of(d3));
-  
   
   pop_compiler();
   return ret;
