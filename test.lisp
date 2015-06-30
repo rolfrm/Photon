@@ -175,6 +175,14 @@ add-test-cnt
 (defcmacro comment (_expr)
   (expr (write_line "lol..")))
 
+(type 
+ (alias vec2f
+	(struct _vec2f 
+		(x f64)
+		(y f64))))
+(defvar vec2f-prototype :type vec2f)
+(exit 0)
+
 
 (write_line "the following works if libglfw is installed")
 
