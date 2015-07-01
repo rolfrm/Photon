@@ -3,13 +3,6 @@
 (defvar true (cast 1 bool))
 (defun not (bool (x bool)) (eq false x))
 (defvar null (cast 0 (ptr void)))
-
-(defun write-line (void (str (ptr char)))
-  (write_line str))
-
-
-
-
 (defvar libm (load-lib "libm.so"))
 (load-symbol libm (quote cos) (quote cos) (type (fcn f64 (x f64))))
 (load-symbol libm (quote cosf) (quote cosf) (type (fcn f32 (x f32))))
@@ -69,6 +62,13 @@
 (defun print-symbol (void (x (ptr symbol)))
   (printstr (symbol-name x)))
 
+(defun write-line (void (str (ptr char)))
+  (progn (printstr str)
+	 (printstr "\n")))
+
+(defun write_line (void (str (ptr char)))
+  (write-line str))
+
 (defun alloc0 ((ptr void) (size u64))
   (var ((buffer (alloc size)))
        (progn
@@ -78,7 +78,6 @@
 (defcmacro ptr+ (ptr offset)
   (var ((size_expr (number2expr (cast (size-of (ptr-inner (type-of ptr))) i64))))
        (progn
-	 ;(printf "size_expr: %i\n" (cast (size-of (ptr-inner (type-of ptr))) i64))
 	 (expr
 	  (cast 
 	   (i64+ 
@@ -132,7 +131,7 @@
 	 (expr
 	  (if (not (unexpr _expr))
 	      (progn
-		(write-line "\n**** ERROR *****")
+		(printstr "\n**** ERROR *****\n")
 		(print-expr (deref (ptr+ asserts (unexpr n))))	
 		(write-line "****  *****\n")	
 		(exit 1)
@@ -232,13 +231,3 @@
 
 (unless false
   (write-line "hej!"))
-
-;(exit 0)
-	  ;; 	(expr 
-	  ;; 	 (var (unexpr vars)
-	  ;; 	      (progn
-	  ;; (unexpr 
-	  ;;  (if (eq (sub-expr.cnt arg) 1)
-	  ;;      (sub-expr.expr arg 0)
-	       
-	  ;;  ( args)

@@ -90,6 +90,7 @@ type_def * defvar_macro(c_block * block, c_value * val, expr * exprs, size_t cnt
     vl->type = C_SYMBOL;
     vl->symbol = sym;
     t = _compile_expr(block, vr, body);
+    COMPILE_ASSERT(t != &error_def);
     val->type = C_OPERATOR;
     val->operator.left = vl;
     val->operator.right = vr;
@@ -239,8 +240,11 @@ expr * expand_macro_store(macro_store * ms, expr * exprs, size_t cnt){
   var_def * __vars = vars;
   var_def ** _vars = &__vars;
   push_symbols(_vars, &var_cnt);
-  expr * exp2 = lisp_compile_and_run_expr(ms->exp);
+  compile_status status = COMPILE_OK;
+  expr * exp2 = lisp_compile_and_run_expr(ms->exp, &status);
   pop_symbols();
+  if(status == COMPILE_ERROR)
+    return NULL;
   return exp2;
 }
 
@@ -847,11 +851,9 @@ void builtin_macros_load(){
 
   opaque_expr();
   defun("walk-expr",str2type("(fcn (ptr expr) (a (ptr expr)))"), walk_expr2);
-  //defun("___expand", str2type("(fcn (ptr expr) (e (ptr expr)))"),expand_expr);
   defun("number2expr",str2type("(fcn (ptr expr) (a i64))"), number2expr);
   defun("expr2symbol", str2type("(fcn (ptr symbol) (a (ptr expr)))"), expr2symbol);
   defun("symbol2expr", str2type("(fcn (ptr expr) (a (ptr symbol)))"), symbol2expr);
-
   defun("is-sub-expr", str2type("(fcn bool (expr (ptr expr)))"), is_sub_expr);
   defun("sub-expr.cnt", str2type("(fcn u64 (expr (ptr expr)))"), get_sub_expr_cnt);
   defun("sub-expr.expr", str2type("(fcn (ptr expr) (expr (ptr expr)) (idx u64))"), get_sub_expr);

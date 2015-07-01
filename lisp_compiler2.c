@@ -9,6 +9,7 @@
 #include "expr_utils.h"
 #include "builtin_macros.h"
 #include "builtin_functions.h"
+	  
 type_def * compile_value(c_value * val, value_expr e){
   val->type = C_INLINE_VALUE;
   var_def * vdef;
@@ -258,7 +259,10 @@ type_def * _compile_expr(c_block * block, c_value * val,  expr e ){
   case VALUE:
     td = compile_value(val,e.value);
     break;
+  case ERROR:
+    return &error_def;
   }	  
+  
   return td;
 }
 
@@ -411,18 +415,23 @@ void lisp_load_base(){
 
 }
 
-var_def * lisp_compile_expr(expr ex){
+var_def * lisp_compile_expr(expr ex, compile_status * optout_status){
   c_root_code cl = compile_lisp_to_eval(ex);
-  if(cl.fcndef.type->fcn.ret == &error_def)
+  if(cl.fcndef.type->fcn.ret == &error_def){
+    if(optout_status != NULL)*optout_status = COMPILE_ERROR;
     return NULL;
+  }
   compile_as_c(&cl,1);
   symbol s = get_symbol("eval");
   return get_variable(s);
 }
 
-void * lisp_compile_and_run_expr(expr ex){
-  var_def * var = lisp_compile_expr(ex);
-  if(var == NULL)
+void * lisp_compile_and_run_expr(expr ex, compile_status * optout_status){
+  compile_status _status;
+  if(optout_status == NULL) optout_status = &_status;
+       
+  var_def * var = lisp_compile_expr(ex, optout_status);
+  if(COMPILE_ERROR == *optout_status)
     return NULL;
   void * (*fcn)() = var->data;
  
@@ -431,17 +440,17 @@ void * lisp_compile_and_run_expr(expr ex){
 }
 
 
-void lisp_run_expr(expr ex){
-
-
-  var_def * evaldef = lisp_compile_expr(ex);
-
-  if(evaldef == NULL) return; //to do: make better.
+compile_status lisp_run_expr(expr ex){
+  compile_status status;
+  var_def * evaldef = lisp_compile_expr(ex, &status);
+  if(COMPILE_ERROR == status || evaldef == NULL) 
+    return COMPILE_ERROR;
+  
   ASSERT(evaldef != NULL);
+
   print_def(evaldef->type->fcn.ret); logd(" :: ");
   type_def * ret = evaldef->type->fcn.ret;
   size_t ret_size = size_of(ret);
-
 
   if(ret == &void_def){
     logd("()\n");
@@ -494,32 +503,41 @@ void lisp_run_expr(expr ex){
     ERROR("Cannot execute function");
   }
   checktypepool();
+  return COMPILE_OK;
+}
+	 
+
+compile_status lisp_run_exprs(expr * exprs, size_t exprcnt){
+  for(u32 i = 0; i < exprcnt; i++){
+    compile_status s = lisp_run_expr(exprs[i]);
+    print_expr(exprs + i);logd("  %i\n",s);
+    
+    if(COMPILE_ERROR == s){
+      
+      loge("Error at: ");
+      print_expr(exprs + i);
+      logd("\n");
+      return COMPILE_ERROR;
+    }
+  }
+  return COMPILE_OK;
 }
 
-void lisp_run_exprs(expr * exprs, size_t exprcnt){
-  for(u32 i = 0; i < exprcnt; i++)
-    lisp_run_expr(exprs[i]);
-}
-
-void lisp_run_script_file(char * filepath){
+compile_status lisp_run_script_file(char * filepath){
   char * code = read_file_to_string(filepath);
-  if(code == NULL)
-    ERROR("Could not read code from file %s", filepath);
-  
-  lisp_run_script_string(code);
-  char * code2 = read_file_to_string(filepath);
-  ASSERT(strcmp(code,code2) == 0);
-  dealloc(code2);
-  
-  // dealloc(code); //todo: fix leaks
+  if(code == NULL){
+    loge("Could not read code from file %s", filepath);
+    return COMPILE_ERROR;
+  }
+  return lisp_run_script_string(code);
 }
 
-void lisp_run_script_string(char * code){
+compile_status lisp_run_script_string(char * code){
   size_t exprcnt;
   expr * exprs = lisp_parse_all(code, &exprcnt);
-
-  lisp_run_exprs(exprs, exprcnt);
+  return lisp_run_exprs(exprs, exprcnt);
 }
+	  
 bool test_tcc();
 bool test_lisp2c(){
   TEST(test_tcc);

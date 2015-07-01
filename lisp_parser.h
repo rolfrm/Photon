@@ -1,7 +1,8 @@
 // requires .
 typedef enum{
   EXPR = 5,
-  VALUE = 6
+  VALUE = 6,
+  ERROR
 }expr_type;
 
 typedef enum{

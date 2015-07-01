@@ -111,8 +111,7 @@ u64 fcn_arg_cnt(type_def * td){
 }
 
 void load_functions(){
-  defun("print_type", str2type("(fcn void (a (ptr type_def)))"), print_type);
-  defun("write_line", str2type("(fcn void (a (ptr char)))"), &write_line);
+  defun("print-type", str2type("(fcn void (a (ptr type_def)))"), print_type);
   type_def * i64fcn_def = str2type("(fcn i64 (a i64) (b i64))");
   defun("i64+",i64fcn_def , &i64_add);
   defun("i64-",i64fcn_def , &i64_sub);

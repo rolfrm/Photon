@@ -70,7 +70,11 @@ int main(int argc, char *argv[] ){
     compiler_state * c = compiler_make();
     push_compiler(c);
     lisp_load_base();
-    lisp_run_script_file(argv[1]);
+    compile_status status = lisp_run_script_file(argv[1]);
+    if(status == COMPILE_ERROR){
+      loge("Error during compilation\n");
+      return -1;
+    }
     pop_compiler();
     return 0;
   }

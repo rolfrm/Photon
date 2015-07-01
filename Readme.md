@@ -34,7 +34,6 @@ V1 Release Checklist
 * [x] conditionals "if"
 * [x] loops (while expr body) result is the output of the last item.
 * [x] a better REPL (history, multi-line, line-edit)
-* [ ] proper interned literal strings (checkout tries. no probably to hash tables instead.)
 * [x] Structs
  * [x] Defining - structs can be defined using the type macro
  * [x] member access
@@ -49,9 +48,9 @@ V1 Release Checklist
  * [x] -ldl related
  * [x] -lm related
 * [x] function overloading macro / varadic functions
+* [x] macros that do not require 'expand
 * [ ] proper function printing (needed for callback functions).
-* [x] macros that do not require 'expand'
-
+* [ ] proper interned literal strings (checkout tries. no probably to hash tables instead.)
 * [ ] Fix massive memory leaks
 * [ ] Bugs / Stability
 * [ ] Propert error handling

@@ -2,14 +2,14 @@
 (load "std.lisp")
 (load "overload.lisp")
 (assert (eq false (eq 0 1)))
-
+;(asd 4 5 (dsa 3 12)
+;(exit 0)
 
 ;; Constants
 1 
 "hello world!"
 
 ;; Function calls
-(write_line "hello world!")
 (i64+ 10 10)
 
 ;(defvar i65+ (cast (addrof i64+) (fcn i8 (a i8) (b i8))))
@@ -49,7 +49,7 @@
 (type (fcn (ptr f64))) ;a function that returns a pointer t an f64 and takes no args.
 
 (type (fcn f64 (a f64) (b f64))) ; a function that returns a f64 and takes two f64s. 
-(print_type (type (struct _vec2 (x f32) (y f32)))) ; this actually defines a struct named _vec2.
+(print-type (type (struct _vec2 (x f32) (y f32)))) ; this actually defines a struct named _vec2.
 (type (alias (ptr _vec2) vec2)) ; defines vec2 as a _vec2 struct.
 
 (defvar numbers:one 1)
@@ -155,7 +155,7 @@
 add-test-cnt
 (defcmacro show-type (exp)
   (progn
-    (print_type (type-of exp))
+    (print-type (type-of exp))
     (expr (write_line "..."))))
 
 
@@ -213,8 +213,8 @@ void main(){
 (defvar glstatus (cast 0 u32))
 (gl:get-shader-info frag gl:compile-status (addrof glstatus))
 (if (eq glstatus gl:true)
-      (write-line "success!")
-      (write-line "fail!"))
+      (print "success!")
+      (print "fail!"))
 (gl:shader-source vert 1 (addrof vert-src) (addrof vert-src-len))
 (gl:compile-shader vert)
 (gl:get-shader-info vert gl:compile-status (addrof glstatus))
@@ -264,6 +264,10 @@ glstatus
   (write-line "mouse callback!"))
 (defun key-callback (void (win-ptr (ptr void)) (key i32) (scancode i32) (action i32) (mods i32))
   (printf "KEY: %c\n" (cast key i64)))
+
+(defvar mx (cast 0.0 f64))
+(defvar my (cast 0.0 f64))
+
 (defun cursor-pos-callback (void (win-ptr (ptr void)) (x f64) (y f64))
   (progn
     (printstr "(")
@@ -271,6 +275,8 @@ glstatus
     (printstr " ")
     (printf64 y)
     (printstr ")\n")
+    (setf mx x)
+    (setf my y)
     (noop)))
 
 (defun error-callback (void (code i32) (str (ptr char)))
@@ -294,7 +300,7 @@ glstatus
     (setf iteration (i64+ iteration 1))
     (gl:clear-color 0.0  0.2 0.0  1.0 )
     (gl:clear gl:color-buffer-bit)
-    (gl:uniform-2f uloc 0.0 0.0)
+    (gl:uniform-2f uloc (cast (f* mx 0.01) f32) 0.0)
     (gl:draw-arrays drawtype 0 pts)
     (glfw:swap-buffers win)
     (glfw:poll-events)    

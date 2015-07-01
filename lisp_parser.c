@@ -287,6 +287,9 @@ void print_expr(expr * expr1){
       logd("%.*s",value.strln ,value.value);
       if(value.type == STRING) logd("\"");
       break;
+    case ERROR:
+      logd("(Parser Error)");
+      break;
     }
   }
   iprint(expr1,0);
@@ -301,8 +304,12 @@ char * lisp_parse(char * code, expr * out_exprs, int * out_exprs_count){
     code = take_while(code, is_whitespace);
     expr out_expr;
     char * cn = parse_expr(code, &out_expr);
-    if(cn == NULL) goto end;
+    if(cn == NULL){ 
+      //ERROR("THIS HAPPENS");
+      goto end;
+    }
     code = cn;
+
     if(out_expr.type == VALUE && out_expr.value.type == COMMENT){
       // skip comment
     }else{
