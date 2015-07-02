@@ -2,8 +2,6 @@
 (load "std.lisp")
 (load "overload.lisp")
 (assert (eq false (eq 0 1)))
-;(asd 4 5 (dsa 3 12)
-;(exit 0)
 
 ;; Constants
 1 
@@ -49,20 +47,43 @@
 (type (fcn (ptr f64))) ;a function that returns a pointer t an f64 and takes no args.
 
 (type (fcn f64 (a f64) (b f64))) ; a function that returns a f64 and takes two f64s. 
-(print-type (type (struct _vec2 (x f32) (y f32)))) ; this actually defines a struct named _vec2.
-(type (alias (ptr _vec2) vec2)) ; defines vec2 as a _vec2 struct.
+(print-type (type (struct _vec2 (x f64) (y f64)))) ; this actually defines a struct named _vec2.
+(type (alias _vec2 vec2)) ; defines vec2 as a _vec2 struct.
 
-(defvar numbers:one 1)
-(defvar numbers:two 2)
-(defvar numbers:three 3)
 ;(type (enum numbers (one 1) (two 2) (three 3)))
 ;; alt:
 ;(type (enum number-names (one "one") (two "two")))
 ;(enum_value numbers one) ;; 1
 ;numbers:three ;; 3
+(progn
+  (defvar xy :type vec2)
+  (noop))
 
-(defvar xy :type vec2)
+(defun makevec2 (vec2 (a f64) (b f64))
+  (let ((out xy))
+    (setf (member out x) a)
+    (setf (member out y) b)
+    out))
 
+(defun vec2+ (vec2 (a vec2) (b vec2))
+  (let ((out xy))
+    (setf (member out x)
+	  (f+ (member a x) (member b x)))
+    (setf (member out y)
+	  (f+ (member a y) (member b y)))
+    out))
+(defun printvec2 (void (a vec2))
+  (progn
+    (print "(") 
+    (print (member a x))
+    (print " , ")
+    (print (member a y))
+    (print ")")))
+
+(overload + vec2+)
+(overload print printvec2)
+(print (vec2+ (makevec2 1.0 2.0) (makevec2 4.0 10.0)))
+(exit 0)
 ;; Types can be compared
 (write_line "Should be true..")
 (eq (type (ptr _vec2)) (type (ptr _vec2)))
@@ -185,7 +206,7 @@ add-test-cnt
 
 (glfw:make-current win)
 (glfw:set-clipboard-string win "clipboard test!")
-(defvar sleeptime (cast 100000 i32))
+(defvar sleeptime (cast 30000 i32))
 (defvar r 0.0)
 ;;; -- Loa Shader Program -- ;;;
 (defvar prog (gl:create-program))
@@ -194,7 +215,7 @@ add-test-cnt
 
 (defvar frag-src "
 void main(){
-  gl_FragColor = vec4(1.0,1.0,1.0,1.0);
+  gl_FragColor = vec4(1.0,0.0,1.0,1.0);
 }
 ")
 
@@ -294,38 +315,18 @@ glstatus
 (glfw:set-cursor-enter-callback win (addrof cursor-enter))
 (glfw:joystick-present? 1)
 
-(while (not (eq iteration 400))
-  (progn
+	  
+	  
+(while (not (eq iteration 4000))
+  (let ((_mx (cast (f* (f- mx 256) (f/ 1.0 512)) f32))(_my (cast (f* (f- my 256) (f/ 1.0 512)) f32)))
     (glfw:poll-events)
     (setf iteration (i64+ iteration 1))
     (gl:clear-color 0.0  0.2 0.0  1.0 )
-    (gl:clear gl:color-buffer-bit)
-    (gl:uniform-2f uloc (cast (f* mx 0.01) f32) 0.0)
+    ;(gl:clear gl:color-buffer-bit)
+    (gl:uniform-2f uloc _mx _my)
     (gl:draw-arrays drawtype 0 pts)
     (glfw:swap-buffers win)
     (glfw:poll-events)    
-    (usleep sleeptime)
-    (gl:clear-color 0.5  0.0 0.4  1.0 )
-    (gl:clear gl:color-buffer-bit)
-    (gl:uniform-2f uloc 0.2 0.2)
-    (gl:draw-arrays drawtype 0 pts)
-    (glfw:swap-buffers win)
-    (usleep sleeptime)
-    (gl:clear-color 0.0  0.0 0.2  1.0 )
-    (gl:clear gl:color-buffer-bit)
-    (gl:uniform-2f uloc 0.2 -0.2)
-    (gl:draw-arrays drawtype 0 pts)
-    
-    (glfw:swap-buffers win)
-    (glfw:poll-events)
-    (usleep sleeptime)
-    
-    (gl:clear-color 0.0  0.0 0.0  1.0 )
-    (gl:clear gl:color-buffer-bit)
-    (gl:uniform-2f uloc -0.2 -0.2)
-    (gl:draw-arrays drawtype 0 pts)
-    (glfw:swap-buffers win)
-    (glfw:poll-events)
     (usleep sleeptime)))
 
 (defvar m (cast (alloc 100) (ptr char)))

@@ -769,8 +769,11 @@ type_def * member_macro(c_block * blk, c_value * val, expr object, expr member){
   val->member.name = expr_symbol(member);
   val->member.item = alloc0(sizeof(c_value));
   type_def * obj_type = _compile_expr(blk, val->member.item, object);
-  if(obj_type->type == TYPEDEF) obj_type = obj_type->ctypedef.inner;
-  ASSERT(obj_type->type == STRUCT);
+  while(obj_type->type == TYPEDEF) obj_type = obj_type->ctypedef.inner;
+  if(obj_type->type != STRUCT && obj_type->type != UNION){
+    loge("Error: Expected objects of type struct or union. got %i\n", obj_type->type);
+    ERROR("Unsupported type");
+  }
   type_def * memtype = NULL;
   for(int i = 0; i < obj_type->cstruct.cnt; i++){
     decl member = obj_type->cstruct.members[i];
