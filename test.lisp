@@ -65,6 +65,9 @@
     (setf (member out y) b)
     out))
 
+(print "...\n")
+
+
 (defcmacro vec2op (operator)
   (let ((name (symbol2expr (symbol-combine (quote vec2) (expr2symbol operator)))))
     (expr
@@ -77,7 +80,7 @@
 		 ((unexpr operator) (member a y) (member b y)))
 	   out))
        (overload (unexpr operator) (unexpr name))))))
-(vec2op *)(vec2op +) (vec2op /) ;(vec2op -)
+(vec2op *)(vec2op +) (vec2op /) (vec2op -)
 
 (defun printvec2 (void (a vec2))
   (progn
@@ -92,8 +95,8 @@
 (overload + vec2+)
 (overload print printvec2)
 (print (+ (makevec2 1.0 2.0) (makevec2 4.0 10.0)))
-(print "\n")
-(exit 0)
+;(print "\n")
+;(exit 0)
 ;; Types can be compared
 (write_line "Should be true..")
 (eq (type (ptr _vec2)) (type (ptr _vec2)))
@@ -332,7 +335,7 @@ glstatus
     (glfw:poll-events)
     (setf iteration (i64+ iteration 1))
     (gl:clear-color 0.0  0.2 0.0  1.0 )
-    ;(gl:clear gl:color-buffer-bit)
+    (gl:clear gl:color-buffer-bit)
     (gl:uniform-2f uloc _mx _my)
     (gl:draw-arrays drawtype 0 pts)
     (glfw:swap-buffers win)

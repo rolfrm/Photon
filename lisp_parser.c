@@ -131,7 +131,11 @@ char * parse_number(char * code, value_expr * string){
   int decimal_reached = 0;
   char * it = code;
   bool _is_hex = false;
-  if(*it == '-') it++; //if negative
+  bool is_negative = false;
+  if(*it == '-') {
+    is_negative = true;
+    it++;
+  }
 
   int (* val_chr)(char chr) = is_digit;
 
@@ -151,6 +155,8 @@ char * parse_number(char * code, value_expr * string){
     }
   }
   size_t l = (it - code);
+  if(l == 1 && is_negative)
+    return NULL;
   if(l == 0) return NULL;
   string->value = code;
   string->type = NUMBER;
