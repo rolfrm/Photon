@@ -207,10 +207,16 @@ expr * expand_macro_store(macro_store * ms, expr * exprs, size_t cnt){
   }
   
   if(is_varadic){
-    ASSERT(cnt >= min_args);
+    if(cnt < min_args){
+      loge("%i is an invalid number of arguments expected at least %i\n", cnt, min_args);
+      return NULL;
+    }
     ASSERT(ms->arg_cnt == min_args + 2);
   }else{
-    ASSERT(cnt == min_args);
+    if(cnt != min_args){
+      loge("%i is an invalid number of arguments expected %i\n", cnt, min_args);
+      return NULL;
+    }
   }
   
   size_t var_cnt = min_args + (is_varadic ? 1 : 0);
@@ -261,6 +267,8 @@ type_def * expand_macro(c_block * block, c_value * val, expr * exprs, size_t cnt
   COMPILE_ASSERT(fcn_var->type == exprtd);
 
   expr * outexpr = expand_macro_store(fcn_var->data, exprs + 1, cnt - 1);
+  if(outexpr == NULL)
+    return &error_def;
   return _compile_expr(block, val, *outexpr);
 }
 

@@ -80,7 +80,16 @@
 
 	   (let ((ol (find-overload  (unexpr s) arg-type (sub-expr.cnt d))))
 	     (when (eq null (cast ol (ptr void)))
-		  (printstr "Error no matching overload found")
+		  (printstr "Error no matching overload found for '")
+		  (print-symbol (quote (unexpr fcn-name)))
+		  (printstr "' ")
+		  (let ((j (cast 0 u64)))
+		    (while (not (eq j (sub-expr.cnt d)))
+		      (progn
+			(print-type (deref (ptr+ arg-type (cast j i64))))
+			(printstr " ")
+			(setf j (u64+ j 1)))))
+		  (printstr "\n")
 		  (exit 0))
 		  
 	     
@@ -103,6 +112,10 @@
 	   24)))))
 
 (defoverloaded +)       
+(defoverloaded -)
+(defoverloaded /)
+(defoverloaded *)
+(defoverloaded print)
 
 (defun add3i64 (i64 (a i64) (b i64) (c i64))
   (i64+ a (i64+ b c)))
@@ -114,6 +127,20 @@
 (overload + f+)
 (overload + symbol-combine)
 (overload + string-concat)
+(overload - i64-)
+(overload - u64-)
+(overload - u32-)
+(overload - f-)
+(overload * i64*)
+(overload * u32*)
+(overload * u64*)
+(overload * f*)
+(overload / i64/)
+(overload / u64/)
+(overload / f/)
+(overload / u32/)
+
+
 (+ (cast 1 u32) (cast 2 u32))
 (+ (cast 1 u64) (cast 2 u64))
 (+ "hello " "world")
@@ -121,13 +148,18 @@
 (+ (quote something) (quote -else))
 (+ 1 2 3)
 
-(defoverloaded print)
+(- 2 4)
+(- (cast 0.5 f64) (cast 0.2 f64))
+
 (overload print printi64)
 (overload print printf64)
+(overload print printf32)
 (overload print printi64)
 (overload print printi32)
 (overload print printstr)
 (overload print print-symbol)
+
+
 (progn
   (print "********** TEST PRINT OVERLOAD ***********\n")
   (print 10) 

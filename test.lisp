@@ -65,13 +65,20 @@
     (setf (member out y) b)
     out))
 
-(defun vec2+ (vec2 (a vec2) (b vec2))
-  (let ((out xy))
-    (setf (member out x)
-	  (f+ (member a x) (member b x)))
-    (setf (member out y)
-	  (f+ (member a y) (member b y)))
-    out))
+(defcmacro vec2op (operator)
+  (let ((name (symbol2expr (symbol-combine (quote vec2) (expr2symbol operator)))))
+    (expr
+     (progn
+       (defun (unexpr name) (vec2 (a vec2) (b vec2))
+	 (let ((out xy))
+	   (setf (member out x) 
+		 ((unexpr operator) (member a x) (member b x)))
+	   (setf (member out y)
+		 ((unexpr operator) (member a y) (member b y)))
+	   out))
+       (overload (unexpr operator) (unexpr name))))))
+(vec2op *)(vec2op +) (vec2op /) ;(vec2op -)
+
 (defun printvec2 (void (a vec2))
   (progn
     (print "(") 
@@ -80,9 +87,12 @@
     (print (member a y))
     (print ")")))
 
+(print "okk..")
+
 (overload + vec2+)
 (overload print printvec2)
-(print (vec2+ (makevec2 1.0 2.0) (makevec2 4.0 10.0)))
+(print (+ (makevec2 1.0 2.0) (makevec2 4.0 10.0)))
+(print "\n")
 (exit 0)
 ;; Types can be compared
 (write_line "Should be true..")
