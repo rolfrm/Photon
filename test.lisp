@@ -89,12 +89,14 @@
     (print " , ")
     (print (member a y))
     (print ")")))
+(overload print printvec2)
 
 (print "okk..")
 
-(overload + vec2+)
-(overload print printvec2)
-(print (+ (makevec2 1.0 2.0) (makevec2 4.0 10.0)))
+
+;(set-printer (quote print))
+;(+ (makevec2 1.0 2.0) (makevec2 4.0 10.0))
+;(makevec2 3.0 4.0)
 ;(print "\n")
 ;(exit 0)
 ;; Types can be compared

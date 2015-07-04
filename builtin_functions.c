@@ -109,6 +109,10 @@ u64 fcn_arg_cnt(type_def * td){
   ASSERT(td->type == FUNCTION);
   return td->fcn.cnt;
 }
+extern symbol * printer;
+void set_printer(symbol * sym){
+  printer = sym;
+}
 
 void load_functions(){
   defun("print-type", str2type("(fcn void (a (ptr type_def)))"), print_type);
@@ -152,5 +156,6 @@ void load_functions(){
 
   defun("fcn-arg-types", str2type("(fcn (ptr (ptr type_def)) (t (ptr type_def)))"), fcn_arg_types);
   defun("fcn-arg-cnt", str2type("(fcn u64 (t (ptr type_def)))"), fcn_arg_cnt);
+  defun("set-printer", str2type("(fcn void (ptr (ptr symbol)))"), set_printer);
 
 }

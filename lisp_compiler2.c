@@ -439,8 +439,23 @@ void * lisp_compile_and_run_expr(expr ex, compile_status * optout_status){
   return fcn();
 }
 
+symbol * printer = NULL;
 
 compile_status lisp_run_expr(expr ex){
+  expr exes[2];
+  expr _ex;
+  if(printer != NULL){
+    _ex.type = EXPR;
+    exes[0] = symbol_expr2(*printer);
+    exes[1] = ex;
+    _ex.sub_expr.cnt = array_count(exes);
+    _ex.sub_expr.exprs = exes;
+    ex = _ex;
+  }
+  expr _exes[20];
+  UNUSED(_exes);
+
+
   compile_status status;
   var_def * evaldef = lisp_compile_expr(ex, &status);
   if(COMPILE_ERROR == status || evaldef == NULL) 

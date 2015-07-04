@@ -560,6 +560,18 @@ type_def * eq_macro(c_block * block, c_value * val, expr item1, expr item2){
   return val->cast.type;
 }
 
+symbol get_tmp_sym(){
+
+  static int tmpid = 0;
+  char tmpname[100];
+  symbol tmpsym;
+  do{
+    sprintf(tmpname,"_tmp%i", tmpid);
+    tmpsym = get_symbol(tmpname);
+    tmpid++;
+  }while(get_variable(tmpsym) != NULL);
+  return tmpsym;
+}
 	  
 type_def * if_macro(c_block * block, c_value * val, expr cnd, expr then, expr _else){
   c_expr ifexpr;
@@ -607,11 +619,12 @@ type_def * if_macro(c_block * block, c_value * val, expr cnd, expr then, expr _e
     val->type = C_NOTHING;
     return then_t;
   }
-  var_def tmpsym;
-  tmpsym.name = get_symbol("_tmp");
-  tmpsym.type = then_t;
+  symbol tmpsym = get_tmp_sym();
+  var_def tmpvar;
+  tmpvar.name = tmpsym;
+  tmpvar.type = then_t;
   size_t cnt = 1;
-  var_def * tmpsymptr = &tmpsym;
+  var_def * tmpsymptr = &tmpvar;
   push_symbols(&tmpsymptr, &cnt);
 
   c_expr then_blk_expr;
@@ -622,7 +635,7 @@ type_def * if_macro(c_block * block, c_value * val, expr cnd, expr then, expr _e
   c_value * val2 = clone(&then_expr.value, sizeof(c_value));
   c_value * to_set = alloc0(sizeof(c_value));
   to_set->type = C_SYMBOL;
-  to_set->symbol = get_symbol("_tmp");
+  to_set->symbol = tmpsym;
   then_expr.type = C_VALUE;
   then_expr.value.type = C_OPERATOR;
   then_expr.value.operator.operator = "=";
@@ -640,13 +653,13 @@ type_def * if_macro(c_block * block, c_value * val, expr cnd, expr then, expr _e
   c_expr else_expr;
   else_expr.type = C_VALUE;
 
-  type_def * else_t = setf_macro(&else_blk_expr.block, &else_expr.value, symbol_expr("_tmp"), _else);
+  type_def * else_t = setf_macro(&else_blk_expr.block, &else_expr.value, symbol_expr2(tmpsym), _else);
   COMPILE_ASSERT(else_t == then_t);
   block_add(&else_blk_expr.block, else_expr);
 
   c_expr tmp_expr;
   tmp_expr.type = C_VAR;
-  tmp_expr.var.var.name = get_symbol("_tmp");
+  tmp_expr.var.var.name = tmpsym;
   tmp_expr.var.var.type = else_t;
   tmp_expr.var.value = NULL;
 
@@ -657,7 +670,7 @@ type_def * if_macro(c_block * block, c_value * val, expr cnd, expr then, expr _e
   block_add(block, elsexpr);
   block_add(block, else_blk_expr);
   val->type = C_SYMBOL;
-  val->symbol = get_symbol("_tmp");
+  val->symbol = tmpsym;
   pop_symbols();
   return else_t;
 }
