@@ -533,7 +533,6 @@ compile_status lisp_run_expr(expr ex){
   checktypepool();
   return COMPILE_OK;
 }
-	 
 
 compile_status lisp_run_exprs(expr * exprs, size_t exprcnt){
   for(u32 i = 0; i < exprcnt; i++){

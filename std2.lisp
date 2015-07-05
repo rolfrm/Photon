@@ -2,5 +2,8 @@
 (load "std.lisp")
 (load "overload.lisp")
 (load "vec2.lisp")
-(assert (eq false (eq 0 1)))
+
+(defcmacro incr (var amount)
+  (expr
+   (setf (unexpr var) (+ (unexpr var) (unexpr amount)))))
 

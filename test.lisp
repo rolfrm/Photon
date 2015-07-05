@@ -1,6 +1,5 @@
 ;; The following code runs / compiles
-(load "std.lisp")
-(load "overload.lisp")
+(load "std2.lisp")
 (assert (eq false (eq 0 1)))
 
 ;; Constants
@@ -47,89 +46,6 @@
 (type (fcn (ptr f64))) ;a function that returns a pointer t an f64 and takes no args.
 
 (type (fcn f64 (a f64) (b f64))) ; a function that returns a f64 and takes two f64s. 
-(print-type (type (struct _vec2 (x f64) (y f64)))) ; this actually defines a struct named _vec2.
-(type (alias _vec2 vec2)) ; defines vec2 as a _vec2 struct.
-
-;(type (enum numbers (one 1) (two 2) (three 3)))
-;; alt:
-;(type (enum number-names (one "one") (two "two")))
-;(enum_value numbers one) ;; 1
-;numbers:three ;; 3
-(progn
-  (defvar xy :type vec2)
-  (noop))
-
-(defun makevec2 (vec2 (a f64) (b f64))
-  (let ((out xy))
-    (setf (member out x) a)
-    (setf (member out y) b)
-    out))
-
-(print "...\n")
-
-
-(defcmacro vec2op (operator)
-  (let ((name (symbol2expr (symbol-combine (quote vec2) (expr2symbol operator)))))
-    (expr
-     (progn
-       (defun (unexpr name) (vec2 (a vec2) (b vec2))
-	 (let ((out xy))
-	   (setf (member out x) 
-		 ((unexpr operator) (member a x) (member b x)))
-	   (setf (member out y)
-		 ((unexpr operator) (member a y) (member b y)))
-	   out))
-       (overload (unexpr operator) (unexpr name))))))
-(vec2op *)(vec2op +) (vec2op /) (vec2op -)
-
-(defun vec2scale (vec2 (a vec2) (b f64))
-  (progn
-    (setf (member a x) (* (member a x) b))
-    (setf (member a y) (* (member a y) b))
-    a))
-
-(defun printvec2 (void (a vec2))
-  (progn
-    (print "(") 
-    (print (member a x))
-    (print " , ")
-    (print (member a y))
-    (print ")")))
-
-(overload * vec2scale)
-
-(defcmacro print-default (body)
-  (expr
-   (progn
-     (unexpr body)
-     (printstr "::\n")
-     (noop))))
-    
-(overload print printvec2)
-(overload-default print print-default)
-
-(print "okk..")
-
-(defcmacro printnl (body)
-  (expr
-   (progn
-     (print (unexpr body))
-     (print "\n"))))
-
-(defcmacro no-print (body)
-  (expr
-   (progn 
-     (unexpr body)
-     (noop))))
-			 
-
-(set-printer (quote no-print))
-
-
-;(+ (makevec2 1.0 2.0) (makevec2 4.0 10.0))
-;(makevec2 3.0 4.0)
-;(print "\n")
-;(exit 0)
 ;; Types can be compared
 (write_line "Should be true..")
 (eq (type (ptr _vec2)) (type (ptr _vec2)))
@@ -140,8 +56,6 @@
 (cast "asd" (ptr i32))
 (cast 0.001 f32) ; Currently the only valid way of creating a float
 (cast 2.5 f64)
-
-
 
 ;; everything is symbol based
 (quote hello) ; creats a symbol named 'hello'
@@ -183,7 +97,7 @@
 (write_line "gets here")
 (while (not (eq a 10))
   (progn 
-    (setf a (i64+ a 1))
+    (setf a (+ a 1))
     (if (eq a 5)
 	(progn (write_line "aaa") 1)
 	(progn (write_line "bbb") 2))
@@ -191,12 +105,10 @@
 
 (deref "asd")
 
-
 (defvar teststr "asdaasd")
 (defvar testarray (alloc 10))
 (memcpy testarray (cast teststr (ptr void)) 8)
 (write_line (cast testarray (ptr char)))
-
 
 (defvar add-test (cast null (ptr i64)))
 (defvar add-test-cnt (cast 0 u64))
@@ -225,9 +137,7 @@ add-test-cnt
     (print-type (type-of exp))
     (expr (write_line "..."))))
 
-
 (show-type (addrof to-add))
-
 
 (add-to-list+ add-test add-test-cnt to-add)
 (add-to-list+ add-test add-test-cnt to-add)
@@ -237,7 +147,6 @@ add-test-cnt
 (add-to-list+ add-test add-test-cnt to-add)
 (write_line "asd")
 (printf "test: %i\n" (cast add-test-cnt i64))
-
 
 (defcmacro comment (_expr)
   (expr (write_line "lol..")))
@@ -309,10 +218,10 @@ glstatus
 ;;; -- Load Vertex Buffer Object -- ;;;
 (defvar vbo (cast 0 u32))
 (defvar vbo-data (cast (alloc (u64* 8 4)) (ptr f32))) ; 4 floats
-(setf (deref (ptr+ vbo-data 2)) (cast 0.25 f32))
-(setf (deref (ptr+ vbo-data 4)) (cast 0.25 f32))
-(setf (deref (ptr+ vbo-data 5)) (cast 0.25 f32))
-(setf (deref (ptr+ vbo-data 7)) (cast 0.25 f32))
+(setf (deref (ptr+ vbo-data 2)) 0.25)
+(setf (deref (ptr+ vbo-data 4)) 0.25)
+(setf (deref (ptr+ vbo-data 5)) 0.25)
+(setf (deref (ptr+ vbo-data 7)) 0.25)
 (gl:gen-buffers 1 (addrof vbo))
 (gl:bind-buffer gl:array-buffer vbo)
 
@@ -331,19 +240,13 @@ glstatus
   (write-line "mouse callback!"))
 (defun key-callback (void (win-ptr (ptr void)) (key i32) (scancode i32) (action i32) (mods i32))
   (printf "KEY: %c\n" (cast key i64)))
-(progn
-  (defvar mpos (makevec2 0 0))
-  (noop))
+
+(defvar mpos (makevec2 0 0))
 
 (defun cursor-pos-callback (void (win-ptr (ptr void)) (x f64) (y f64))
   (progn
-    (printstr "(")
-    (printf64 x)
-    (printstr " ")
-    (printf64 y)
-    (printstr ")\n")
-    (setf mpos (makevec2 x y))
-    (noop)))
+    (print (setf mpos (makevec2 x y)))
+    (print "\n")))
 
 (defun error-callback (void (code i32) (str (ptr char)))
   (write-line str))
@@ -360,29 +263,24 @@ glstatus
 (glfw:set-cursor-enter-callback win (addrof cursor-enter))
 (glfw:joystick-present? 1)
 
+(defvar a 0)
+(while (not (eq a 1000))
+  (progn
+    (setf a (+ a 1))
+    (dealloc (realloc (alloc 1000) 2000))
+    10
+    ))
+
+
 (while (not (eq iteration 4000))
-  (let ((_mx (cast 0 f32)) (_my (cast 0 f32)))
+  (let ((m (* (- (makevec2 256 256) mpos) 0.004)))
     (setf iteration (+ iteration 1))
     (gl:clear-color 0.0  0.2 0.0  1.0 )
     (gl:clear gl:color-buffer-bit)
-    (gl:uniform-2f uloc _mx _my)
+    (gl:uniform-2f uloc (cast (- 0 (member m x)) f32) (cast (member m y) f32))
     (gl:draw-arrays drawtype 0 pts)
     (glfw:swap-buffers win)
     (glfw:poll-events)    
     (usleep sleeptime)))
 
-(defvar m (cast (alloc 100) (ptr char)))
-(setf (deref m) (deref "a"))
-(setf (deref m) (deref "œ"))
-
-"SUCCESS!"
-
-;; testing for memory corruption
-(defvar a 0)
-(while (not (eq a 1000))
-  (progn
-    (setf a (i64+ a 1))
-    (dealloc (realloc (alloc 1000) 2000))
-    10
-    ))
 
