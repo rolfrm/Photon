@@ -124,23 +124,24 @@
 (defun add3i64 (i64 (a i64) (b i64) (c i64))
   (i64+ a (i64+ b c)))
 
-(overload + i64+)
-(overload + add3i64)
-(overload + u64+)
-
-(overload + f+)
 (overload + symbol-combine)
 (overload + string-concat)
-(overload - i64-)
-(overload - u64-)
 
-(overload - f-)
+(overload + add3i64)
+
 (overload * i64*)
-
-(overload * u64*)
-(overload * f*)
 (overload / i64/)
+(overload - i64-)
+(overload + i64+)
+
+(overload + u64+)
+(overload * u64*)
+(overload - u64-)
 (overload / u64/)
+
+(overload + f+)
+(overload - f-)
+(overload * f*)
 (overload / f/)
 
 (overload + u32+)
@@ -152,16 +153,6 @@
 (overload - f32-)
 (overload * f32*)
 (overload / f32/)
-
-(+ (cast 1 u32) (cast 2 u32))
-(+ (cast 1 u64) (cast 2 u64))
-(+ "hello " "world")
-(+ (cast 1.0 f64) (cast 2.0 f64))
-(+ (quote something) (quote -else))
-(+ 1 2 3)
-
-(- 2 4)
-(- (cast 0.5 f64) (cast 0.2 f64))
 
 (overload print printi64)
 (overload print printi32)
@@ -176,23 +167,30 @@
 (overload print printstr)
 (overload print print-symbol)
 
+(defun print-bool (void (x bool))
+  (if x
+      (printstr "true")
+      (printstr "false")))
+(overload print print-bool)
 
-(progn
-  (print "********** TEST PRINT OVERLOAD ***********\n")
-  (print 10) 
-  (print "\n")
-  (print (cast 1.0 f64))
-  (print "\n")
-  (print (quote hello!))
-  (print "\n")
-  (print "**********  ***********\n"))
+(defcmacro print-default (body)
+  (expr
+   (progn
+     (unexpr body)
+     (printstr "--- unable to print result ---"))))
+    
+(overload-default print print-default)
 
-;; (overload + i32+)
-;; (overload + i16+)
-;; (overload + i8+)
+(defcmacro printnl (body)
+  (expr
+   (progn
+     (print (unexpr body))
+     (printstr "\n"))))
 
-;; (overload + u32+)
-;; (overload + u16+)
-;; (overload + u8+)
-(when false (write-line "when true!"))
-(unless true (write-line "when false!"))
+(defcmacro no-print (body)
+  (expr
+   (progn 
+     (unexpr body)
+     (noop))))
+			 
+(set-printer (quote no-print))

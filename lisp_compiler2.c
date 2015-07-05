@@ -474,7 +474,9 @@ compile_status lisp_run_expr(expr ex){
   size_t ret_size = size_of(ret);
 
   if(printer != NULL){
-    ASSERT(ret == &void_def);
+    if(ret != &void_def){
+      log("Printer should return &void def");
+    }
   }else{
     print_def(evaldef->type->fcn.ret); logd(" :: ");  
   }
@@ -535,7 +537,7 @@ compile_status lisp_run_expr(expr ex){
 
 compile_status lisp_run_exprs(expr * exprs, size_t exprcnt){
   for(u32 i = 0; i < exprcnt; i++){
-    logd(">> "); print_expr(exprs + i);logd("\n");
+    //logd(">> "); print_expr(exprs + i);logd("\n");
     compile_status s = lisp_run_expr(exprs[i]);    
     if(COMPILE_ERROR == s){
       

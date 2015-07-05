@@ -349,7 +349,7 @@ glstatus
   (write-line str))
 
 (defun cursor-enter (void (win (ptr void)) (enter i32))
-  (if (eq enter (cast 1 i32))
+  (if (eq enter 1)
       (write-line "ENTER")
       (write-line "LEAVE")))
 
@@ -362,7 +362,7 @@ glstatus
 
 (while (not (eq iteration 4000))
   (let ((_mx (cast 0 f32)) (_my (cast 0 f32)))
-    (setf iteration (i64+ iteration 1))
+    (setf iteration (+ iteration 1))
     (gl:clear-color 0.0  0.2 0.0  1.0 )
     (gl:clear gl:color-buffer-bit)
     (gl:uniform-2f uloc _mx _my)
