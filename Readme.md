@@ -19,7 +19,7 @@ To test the compiler.
 7. ./foton test.lisp
 8. ./foton 
 
-V1 Release Checklist
+V1 Release Checklist (Aiming at August 21 release)
 --------
 * [x] Naming symbols anything.
 * [x] Global variables.
@@ -51,14 +51,13 @@ V1 Release Checklist
 * [x] macros that do not require 'expand
 * [x] proper function printing (needed for callback functions). using printers, a bit slow..
 * [ ] faster type-of macro (current version requires compiling the code to check the types. Better to just do it once. Memorizing?
-
 * [ ] proper interned literal strings (checkout tries. no probably to hash tables instead.)
 * [ ] Fix massive memory leaks
 * [ ] Bugs / Stability
-* [ ] Propert error handling
+* [ ] better error handling
 * [ ] line number of exprs.
 * [ ] lvalue checking (setf 1 10) is invalid for instance. (setf a 10) might be ok.
-
+* [ ] Linux 32 bit / Windows 64/32 bit support
 Vn Features
 ---------
 * [ ] Packages / Modules
