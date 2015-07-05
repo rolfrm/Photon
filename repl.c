@@ -87,10 +87,13 @@ bool start_read_eval_print_loop(){
 }
 
 
-void repl(){
+void repl(char * preload_file){
   compiler_state * c = compiler_make();
   push_compiler(c);
   lisp_load_base();
+  if(preload_file != NULL)
+    if(COMPILE_ERROR == lisp_run_script_file(preload_file))
+      return;
   start_read_eval_print_loop();
   pop_compiler(c);
 }

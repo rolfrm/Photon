@@ -113,10 +113,10 @@ type_def * setf_macro(c_block * block, c_value * val, expr name, expr body){
   c_value * vl = alloc0(sizeof(c_value));
   type_def * t1 = _compile_expr(block, vl, name);
   type_def * t = _compile_expr(block, vr, body);
-  if(t1 != t){
-    loge("same types required for setf. got '");
+  if(!is_type_compatible(t,t1,body)){
+    loge("same types required for setf. Requires '");
     print_min_type(t1);
-    loge("' and '");
+    loge("' got '");
     print_min_type(t);
     loge("'.\n");
     ERROR("cannot implicitly convert type");

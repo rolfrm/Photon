@@ -109,9 +109,17 @@ u64 fcn_arg_cnt(type_def * td){
   ASSERT(td->type == FUNCTION);
   return td->fcn.cnt;
 }
+
 extern symbol * printer;
 void set_printer(symbol * sym){
   printer = sym;
+}
+
+bool is_type_compatible2(type_def * call_type, type_def * arg_type, expr * exp){
+  logd("***\n");
+  print_expr(exp->sub_expr.exprs);logd("\n");
+  logd("*** ^^^^ ***\n");
+  return is_type_compatible(call_type, arg_type, *exp);
 }
 
 void load_functions(){
@@ -157,5 +165,8 @@ void load_functions(){
   defun("fcn-arg-types", str2type("(fcn (ptr (ptr type_def)) (t (ptr type_def)))"), fcn_arg_types);
   defun("fcn-arg-cnt", str2type("(fcn u64 (t (ptr type_def)))"), fcn_arg_cnt);
   defun("set-printer", str2type("(fcn void (ptr (ptr symbol)))"), set_printer);
+  //bool is_type_compatible2(type_def * call_type, type_def * arg_type, expr * exp){
+  defun("is-type-compatible", str2type("(fcn bool (call-type (ptr type_def)) (arg-type (ptr type_def)) (call-expr (ptr expr)))"), is_type_compatible2);
+
 
 }

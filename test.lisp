@@ -82,6 +82,12 @@
        (overload (unexpr operator) (unexpr name))))))
 (vec2op *)(vec2op +) (vec2op /) (vec2op -)
 
+(defun vec2scale (vec2 (a vec2) (b f64))
+  (progn
+    (setf (member a x) (* (member a x) b))
+    (setf (member a y) (* (member a y) b))
+    a))
+
 (defun printvec2 (void (a vec2))
   (progn
     (print "(") 
@@ -89,12 +95,37 @@
     (print " , ")
     (print (member a y))
     (print ")")))
+
+(overload * vec2scale)
+
+(defcmacro print-default (body)
+  (expr
+   (progn
+     (unexpr body)
+     (printstr "::\n")
+     (noop))))
+    
 (overload print printvec2)
+(overload-default print print-default)
 
 (print "okk..")
 
+(defcmacro printnl (body)
+  (expr
+   (progn
+     (print (unexpr body))
+     (print "\n"))))
 
-;(set-printer (quote print))
+(defcmacro no-print (body)
+  (expr
+   (progn 
+     (unexpr body)
+     (noop))))
+			 
+
+(set-printer (quote no-print))
+
+
 ;(+ (makevec2 1.0 2.0) (makevec2 4.0 10.0))
 ;(makevec2 3.0 4.0)
 ;(print "\n")
@@ -300,9 +331,9 @@ glstatus
   (write-line "mouse callback!"))
 (defun key-callback (void (win-ptr (ptr void)) (key i32) (scancode i32) (action i32) (mods i32))
   (printf "KEY: %c\n" (cast key i64)))
-
-(defvar mx (cast 0.0 f64))
-(defvar my (cast 0.0 f64))
+(progn
+  (defvar mpos (makevec2 0 0))
+  (noop))
 
 (defun cursor-pos-callback (void (win-ptr (ptr void)) (x f64) (y f64))
   (progn
@@ -311,8 +342,7 @@ glstatus
     (printstr " ")
     (printf64 y)
     (printstr ")\n")
-    (setf mx x)
-    (setf my y)
+    (setf mpos (makevec2 x y))
     (noop)))
 
 (defun error-callback (void (code i32) (str (ptr char)))
@@ -330,11 +360,8 @@ glstatus
 (glfw:set-cursor-enter-callback win (addrof cursor-enter))
 (glfw:joystick-present? 1)
 
-	  
-	  
 (while (not (eq iteration 4000))
-  (let ((_mx (cast (f* (f- mx 256) (f/ 1.0 512)) f32))(_my (cast (f* (f- my 256) (f/ 1.0 512)) f32)))
-    (glfw:poll-events)
+  (let ((_mx (cast 0 f32)) (_my (cast 0 f32)))
     (setf iteration (i64+ iteration 1))
     (gl:clear-color 0.0  0.2 0.0  1.0 )
     (gl:clear gl:color-buffer-bit)

@@ -299,7 +299,6 @@ void print_expr(expr * expr1){
     }
   }
   iprint(expr1,0);
-  logd("\n");
 }
 
 

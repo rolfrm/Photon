@@ -49,7 +49,9 @@ V1 Release Checklist
  * [x] -lm related
 * [x] function overloading macro / varadic functions
 * [x] macros that do not require 'expand
-* [ ] proper function printing (needed for callback functions).
+* [x] proper function printing (needed for callback functions). using printers, a bit slow..
+* [ ] faster type-of macro (current version requires compiling the code to check the types. Better to just do it once. Memorizing?
+
 * [ ] proper interned literal strings (checkout tries. no probably to hash tables instead.)
 * [ ] Fix massive memory leaks
 * [ ] Bugs / Stability

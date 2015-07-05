@@ -144,6 +144,21 @@ bool is_float_literal(expr ex){
   return false;
 }
 
+bool is_type_compatible(type_def * call_type, type_def * arg_type, expr callexpr){
+  if(call_type == arg_type)
+    return true;
+  bool is_number = is_number_literal(callexpr);
+  bool is_float = is_float_literal(callexpr);
+  bool is_integral = is_number && !is_float;
+  if(is_float_type(arg_type)&& is_number){
+    return true;
+  }else if(is_integral && is_integral_type(arg_type)){
+    return true;
+  }
+  return false;	   
+}
+
+
 type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se){
   if(se->cnt == 0)
     ERROR("sub expressio count 0");
@@ -191,43 +206,35 @@ type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se){
     type_def * td = var_type;
 
     if(td->fcn.cnt != argcnt){
-      ERROR("Too few arguments to function '%s' got %i expected %i.", symbol_name(name), argcnt, td->fcn.cnt);
+      COMPILE_ERROR("Too few arguments to function '%s' got %i expected %i.", symbol_name(name), argcnt, td->fcn.cnt);
     }
     c_value fargs[argcnt];
     memset(fargs,0,sizeof(c_value) * argcnt);
     type_def * farg_types[argcnt];
+    bool ok = true;
     for(i64 i = 0; i < argcnt; i++){
       farg_types[i] = _compile_expr(block, fargs + i, args[i]);
-      
-      if(type_pool_get(farg_types[i]) != type_pool_get(td->fcn.args[i])){
-	// handle literals.
-	bool is_number = is_number_literal(args[i]);
-	bool is_float = is_float_literal(args[i]);
-	bool is_integral = is_number && !is_float;
-	if(is_float_type(farg_types[i])&& is_number){
-	}else if(is_integral && is_integral_type(farg_types[i])){
-	  
+      if(!is_type_compatible(farg_types[i],td->fcn.args[i], args[i])){
+	ok = false;
+	logd("ERROR: got '");
+	int ptrs1;
+	type_def * t1i = get_fcn_ptr_function(farg_types[i], &ptrs1);
+	if(t1i != NULL){
+	  logd("(function %.*s)", ptrs1, "*");
 	}else{
-	  logd("ERROR: got '");
-	  int ptrs1;
-	  type_def * t1i = get_fcn_ptr_function(farg_types[i], &ptrs1);
-	  if(t1i != NULL){
-	    logd("(function %.*s)", ptrs1, "*");
-	  }else{
-	    print_min_type(farg_types[i]);
-	  }
-	  logd("' expected '");
-	  t1i = get_fcn_ptr_function(td->fcn.args[i], &ptrs1);
-	  if(t1i != NULL){
-	    logd("(function %.*s)", ptrs1, "*");
-	  }else{
-	    print_min_type(td->fcn.args[i]);
-	  }
-	  logd("'\n");
-	  logd("for function '%s'\n", symbol_name(name));
-	  ERROR("Non matching types");
+	  print_min_type(farg_types[i]);
 	}
+	logd("' expected '");
+	t1i = get_fcn_ptr_function(td->fcn.args[i], &ptrs1);
+	if(t1i != NULL){
+	  logd("(function %.*s)", ptrs1, "*");
+	}else{
+	  print_min_type(td->fcn.args[i]);
+	}
+	logd("'\n");
       }
+      if(!ok)
+	COMPILE_ERROR("Non matching types for function '%s'\n", symbol_name(name));
     }
 
     c_function_call call;
@@ -442,20 +449,19 @@ void * lisp_compile_and_run_expr(expr ex, compile_status * optout_status){
 symbol * printer = NULL;
 
 compile_status lisp_run_expr(expr ex){
-  expr exes[2];
+  expr exes[3];
   expr _ex;
   if(printer != NULL){
     _ex.type = EXPR;
     exes[0] = symbol_expr2(*printer);
     exes[1] = ex;
-    _ex.sub_expr.cnt = array_count(exes);
+    _ex.sub_expr.cnt = 2;
     _ex.sub_expr.exprs = exes;
     ex = _ex;
   }
   expr _exes[20];
   UNUSED(_exes);
-
-
+  
   compile_status status;
   var_def * evaldef = lisp_compile_expr(ex, &status);
   if(COMPILE_ERROR == status || evaldef == NULL) 
@@ -463,14 +469,22 @@ compile_status lisp_run_expr(expr ex){
   
   ASSERT(evaldef != NULL);
 
-  print_def(evaldef->type->fcn.ret); logd(" :: ");
+  
   type_def * ret = evaldef->type->fcn.ret;
   size_t ret_size = size_of(ret);
 
+  if(printer != NULL){
+    ASSERT(ret == &void_def);
+  }else{
+    print_def(evaldef->type->fcn.ret); logd(" :: ");  
+  }
+  
   if(ret == &void_def){
-    logd("()\n");
+    if(printer == NULL)
+      logd("()\n");
     void (* fcn)() = evaldef->data;
     fcn();
+    if(printer != NULL) return COMPILE_OK;
   }else if(ret == str2type("(ptr type_def)")){
     type_def * (* fcn)() = evaldef->data;
     fcn();
@@ -511,10 +525,7 @@ compile_status lisp_run_expr(expr ex){
     void * (* fcn)() = evaldef->data;
     void * v = fcn();
     logd("try %p\n", v);
-  }/*else if(ret_size > 8){
-    void (* fcn)() = evaldef->data; // i need to do some kind of stack padding.
-    fcn();
-    }*/else{
+  }else{
     ERROR("Cannot execute function");
   }
   checktypepool();
@@ -524,9 +535,8 @@ compile_status lisp_run_expr(expr ex){
 
 compile_status lisp_run_exprs(expr * exprs, size_t exprcnt){
   for(u32 i = 0; i < exprcnt; i++){
-    compile_status s = lisp_run_expr(exprs[i]);
-    print_expr(exprs + i);logd("  %i\n",s);
-    
+    logd(">> "); print_expr(exprs + i);logd("\n");
+    compile_status s = lisp_run_expr(exprs[i]);    
     if(COMPILE_ERROR == s){
       
       loge("Error at: ");
@@ -541,7 +551,7 @@ compile_status lisp_run_exprs(expr * exprs, size_t exprcnt){
 compile_status lisp_run_script_file(char * filepath){
   char * code = read_file_to_string(filepath);
   if(code == NULL){
-    loge("Could not read code from file %s", filepath);
+    loge("Error: Could not read code from file '%s'\n", filepath);
     return COMPILE_ERROR;
   }
   return lisp_run_script_string(code);

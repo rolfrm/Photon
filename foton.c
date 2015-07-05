@@ -47,9 +47,9 @@ bool test_get_cname();
 bool test_symbols();
 bool test_type_pool();
 int main(int argc, char *argv[] ){
-  if(argc == 1 || (argc == 2 && strcmp(argv[1],"--repl") == 0)){
+  if(argc == 1 || (argc >= 2 && strcmp(argv[1],"--repl") == 0)){
     break_on_errors = false;
-    repl();
+    repl(argc > 2 ? argv[2] : NULL);
     return 0;
   }
   
@@ -72,7 +72,6 @@ int main(int argc, char *argv[] ){
     lisp_load_base();
     compile_status status = lisp_run_script_file(argv[1]);
     if(status == COMPILE_ERROR){
-      loge("Error during compilation\n");
       return -1;
     }
     pop_compiler();

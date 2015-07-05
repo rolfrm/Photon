@@ -54,7 +54,25 @@
   (std:print-i64 "%i" x))
 
 (defun printi32 (void (x i32))
-  (std:print-i64 "%i" (cast x i64)))
+  (printi64 (cast x i64)))
+
+(defun printi16 (void (x i16))
+  (printi64 (cast x i64)))
+
+(defun printi8 (void (x i8))
+  (printi64 (cast x i64)))
+
+(defun printu64 (void (x u64))
+  (printi64 (cast x i64)))
+
+(defun printu32 (void (x u32))
+  (printu64 (cast x u64)))
+
+(defun printu16 (void (x u16))
+  (printu64 (cast x u64)))
+
+(defun printu8 (void (x u8))
+  (printu64 (cast x u64)))
 
 (defun printstr (void (x (ptr char)))
   (std:print-f64 x 0.0))

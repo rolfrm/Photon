@@ -11,7 +11,9 @@
  (alias
   (struct _overload
 	  (members (ptr overload-info))
-	  (member-cnt i64))
+	  (member-cnt i64)
+	  (default (ptr symbol))
+	  )
   overload))
 
 (printstr "size: ") (size-of (type overload-info))
@@ -33,69 +35,66 @@
     (setf (member item arg-cnt) (fcn-arg-cnt fcn-type))
     item))
 
-(defun find-overload ((ptr symbol) (ol overload) (arg-types (ptr (ptr type_def))) (arg-cnt u64))
+(defun find-overload ((ptr symbol) (ol overload) (call-types (ptr (ptr type_def))) (arg-cnt u64) (exprs (ptr expr)))
   (let ((i 0) (out (cast null (ptr symbol)))
 	(cnt (member ol member-cnt))
 	(mems (member ol members)))
-    
+    (assert (is-sub-expr exprs))
     (while (and (eq out (cast null (ptr symbol)))
 		(not (eq i cnt)))
       (let ((mem (deref (ptr+ mems i))))
 	(let ((types (member mem arg-types))
 	      (types-cnt (member mem arg-cnt)))
-	  (if (eq types-cnt arg-cnt)
-	      (let ((j (cast 0 u64))
-		    (same true))
-		(while (not (eq j arg-cnt))
-		  (progn
-		    (if (eq (deref (ptr+ types (cast j i64))) 
-			    (deref (ptr+ arg-types (cast j i64))))
-			(noop)
-			(setf same false))
-		    (setf j (u64+ j 1))))
-		(if same
-		    (progn
-		      (setf out (member mem sym))
-		      (noop))
-		    (noop)))
-	      (noop)))
-	  (setf i (i64+ i 1))))
-    out))
+	  (when (eq types-cnt arg-cnt)
+	    (let ((j (cast 0 u64))
+		  (same true))
+	      (while (and same (not (eq j arg-cnt)))
+		(unless (is-type-compatible 
+			 (deref (ptr+ call-types (cast j i64))) 
+			 (deref (ptr+ types (cast j i64)))
+			 (sub-expr.expr exprs j)
+			 )
+		  (setf same false))
+		(setf j (u64+ j 1)))
+	      (when same
+		(setf out (member mem sym))
+		)))))
+      (setf i (i64+ i 1)))
+    (if (eq (cast null (ptr symbol)) out)
+	(member ol default)
+	out)))
 
 (defcmacro defoverloaded (fcn-name)
   (let ((s (symbol2expr (symbol-combine (expr2symbol fcn-name) (quote -info)))))
     (expr 
      (progn
        (defcmacro (unexpr fcn-name) (&rest d)
-	 (let ((arg-type (cast (alloc (u64* (sub-expr.cnt d) (size-of (type (ptr type_def)))))
+	 (let ((call-type (cast (alloc (u64* (sub-expr.cnt d) (size-of (type (ptr type_def)))))
 			       (ptr (ptr type_def))))
 	       (_i (cast 0 u64)))
-	
 	   (while (not (eq _i (sub-expr.cnt d)))
 	     (progn
-	       (setf (deref (ptr+ arg-type (cast _i i64)))
+	       (setf (deref (ptr+ call-type (cast _i i64)))
 		     (type-of (sub-expr.expr d _i)))
 
 	       (setf _i (u64+ _i 1))))
-	   
 
-	   (let ((ol (find-overload  (unexpr s) arg-type (sub-expr.cnt d))))
-	     (when (eq null (cast ol (ptr void)))
-		  (printstr "Error no matching overload found for '")
-		  (print-symbol (quote (unexpr fcn-name)))
-		  (printstr "' ")
-		  (let ((j (cast 0 u64)))
-		    (while (not (eq j (sub-expr.cnt d)))
-		      (progn
-			(print-type (deref (ptr+ arg-type (cast j i64))))
-			(printstr " ")
-			(setf j (u64+ j 1)))))
-		  (printstr "\n")
-		  (exit 0))
-		  
-	     
-	     (unfold-body (symbol2expr ol) d)
-	     )))
+	   (let ((ol (find-overload  (unexpr s) call-type (sub-expr.cnt d) d)))
+	     (if (eq null (cast ol (ptr void)))
+		 (progn
+		   (printstr "Error no matching overload found for '")
+		   (print-symbol (quote (unexpr fcn-name)))
+		   (printstr "' ")
+		   (let ((j (cast 0 u64)))
+		     (while (not (eq j (sub-expr.cnt d)))
+		       (progn
+			 (print-type (deref (ptr+ call-type (cast j i64))))
+			 (printstr " ")
+			 (setf j (u64+ j 1)))))
+		   (printstr "\n")
+		   (expr error))
+		 (unfold-body (symbol2expr ol) d)
+		 ))))
        
        (defvar (unexpr s) prototype)
        (noop)
@@ -111,6 +110,10 @@
 	   (cast (addrof (member (unexpr s) member-cnt)) (ptr u64))
 	   (cast (addrof item) (ptr void))
 	   24)))))
+
+(defcmacro overload-default (name macro)
+  (let ((s (symbol2expr (symbol-combine (expr2symbol name) (quote -info)))))
+    (expr (setf (member (unexpr s) default) (quote (unexpr macro))))))
 
 (defoverloaded +)       
 (defoverloaded -)
@@ -153,10 +156,15 @@
 (- (cast 0.5 f64) (cast 0.2 f64))
 
 (overload print printi64)
+(overload print printi32)
+(overload print printi16)
+(overload print printi8)
+(overload print printu64)
+(overload print printu32)
+(overload print printu16)
+(overload print printu8)
 (overload print printf64)
 (overload print printf32)
-(overload print printi64)
-(overload print printi32)
 (overload print printstr)
 (overload print print-symbol)
 

@@ -62,6 +62,8 @@ comp_state comp_state_make();
 // warning: The returned variable will eventually get invalidated by defining new variables.
 var_def * get_variable(symbol s);
 
+bool is_type_compatible(type_def * call_type, type_def * arg_type, expr callexpr);
+
 cmacro_def * get_cmacro_def(symbol s);
 compiled_expr compile_expr(expr * e);
 type_def compile_iexpr(expr expr1);
