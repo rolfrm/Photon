@@ -317,7 +317,6 @@ u64 size_of(type_def * t){
 	else{
 	  s += thiss;
 	}
-	logd("size: %i %i %i\n",i, s, thiss);
       }
     return s;
   case FUNCTION:

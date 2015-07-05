@@ -44,7 +44,27 @@
 
 ;; gl uniformas
 (gl-load gl:get-uniform-location glGetUniformLocation (fcn i32 (program u32) (name (ptr char))))
+(gl-load gl:uniform-1f glUniform1f (fcn void (location i32) (v1 f32)));
 (gl-load gl:uniform-2f glUniform2f (fcn void (location i32) (v1 f32) (v2 f32)));
+(gl-load gl:uniform-3f glUniform3f (fcn void (location i32) (v1 f32) (v2 f32) (v3 f32)));
+(gl-load gl:uniform-4f glUniform4f (fcn void (location i32) (v1 f32) (v2 f32) (v3 f32) (v3 f32)));
+
+(gl-load gl:uniform-1i glUniform1i (fcn void (location i32) (v1 i32)));
+(gl-load gl:uniform-2i glUniform2i (fcn void (location i32) (v1 i32) (v2 i32)));
+(gl-load gl:uniform-3i glUniform3i (fcn void (location i32) (v1 i32) (v2 i32) (v3 i32)));
+(gl-load gl:uniform-4i glUniform4i (fcn void (location i32) (v1 i32) (v2 i32) (v3 i32) (v3 i32)));
+
+
+(defoverloaded gl:uniform)
+(overload gl:uniform gl:uniform-1f)
+(overload gl:uniform gl:uniform-2f)
+(overload gl:uniform gl:uniform-3f)
+(overload gl:uniform gl:uniform-4f)
+
+(overload gl:uniform gl:uniform-1i)
+(overload gl:uniform gl:uniform-2i)
+(overload gl:uniform gl:uniform-3i)
+(overload gl:uniform gl:uniform-4i)
 
 ;; defines
 ;;GL_SHADER_TYPE, GL_DELETE_STATUS, GL_COMPILE_STATUS, GL_INFO_LOG_LENGTH, GL_SHADER_SOURCE_LENGTH.

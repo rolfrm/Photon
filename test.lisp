@@ -169,8 +169,9 @@ add-test-cnt
 (defvar vert (gl:create-shader gl:vertex-shader))
 
 (defvar frag-src "
+uniform vec4 color;
 void main(){
-  gl_FragColor = vec4(1.0,0.0,1.0,1.0);
+  gl_FragColor = color;
 }
 ")
 
@@ -277,7 +278,8 @@ glstatus
     (setf iteration (+ iteration 1))
     (gl:clear-color 0.0  0.2 0.0  1.0 )
     (gl:clear gl:color-buffer-bit)
-    (gl:uniform-2f uloc (cast (- 0 (member m x)) f32) (cast (member m y) f32))
+    (gl:uniform uloc (cast (- 0 (member m x)) f32) (cast (member m y) f32))
+    (gl:uniform (gl:get-uniform-location prog "color") 1 0 0 1)
     (gl:draw-arrays drawtype 0 pts)
     (glfw:swap-buffers win)
     (glfw:poll-events)    
