@@ -114,7 +114,7 @@
   (expr
    (progn
      (print (unexpr body))
-     (print "\n"))))
+     (printstr "\n"))))
 
 (defcmacro no-print (body)
   (expr
@@ -123,3 +123,4 @@
      (noop))))
 			 
 (set-printer (quote printnl))
+(+ 1 (cast 2 f32))

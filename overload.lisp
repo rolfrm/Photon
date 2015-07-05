@@ -127,23 +127,31 @@
 (overload + i64+)
 (overload + add3i64)
 (overload + u64+)
-(overload + u32+)
+
 (overload + f+)
 (overload + symbol-combine)
 (overload + string-concat)
 (overload - i64-)
 (overload - u64-)
-(overload - u32-)
+
 (overload - f-)
 (overload * i64*)
-(overload * u32*)
+
 (overload * u64*)
 (overload * f*)
 (overload / i64/)
 (overload / u64/)
 (overload / f/)
+
+(overload + u32+)
+(overload - u32-)
+(overload * u32*)
 (overload / u32/)
 
+(overload + f32+)
+(overload - f32-)
+(overload * f32*)
+(overload / f32/)
 
 (+ (cast 1 u32) (cast 2 u32))
 (+ (cast 1 u64) (cast 2 u64))

@@ -79,6 +79,11 @@ u32 u32_sub(u32 a, u32 b){ return a - b; }
 u32 u32_mul(u32 a, u32 b){ return a * b; }
 u32 u32_div(u32 a, u32 b){ return a / b; }
 
+f32 f32_add(f32 a, f32 b){ return a + b; }
+f32 f32_sub(f32 a, f32 b){ return a - b; }
+f32 f32_mul(f32 a, f32 b){ return a * b; }
+f32 f32_div(f32 a, f32 b){ return a / b; }
+
 i32 i32_add(i32 a, i32 b) { return a + b; }
 
 type_def * type_of(expr * ex){
@@ -112,13 +117,10 @@ u64 fcn_arg_cnt(type_def * td){
 
 extern symbol * printer;
 void set_printer(symbol * sym){
-  printer = sym;
+  printer = sym;  
 }
 
 bool is_type_compatible2(type_def * call_type, type_def * arg_type, expr * exp){
-  logd("***\n");
-  print_expr(exp->sub_expr.exprs);logd("\n");
-  logd("*** ^^^^ ***\n");
   return is_type_compatible(call_type, arg_type, *exp);
 }
 
@@ -141,6 +143,12 @@ void load_functions(){
   defun("u32-",u32fcn_def , &u32_sub);
   defun("u32*",u32fcn_def , &u32_mul);
   defun("u32/",u32fcn_def , &u32_div);
+
+  type_def * f32fcn_def = str2type("(fcn f32 (a f32) (b f32))");
+  defun("f32+",f32fcn_def , &f32_add);
+  defun("f32-",f32fcn_def , &f32_sub);
+  defun("f32*",f32fcn_def , &f32_mul);
+  defun("f32/",f32fcn_def , &f32_div);
 
   defun("get-symbol", str2type("(fcn (ptr symbol) (a (ptr char)))"), get_symbol2);
   
