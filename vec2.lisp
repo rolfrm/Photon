@@ -106,13 +106,13 @@
     (let ((aptr (cast (addrof a) (ptr f64)))
 	  (bptr (cast (addrof b) (ptr f64)))
 	  (optr (cast (addrof mout) (ptr f64))))
-    (range i 0 4
-       (range j 0 4
-	  (let ((cell (ptr+ optr (+ (* j 4) i))))
-	    (range k 0 4
-	       (incf (deref cell)
-		       (* (deref aptr (+ (* k 4) i))
-			  (deref bptr (+ (* j 4) k)))))))))
+      (range c 0 4
+	     (range r 0 4
+		    (let ((cell (ptr+ optr (+ (* c 4) r))))
+		      (range k 0 4
+			     (incr (deref cell)
+				   (* (deref (ptr+ aptr (+ (* c 4) k)))
+				      (deref (ptr+ bptr (+ (* k 4) r))))))))))
     mout))
 
 (overload dot mat4-dot)
