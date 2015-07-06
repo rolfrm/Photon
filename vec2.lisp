@@ -55,61 +55,68 @@
 	  (m20 f64) (m21 f64) (m22 f64) (m23 f64) 
 	  (m30 f64) (m31 f64) (m32 f64) (m33 f64))
   mat4))
+
 (defvar mat4-default :type mat4)
 (memset (cast (addrof mat4-default) (ptr void)) 0 (size-of (type mat4)))
 
-(defun mat4+ (mat4 (a mat4) (b mat4))
+(defvar eye mat4-default)
+(setf (member eye m00) 1)
+(setf (member eye m11) 1)
+(setf (member eye m22) 1)
+(setf (member eye m33) 1)
+
+(defcmacro matop (op)
+  (let ((fcn-name (symbol2expr (symbol-combine (quote mat4) (expr2symbol op) ))))
+    (expr 
+     (progn
+       (defun (unexpr fcn-name) (mat4 (a mat4) (b mat4))
+	 (let ((mout mat4-default))
+	   (let ((aptr (cast (addrof a) (ptr f64)))
+		 (bptr (cast (addrof b) (ptr f64)))
+		 (optr (cast (addrof mout) (ptr f64))))
+	     (range it 0 16
+		    (setf (deref (ptr+ optr it))
+			  ((unexpr op) (deref (ptr+ aptr it))
+			   (deref (ptr+ bptr it))))))
+	   mout))
+       (overload (unexpr op) (unexpr fcn-name))))))
+
+(matop +)
+(matop *)
+(matop /)
+(matop -)
+
+(defun mat4-scale (mat4 (mat mat4) (scalar f64))
   (let ((mout mat4-default))
-    (let ((aptr (cast (addrof a) (ptr f64)))
-	  (bptr (cast (addrof a) (ptr f64)))
+    (let ((aptr (cast (addrof mat) (ptr f64)))
 	  (optr (cast (addrof mout) (ptr f64))))
       (range it 0 16
 	     (setf (deref (ptr+ optr it))
-		   (+ (deref (ptr+ aptr it))
-		      (deref (ptr+ bptr it))))))
+		   (* (deref (ptr+ aptr it)) scalar))))
     mout))
 
 
-(defun mat4- (mat4 (a mat4) (b mat4))
+
+(overload * mat4-scale)
+
+(defoverloaded dot)
+
+(defun mat4-dot (mat4 (a mat4) (b mat4))
   (let ((mout mat4-default))
     (let ((aptr (cast (addrof a) (ptr f64)))
-	  (bptr (cast (addrof a) (ptr f64)))
+	  (bptr (cast (addrof b) (ptr f64)))
 	  (optr (cast (addrof mout) (ptr f64))))
-      (range it 0 16
-	     (setf (deref (ptr+ optr it))
-		   (- (deref (ptr+ aptr it))
-		      (deref (ptr+ bptr it))))))
+      (range c 0 4
+	     (range r 0 4
+		    (let ((cell (ptr+ optr (+ (* c 4) r))))
+		      (range k 0 4
+			     (incr (deref cell)
+				   (* (deref (ptr+ aptr (+ (* c 4) k)))
+				      (deref (ptr+ bptr (+ (* k 4) r))))))))))
     mout))
 
-
-(defun mat4/ (mat4 (a mat4) (b mat4))
-  (let ((mout mat4-default))
-    (let ((aptr (cast (addrof a) (ptr f64)))
-	  (bptr (cast (addrof a) (ptr f64)))
-	  (optr (cast (addrof mout) (ptr f64))))
-      (range it 0 16
-	     (setf (deref (ptr+ optr it))
-		   (/ (deref (ptr+ aptr it))
-		      (deref (ptr+ bptr it))))))
-    mout))
-
-
-(defun mat4* (mat4 (a mat4) (b mat4))
-  (let ((mout mat4-default))
-    (let ((aptr (cast (addrof a) (ptr f64)))
-	  (bptr (cast (addrof a) (ptr f64)))
-	  (optr (cast (addrof mout) (ptr f64))))
-      (range it 0 16
-	     (setf (deref (ptr+ optr it))
-		   (* (deref (ptr+ aptr it))
-		      (deref (ptr+ bptr it))))))
-    mout))
-
-(overload + mat4+)
-(overload * mat4*)
-(overload / mat4/)
-(overload - mat4-)
-
+(overload dot mat4-dot)
+	   
 
 (defun mat4-print (void (mat mat4))
   (progn
