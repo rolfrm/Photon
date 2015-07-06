@@ -58,15 +58,18 @@ V1 Release Checklist (Aiming at August 21 release)
 * [ ] line number of exprs.
 * [ ] lvalue checking (setf 1 10) is invalid for instance. (setf a 10) might be ok.
 * [ ] Linux 32 bit / Windows 64/32 bit support
-Vn Features
+
+
+Future Features
 ---------
 * [ ] Packages / Modules
 * [ ] libgccjit backend.
-* [ ] (or) Use user selected compiler backend. Fallback to tcc if necessesary.
-* [ ] offloading compiled code into a c-compatible static or dynamic link library and header file.
+* [ ] (and/or) Use user selected compiler backend. Fallback to tcc if necessesary.
+* [ ] Compile working image into a c-compatible static or dynamic link library and header file.
 * [ ] Front end optimizations like tail call optimizations, function inlining and constant propagation. Note: pure functions can be evaluated during constant propagation.
-* [ ] Bignums
-* [ ] SSE support
+* [ ] Bignums (can be built into the language)
+* [ ] inline assembly
+* [ ] SSE support (made with inline assembly)
 * [ ] enums
 
 License
