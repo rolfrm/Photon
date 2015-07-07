@@ -91,7 +91,11 @@ type_def * type_of(expr * ex){
   blk.exprs = NULL;
   blk.expr_cnt = 0;
   c_value val;
-  return _compile_expr(&blk, &val, *ex);
+  u64 start = timestamp();
+  type_def * otype = _compile_expr(&blk, &val, *ex);
+  u64 stop = timestamp();
+  logd("Type of: %f s\n", 1e-6 * (stop - start));
+  return otype;
 }
 
 char * symbol_name2(symbol * sym){

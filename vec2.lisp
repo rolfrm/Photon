@@ -2,26 +2,72 @@
        (struct _vec2 (x f64) (y f64))
        vec2))
 
-;numbers:three ;; 3
-(progn
-  (defvar xy :type vec2)
-  (noop))
+(type
+ (alias
+  (struct _vec3 (x f64) (y f64) (z f64))
+  vec3))
 
-(defun makevec2 (vec2 (a f64) (b f64))
-  (let ((out xy))
-    (setf (member out x) a)
-    (setf (member out y) b)
+(type 
+ (alias
+  (struct _vec4 (x f64) (y f64) (z f64) (w f64))
+  vec4))
+
+
+
+;numbers:three ;; 3
+(defvar vec2-default :type vec2)
+(memset (cast (addrof vec2-default) (ptr void)) 0 (size-of (type vec2)))
+(defvar vec3-default :type vec3)
+(memset (cast (addrof vec3-default) (ptr void)) 0 (size-of (type vec3)))
+(defvar vec4-default :type vec4)
+(memset (cast (addrof vec4-default) (ptr void)) 0 (size-of (type vec4)))
+
+(defoverloaded aref)
+(defun vec2-aref ((ptr f64) (a vec2) (idx i64))
+  (ptr+ (cast (addrof a) (ptr f64)) idx))
+
+(defun vec3-aref ((ptr f64) (a vec3) (idx i64))
+  (ptr+ (cast (addrof a) (ptr f64)) idx))
+
+(defun vec4-aref ((ptr f64) (a vec4) (idx i64))
+  (ptr+ (cast (addrof a) (ptr f64)) idx))
+
+(overload aref vec2-aref)
+(overload aref vec3-aref)
+(overload aref vec4-aref)
+
+(defun makevec2 (vec2 (x f64) (y f64))
+  (let ((out vec2-default))
+    (setf (member out x) x)
+    (setf (member out y) y)
     out))
 
-(defun +vec2 (vec2 (a f64) (b f64))
-  (makevec2 a b))
+(defun makevec3 (vec3 (x f64) (y f64) (z f64))
+  (let ((out vec3-default))
+    (setf (member out x) x)
+    (setf (member out y) y)
+    (setf (member out z) z)
+    out))
+
+(defun makevec4 (vec4 (x f64) (y f64) (z f64) (w f64))
+  (let ((out vec4-default))
+    (setf (member out x) x)
+    (setf (member out y) y)
+    (setf (member out z) z)
+    (setf (member out w) w)
+    out))
+
+(defoverloaded vec)
+(overload vec makevec2)
+(overload vec makevec3)
+(overload vec makevec4)
 
 (defcmacro vec2op (operator)
   (let ((name (symbol2expr (symbol-combine (quote vec2) (expr2symbol operator)))))
     (expr
      (progn
        (defun (unexpr name) (vec2 (a vec2) (b vec2))
-	 (let ((out xy))
+	 (let ((out vec2-default))
 	   (setf (member out x) 
 		 ((unexpr operator) (member a x) (member b x)))
 	   (setf (member out y)
@@ -44,8 +90,33 @@
     (print (member a y))
     (printstr ")")))
 
+(defun printvec3 (void (a vec3))
+  (progn
+    (printstr "(") 
+    (print (member a x))
+    (printstr ", ")
+    (print (member a y))
+    (printstr ", ")
+    (print (member a z))
+    (printstr ")")))
+
+
+(defun printvec4 (void (a vec4))
+  (progn
+    (printstr "(") 
+    (print (member a x))
+    (printstr ", ")
+    (print (member a y))
+    (printstr ", ")
+    (print (member a z))
+    (printstr ", ")
+    (print (member a w))
+    (printstr ")")))
+
 (overload * vec2scale)
 (overload print printvec2)
+(overload print printvec3)
+(overload print printvec4)
 
 (type 
  (alias
@@ -58,6 +129,10 @@
 
 (defvar mat4-default :type mat4)
 (memset (cast (addrof mat4-default) (ptr void)) 0 (size-of (type mat4)))
+
+(defun mat4-aref ((ptr f64) (a mat4) (row i64) (col i64))
+  (ptr+ (cast (addrof a) (ptr f64)) (+ (* 4 col) row)))
+(overload aref mat4-aref)
 
 (defvar eye mat4-default)
 (setf (member eye m00) 1)
@@ -95,8 +170,6 @@
 		   (* (deref (ptr+ aptr it)) scalar))))
     mout))
 
-
-
 (overload * mat4-scale)
 
 (defoverloaded dot)
@@ -115,8 +188,17 @@
 				      (deref (ptr+ bptr (+ (* k 4) r))))))))))
     mout))
 
+(defun mat4vec4-dot (vec4 (a mat4) (b vec4))
+  (let ((vout vec4-default))
+    (range i 0 4
+	   (setf (deref (aref vout i))
+		 (let ((v 0.0))
+		   (range j 0 4 (incr v (* (deref (aref b j)) (deref (aref a i j)))))
+		   v)))
+    vout))
+
 (overload dot mat4-dot)
-	   
+(overload dot mat4vec4-dot)	   
 
 (defun mat4-print (void (mat mat4))
   (progn

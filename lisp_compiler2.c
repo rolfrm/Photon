@@ -463,7 +463,11 @@ compile_status lisp_run_expr(expr ex){
   UNUSED(_exes);
   
   compile_status status;
+  u64 start = timestamp();
   var_def * evaldef = lisp_compile_expr(ex, &status);
+  u64 stop = timestamp();
+  double secs = (stop - start) * 1e-6;
+  logd("Compiling took %f s\n", secs);
   if(COMPILE_ERROR == status || evaldef == NULL) 
     return COMPILE_ERROR;
   
