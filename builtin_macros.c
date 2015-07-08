@@ -245,18 +245,6 @@ expr * expand_macro_store(macro_store * ms, expr * exprs, size_t cnt){
   var_def ** _vars = &__vars;
   push_symbols(_vars, &var_cnt);
   compile_status status = COMPILE_OK;
-  
-  expr e = ms->exp;
-  expr front_expr = e.sub_expr.exprs[0];
-  if(is_symbol(front_expr)){
-    symbol s = get_symbol(read_symbol(front_expr));
-    var_def * v = get_variable(s);
-    if(v != NULL){
-      logd("Found %s t:\n",symbol_name(s));
-      print_decl(v->type,s);
-      logd("\n");
-    }
-  }
   expr * exp2 = lisp_compile_and_run_expr(ms->exp, &status); //figure out a better way.
   pop_symbols();
   if(status == COMPILE_ERROR)
@@ -320,13 +308,12 @@ expr recurse_expand(expr ex, expr ** exprs, int * cnt){
   }
   expr sexp[exp.cnt];
   for(size_t i = 0; i < exp.cnt; i++)
-    sexp[i] = recurse_expand(exp.exprs[i], exprs, cnt);    
+    sexp[i] = recurse_expand(exp.exprs[i], exprs, cnt);
   expr new;
   new.type = EXPR;
   new.sub_expr.exprs = clone(sexp, sizeof(sexp));
   new.sub_expr.cnt = exp.cnt;
   return new;
-  
 }
 #include <stdarg.h>
 expr * expand_expr(expr * exprs, ...){
@@ -341,8 +328,7 @@ expr * expand_expr(expr * exprs, ...){
 
   va_end(vl);
   expr _new = recurse_expand(*first, list, &cnt);
-  expr * __new = clone(&_new, sizeof(expr));
-  return __new;
+  return clone(&_new, sizeof(expr));
 }
 
 symbol get_recurse_sym(int id, int cnt){

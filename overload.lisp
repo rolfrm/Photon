@@ -40,6 +40,8 @@
 	(cnt (member ol member-cnt))
 	(mems (member ol members)))
     (assert (is-sub-expr exprs))
+    ;(print-expr exprs)
+    ;(printstr "\n")
     (while (and (eq out (cast null (ptr symbol)))
 		(not (eq i cnt)))
       (let ((mem (deref (ptr+ mems i))))
@@ -64,27 +66,22 @@
 	(member ol default)
 	out)))
 
-(defcmacro defoverloaded (fcn-name)
-  (let ((s (symbol2expr (symbol-combine (expr2symbol fcn-name) (quote -info)))))
-    (expr 
-     (progn
-       (defcmacro (unexpr fcn-name) (&rest d)
-	 (let ((call-type (cast (alloc (u64* (sub-expr.cnt d) (size-of (type (ptr type_def)))))
-			       (ptr (ptr type_def))))
-	       (_i (cast 0 u64)))
-	   (while (not (eq _i (sub-expr.cnt d)))
-	     (progn
-	       (setf (deref (ptr+ call-type (cast _i i64)))
-		     (type-of (sub-expr.expr d _i)))
-
-	       (setf _i (u64+ _i 1))))
-
-	   (let ((ol (find-overload  (unexpr s) call-type (sub-expr.cnt d) d)))
-	     (if (eq null (cast ol (ptr void)))
-		 (progn
-		   (printstr "Error no matching overload found for '")
-		   (print-symbol (quote (unexpr fcn-name)))
-		   (printstr "' ")
+(defun get-overloaded-expr ((ptr expr) (ol-info overload) (d (ptr expr)))
+  (let ((call-type (cast (alloc (u64* (sub-expr.cnt d) (size-of (type (ptr type_def)))))
+			 (ptr (ptr type_def))))
+	(_i (cast 0 u64)))
+    (while (not (eq _i (sub-expr.cnt d)))
+      (progn
+	(setf (deref (ptr+ call-type (cast _i i64)))
+	      (type-of (sub-expr.expr d _i)))
+	(setf _i (u64+ _i 1))))
+    
+    (let ((ol (find-overload ol-info  call-type (sub-expr.cnt d) d)))
+      (if (eq null (cast ol (ptr void)))
+	  (progn
+	    (printstr "Error no matching overload found for '")
+	    ;(print-symbol (quote (unexpr fcn-name)))
+	    (printstr "' ")
 		   (let ((j (cast 0 u64)))
 		     (while (not (eq j (sub-expr.cnt d)))
 		       (progn
@@ -93,8 +90,17 @@
 			 (setf j (u64+ j 1)))))
 		   (printstr "\n")
 		   (expr error))
-		 (unfold-body (symbol2expr ol) d)
-		 ))))
+	  (unfold-body (symbol2expr ol) d)
+	  ))))
+
+
+(defcmacro defoverloaded (fcn-name)
+  (let ((s (symbol2expr (symbol-combine (expr2symbol fcn-name) (quote -info)))))
+    (expr 
+     (progn
+       (defcmacro (unexpr fcn-name) (&rest d)
+	 (get-overloaded-expr (unexpr s)  d)
+	 )
        
        (defvar (unexpr s) prototype)
        (noop)
