@@ -59,12 +59,11 @@ type_def * var_macro(c_block * block, c_value * val, expr vars, expr body){
     cvars[i].type = C_VAR;
     cvars[i].var = var;
   }
-  for(size_t i = 0; i < sexpr.cnt; i++){
+  for(size_t i = 0; i < sexpr.cnt; i++)
     block_add(block,cvars[i]);
-  }
   
   push_symbols(&lisp_vars, &sexpr.cnt);
-  type_def *ret_type = _compile_expr(block,val,body);
+  type_def *ret_type = _compile_expr(block, val, body);
   pop_symbols();
   return ret_type;
 }
@@ -233,7 +232,6 @@ expr * expand_macro_store(macro_store * ms, expr * exprs, size_t cnt){
   }
 
   if(is_varadic){
-
     int i = min_args;
     exprv[i] = alloc(sizeof(expr));
     exprv[i]->type = EXPR;
@@ -247,7 +245,19 @@ expr * expand_macro_store(macro_store * ms, expr * exprs, size_t cnt){
   var_def ** _vars = &__vars;
   push_symbols(_vars, &var_cnt);
   compile_status status = COMPILE_OK;
-  expr * exp2 = lisp_compile_and_run_expr(ms->exp, &status);
+  
+  expr e = ms->exp;
+  expr front_expr = e.sub_expr.exprs[0];
+  if(is_symbol(front_expr)){
+    symbol s = get_symbol(read_symbol(front_expr));
+    var_def * v = get_variable(s);
+    if(v != NULL){
+      logd("Found %s t:\n",symbol_name(s));
+      print_decl(v->type,s);
+      logd("\n");
+    }
+  }
+  expr * exp2 = lisp_compile_and_run_expr(ms->exp, &status); //figure out a better way.
   pop_symbols();
   if(status == COMPILE_ERROR)
     return NULL;
