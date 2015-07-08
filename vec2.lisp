@@ -134,11 +134,11 @@
   (ptr+ (cast (addrof a) (ptr f64)) (+ (* 4 col) row)))
 (overload aref mat4-aref)
 
-(defvar eye mat4-default)
-(setf (member eye m00) 1)
-(setf (member eye m11) 1)
-(setf (member eye m22) 1)
-(setf (member eye m33) 1)
+(defvar mat4-eye mat4-default)
+(setf (member mat4-eye m00) 1)
+(setf (member mat4-eye m11) 1)
+(setf (member mat4-eye m22) 1)
+(setf (member mat4-eye m33) 1)
 
 (defcmacro matop (op)
   (let ((fcn-name (symbol2expr (symbol-combine (quote mat4) (expr2symbol op) ))))
@@ -191,11 +191,22 @@
 (defun mat4vec4-dot (vec4 (a mat4) (b vec4))
   (let ((vout vec4-default))
     (range i 0 4
-	   (setf (deref (aref vout i))
-		 (let ((v 0.0))
-		   (range j 0 4 (incr v (* (deref (aref b j)) (deref (aref a i j)))))
-		   v)))
+	   (let ((cell (cast (addrof vout) (ptr f64))))
+	     (setf (deref (ptr+ cell i))
+		   (let ((v 0.0))
+		     (range j 0 4 
+			    (let ((from-b (deref (aref b j)))
+				  (from-a (deref (aref a i j))))
+			      (incr v (* from-b from-a))))
+		     v))))
     vout))
+
+(defun translation-matrix (mat4 (offset vec3))
+  (let ((mat mat4-eye))
+    (setf (member mat m03) (member offset x))
+    (setf (member mat m13) (member offset y))
+    (setf (member mat m23) (member offset z))
+    mat))
 
 (overload dot mat4-dot)
 (overload dot mat4vec4-dot)	   

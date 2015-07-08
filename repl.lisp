@@ -1,5 +1,7 @@
 (load "std2.lisp")
 (set-printer (quote printnl))
-(defvar t eye)
-(setf (member t m03) 1.0)
-
+(defvar t mat4-eye)
+(setf (member t m03) 10.0)
+t
+(defvar b (vec 1 2 3 1))
+(dot t b)
