@@ -103,12 +103,7 @@ char * symbol_name2(symbol * sym){
   return symbol_name(*sym);
 }
 
-type_def * var_type(symbol * sym){
-  var_def * var = get_variable(*sym);
-  if(var != NULL)
-    return var->type;
-  return NULL;
-}
+
 
 type_def ** fcn_arg_types(type_def * td){
   ASSERT(td->type == FUNCTION);
@@ -129,31 +124,44 @@ bool is_type_compatible2(type_def * call_type, type_def * arg_type, expr * exp){
   return is_type_compatible(call_type, arg_type, *exp);
 }
 
+type_def * var_type(symbol * sym){
+  var_def * var = get_variable(*sym);
+  if(var != NULL)
+    return var->type;
+  return NULL;
+}
+
+void * get_var(symbol * sym){
+  var_def * var = get_variable(*sym);
+  if(var == NULL) return NULL;
+  return var->data;
+}
+
 void load_functions(){
   defun("print-type", str2type("(fcn void (a (ptr type_def)))"), print_type);
   type_def * i64fcn_def = str2type("(fcn i64 (a i64) (b i64))");
-  defun("i64+",i64fcn_def , &i64_add);
-  defun("i64-",i64fcn_def , &i64_sub);
-  defun("i64*",i64fcn_def , &i64_mul);
-  defun("i64/",i64fcn_def , &i64_div);
+  defun("i64+", i64fcn_def, &i64_add);
+  defun("i64-", i64fcn_def, &i64_sub);
+  defun("i64*", i64fcn_def, &i64_mul);
+  defun("i64/", i64fcn_def, &i64_div);
 
   type_def * u64fcn_def = str2type("(fcn u64 (a u64) (b u64))");
-  defun("u64+",u64fcn_def , &u64_add);
-  defun("u64-",u64fcn_def , &u64_sub);
-  defun("u64*",u64fcn_def , &u64_mul);
-  defun("u64/",u64fcn_def , &u64_div);
+  defun("u64+", u64fcn_def, &u64_add);
+  defun("u64-", u64fcn_def, &u64_sub);
+  defun("u64*", u64fcn_def, &u64_mul);
+  defun("u64/", u64fcn_def, &u64_div);
 
   type_def * u32fcn_def = str2type("(fcn u32 (a u32) (b u32))");
-  defun("u32+",u32fcn_def , &u32_add);
-  defun("u32-",u32fcn_def , &u32_sub);
-  defun("u32*",u32fcn_def , &u32_mul);
-  defun("u32/",u32fcn_def , &u32_div);
+  defun("u32+", u32fcn_def, &u32_add);
+  defun("u32-", u32fcn_def, &u32_sub);
+  defun("u32*", u32fcn_def, &u32_mul);
+  defun("u32/", u32fcn_def, &u32_div);
 
   type_def * f32fcn_def = str2type("(fcn f32 (a f32) (b f32))");
-  defun("f32+",f32fcn_def , &f32_add);
-  defun("f32-",f32fcn_def , &f32_sub);
-  defun("f32*",f32fcn_def , &f32_mul);
-  defun("f32/",f32fcn_def , &f32_div);
+  defun("f32+", f32fcn_def, &f32_add);
+  defun("f32-", f32fcn_def, &f32_sub);
+  defun("f32*", f32fcn_def, &f32_mul);
+  defun("f32/", f32fcn_def, &f32_div);
 
   defun("get-symbol", str2type("(fcn (ptr symbol) (a (ptr char)))"), get_symbol2);
   
@@ -174,11 +182,9 @@ void load_functions(){
   defun("type2expr", str2type("(fcn (ptr expr) (t (ptr type_def)))"), type2expr);
   defun("symbol-name", str2type("(fcn (ptr char) (sym (ptr symbol)))"), symbol_name2);
   defun("var-type", str2type("(fcn (ptr type_def) (variable (ptr symbol)))"), var_type);
-
+  defun("get-var", str2type("(fcn (ptr void) (sym (ptr symbol)))"), get_var);
   defun("fcn-arg-types", str2type("(fcn (ptr (ptr type_def)) (t (ptr type_def)))"), fcn_arg_types);
   defun("fcn-arg-cnt", str2type("(fcn u64 (t (ptr type_def)))"), fcn_arg_cnt);
   defun("set-printer", str2type("(fcn void (ptr (ptr symbol)))"), set_printer);
   defun("is-type-compatible", str2type("(fcn bool (call-type (ptr type_def)) (arg-type (ptr type_def)) (call-expr (ptr expr)))"), is_type_compatible2);
-
-
 }

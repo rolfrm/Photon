@@ -5,3 +5,11 @@
 t
 (defvar b (vec 1 2 3 1))
 (dot t b)
+
+(defcmacro print-ptr (expr)
+  (if (type-is-pointer? (type-of expr))
+      (expr (progn
+	      (unexpr expr)
+	      (printstr "Pointer!")))
+      (cast null (ptr expr))))
+(overload print print-ptr)

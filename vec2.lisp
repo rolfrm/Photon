@@ -161,6 +161,9 @@
 (matop /)
 (matop -)
 
+(defcmacro vref (item)
+  (expr (cast (addrof (unexpr item)) (ptr f64))))
+
 (defun mat4-scale (mat4 (mat mat4) (scalar f64))
   (let ((mout mat4-default))
     (let ((aptr (cast (addrof mat) (ptr f64)))
