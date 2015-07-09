@@ -120,8 +120,8 @@
 
 (defcmacro overload (name fcn)
   (var ((s (symbol2expr (symbol-combine (expr2symbol name) (quote -info)))))
-       (if (eq (type-of fcn) (type (ptr macro_store)))
-	   (expr 1)
+       ;(if (eq (type-of fcn) (type (ptr macro_store)))
+	;   (expr 1)
 	    ;; (let ((macroitem overload-macro-default))
 	    ;;   (setf (member macroitem sym) (quote (unexpr fcn)))
 	    ;;   (setf (member macroitem arg-cnt) 1)
@@ -136,7 +136,8 @@
 	       (cast (addrof (member (unexpr s) members)) (ptr (ptr void)))
 	       (cast (addrof (member (unexpr s) member-cnt)) (ptr u64))
 	       (cast (addrof item) (ptr void))
-	       (size-of (type overload-info))))))))
+	       24 ;(size-of (type overload-info))
+	       )))));)
 
 (defcmacro overload-default (name macro)
   (let ((s (symbol2expr (symbol-combine (expr2symbol name) (quote -info)))))

@@ -12,4 +12,4 @@ t
 	      (unexpr expr)
 	      (printstr "Pointer!")))
       (cast null (ptr expr))))
-(overload print print-ptr)
+;(overload print print-ptr)
