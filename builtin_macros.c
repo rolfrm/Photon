@@ -403,7 +403,7 @@ type_def * expr_macro(c_block * block, c_value * val, expr body){
     defun(_expandname, ftype2, expand_expr);
   ASSERT(expandname.id != 0);
 
-  ASSERT(val->type == 0)
+  //ASSERT(val->type == 0)
   val->type = C_FUNCTION_CALL;
   val->call.name = expandname;
   val->call.args = clone(cargs,sizeof(c_value) * (cnt + 1));
