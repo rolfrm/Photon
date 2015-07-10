@@ -57,10 +57,11 @@ int main(int argc, char *argv[] ){
     log("Running tests...\n");
     compiler_state * c = compiler_make();
     push_compiler(c);
+    TEST(test_symbols);
     TEST(test_lisp_parser);
     TEST(test_type_pool);
     TEST(test_lisp2c);
-    TEST(test_symbols);
+
     pop_compiler();
 
     return 0;

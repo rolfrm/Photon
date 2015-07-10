@@ -101,6 +101,105 @@ typedef struct {
   UT_hash_handle hh;
 }symbol_lookup;
 
+char base61char(int i){
+  if(i < 10)
+    return '0' + i;
+  if(i < 10 + 26)
+    return 'A' + (i - 10);
+  if(i < 10 + 26 + 26)
+    return 'a' + (i - 10 - 26);
+  return '_';
+}
+
+int ibase61char(char c){
+  if(c >= '0' && c <= '9')
+    return c - '0';
+  if(c >= 'A' && c<= 'Z')
+    return c - 'A' + 10;
+  if(c >= 'a' && c <= 'z')
+    return c - 'a' + 10 + 26;
+  return 62; //'_'
+}
+
+void base61_format(char * str){
+  //{0-9, A-Z, a-z, _ }.
+  int c = 0;
+  int code = 0;
+  while(*str != 0){
+    c = (c << 8) | *str;
+    //logd("C: %i\n",c);
+    code = (code << 8) + 0xFF;
+    while(code > 63){
+      char c2 = base61char(c % 63);
+      format("%c",c2);
+      c = c / 63;
+      code = code / 63;
+    }
+    str++;
+  }
+  char last = base61char(c);
+  format("%c", last);
+}
+
+void base61_inverse_format(char * str){
+  int nchar = 0;
+  int bitcount = 0;
+  while(*str != 0){
+    bitcount = (bitcount << 8) + 0xFF;
+    while(bitcount > 63 && *str != 0){
+      int inv = ibase61char(*str);
+      format("inv: %i %c %c\n", inv, *str,  base61char(inv));
+      nchar = nchar * 63 + ibase61char(*str);
+      bitcount /= 63;
+      str++;
+    }
+    
+    format("c: %c %i\n", nchar, nchar);
+    nchar /= 255;
+    bitcount /= 63;
+   
+  }
+}
+
+void format_c_name(symbol s){
+  char * sym = symbol_name(s);
+  bool first_alpha = isalpha(sym[0]) || '_' == sym[0];
+  bool all_alphanum = true;
+  for(size_t i = 0; sym[i];i++){
+    if(isalnum(sym[i]) == false && sym[i] !='_'){
+      all_alphanum = false;
+      break;
+    }
+  }
+  
+  if(all_alphanum){
+    if(first_alpha){
+      format("%s", sym);
+    }else{
+      format("S_%s",sym);
+    }
+    return;
+  }else{
+    static i32 uniqueid = 0;
+    static symbol_lookup * lut = NULL;
+    symbol_lookup _lut_item;
+    symbol_lookup * lut_item = &_lut_item;
+    HASH_FIND_STR(lut, sym, lut_item);
+    if(lut_item != NULL){
+      format("%s", lut_item->cname);
+      return;
+    }
+    lut_item = alloc0(sizeof(symbol_lookup));
+    char * value = fmtstr("S__%i", uniqueid);
+
+    lut_item->key = sym;
+    lut_item->cname = value;
+    HASH_ADD_KEYPTR(hh, lut, lut_item->key, strlen(lut_item->key), lut_item);
+    uniqueid += 1;
+    format("%s", value);
+  }
+}
+
 char * get_c_name(symbol s){
   char * sym = symbol_name(s);
   bool first_alpha = isalpha(sym[0]) || '_' == sym[0];
@@ -132,6 +231,7 @@ char * get_c_name(symbol s){
     return value;
   }
 }
+
 
 cmacro_def * get_cmacro_def(symbol s){
   var_def * var = get_variable(s);
@@ -185,6 +285,24 @@ bool test_symbol_table(){
     TEST_ASSERT(get_symbol(buf).id != lastid);
     lastid = get_symbol(buf).id;
   }
+  
+  for(int i = 0 ; i < 63; i++){
+    char mangled = base61char(i);
+    int demangled = ibase61char(mangled);
+    format("%i: %c %i\n", i, mangled, demangled);
+    TEST_ASSERT(i == demangled);
+  }
+
+  format("hello! :");
+  base61_format("hello");
+  format("\n");
+  base61_format("+-_)@# hello cxz_-@#!%");
+
+  format("\ninverse: ");
+  
+  base61_inverse_format("fg27Sq5"); 
+  format("\n");
+  return TEST_FAIL;
   return TEST_SUCCESS;
 }
 

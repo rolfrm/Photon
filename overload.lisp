@@ -79,6 +79,9 @@
 	(member ol default)
 	out)))
 
+(defun expand-macro ((ptr expr) (sym (ptr symbol)) (expr (ptr expr)))
+  (cast null (ptr expr)))
+
 (defun find-overload-macro ((ptr symbol) (ol overload) (exprs (ptr expr)))
   (let ((i 0) (out (cast null (ptr expr)))
 	(cnt (member ol macro-cnt))
@@ -105,19 +108,23 @@
     
     (let ((ol (find-overload ol-info  call-type (sub-expr.cnt d) d)))
       (if (eq null (cast ol (ptr void)))
-	  
 	  (progn
-	    (printstr "Error no matching overload found for '")
-	    ;(print-symbol (quote (unexpr fcn-name)))
-	    (printstr "' ")
-		   (let ((j (cast 0 u64)))
-		     (while (not (eq j (sub-expr.cnt d)))
-		       (progn
-			 (print-type (deref (ptr+ call-type (cast j i64))))
-			 (printstr " ")
-			 (setf j (u64+ j 1)))))
-		   (printstr "\n")
-		   (expr error))
+	    (printstr "THIS HAPPENS!")
+	    (let ((maco (find-overload-macro ol-info d)))
+
+	      (if (not (eq maco (cast null (ptr expr))))
+		  (progn
+		    (printstr "Error no matching overload found for '")
+					;(print-symbol (quote (unexpr fcn-name)))
+		    (printstr "' ")
+		    (let ((j (cast 0 u64)))
+		      (while (not (eq j (sub-expr.cnt d)))
+			(progn
+			  (print-type (deref (ptr+ call-type (cast j i64))))
+			  (printstr " ")
+			  (setf j (u64+ j 1)))))
+		    (printstr "\n")
+		    (expr "error")))))
 	  (unfold-body (symbol2expr ol) d)
 	  ))))
 
