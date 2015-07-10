@@ -545,7 +545,9 @@ type_def * eq_macro(c_block * block, c_value * val, expr item1, expr item2){
   type_def * t1 = _compile_expr(block, val1, item1);
   type_def * t2 = _compile_expr(block, val2, item2);
   COMPILE_ASSERT(t1 != &error_def && t1 != &void_def);
-  COMPILE_ASSERT(is_type_compatible(t1,t2,item1) || is_type_compatible(t2,t1,item2));
+  if(!(is_type_compatible(t1,t2,item1) || is_type_compatible(t2,t1,item2))){
+    COMPILE_ERROR("Types cannot be compared by eq");
+  }
   val->type = C_CAST;
   val->cast.value = comp;
   val->cast.type = str2type("bool");
