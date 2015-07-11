@@ -101,6 +101,29 @@ typedef struct {
   UT_hash_handle hh;
 }symbol_lookup;
 
+void basea2b(u8 (* read_glyph)(bool * ctn), u32 from_base, u32 to_base, void (*emit_glyph)(u8 glyph)){
+  //buffer is a gigantic number that we stream the data into / from
+  u32 buffer = 0;
+  u32 basecount = 0;
+  bool ctn = true;
+  while(ctn){
+    while(basecount < to_base && ctn){
+      //read bits until we have a whole 'from' symbol
+      buffer = (buffer * (from_base + 1)) + read_glyph(&ctn);
+      basecount = basecount * (from_base + 1) + from_base;
+      //logd(":: %i %i\n",basecount, to_base);
+    }
+    
+    // emit the char
+    emit_glyph(buffer % (to_base + 1));
+    buffer /=  (to_base + 0);
+    basecount /= (to_base + 0);
+    //logd("::: %i\n",basecount);
+  }
+  emit_glyph(buffer);
+}
+
+
 char base61char(int i){
   if(i < 10)
     return '0' + i;
@@ -121,6 +144,43 @@ int ibase61char(char c){
   return 62; //'_'
 }
 
+void basen_encode(char * data, int len, int base, void (* newglyph)(int glyph)){
+  int buffer = 0;
+  int basecount = 0;
+  for(int i = 0; i < len;){
+    while(basecount < base){
+      //read in a 
+      buffer = buffer * 0xFF + data[i];
+      basecount = (basecount * 0xFF) + 0xFF;
+      i++;
+    }
+    // eat the first base bits
+    newglyph(buffer % base);
+    buffer /= base;
+    basecount /= base;
+  }
+  newglyph(buffer % base);
+}
+
+
+void basen_decode(char * data, int len, int base, void (*newglyph)(int glyph)){
+  int buffer = 0;
+  int basecount = 0;
+  for(int i = 0; i < len;){
+    while(basecount < 0xFF){
+      //read bits until we have a whole char
+      buffer = (buffer * base) + data[i];
+      basecount = basecount * base + base;
+      i++;
+    }
+    // emit the char
+    newglyph(buffer % 0xFF);
+    buffer /=  0xFF;
+    basecount /= 0xFF;
+  }
+  newglyph(buffer);
+}
+
 void base61_format(char * str){
   //{0-9, A-Z, a-z, _ }.
   int c = 0;
@@ -131,7 +191,7 @@ void base61_format(char * str){
     code = (code << 8) + 0xFF;
     while(code > 63){
       char c2 = base61char(c % 63);
-      format("%c",c2);
+      format("%c", c2);
       c = c / 63;
       code = code / 63;
     }
@@ -146,17 +206,17 @@ void base61_inverse_format(char * str){
   int bitcount = 0;
   while(*str != 0){
     bitcount = (bitcount << 8) + 0xFF;
+    format("----\n");
     while(bitcount > 63 && *str != 0){
       int inv = ibase61char(*str);
-      format("inv: %i %c %c\n", inv, *str,  base61char(inv));
-      nchar = nchar * 63 + ibase61char(*str);
+      format("inv: %i %i %i\n", inv,  nchar, bitcount);
+      nchar = nchar * 63 + inv;
       bitcount /= 63;
       str++;
     }
     
-    format("c: %c %i\n", nchar, nchar);
-    nchar /= 255;
-    bitcount /= 63;
+    format("c: %c %i %i\n", nchar, nchar, bitcount);
+    nchar /= 63;
    
   }
 }
@@ -302,6 +362,69 @@ bool test_symbol_table(){
   
   base61_inverse_format("fg27Sq5"); 
   format("\n");
+
+  format("\n Better test:\n");
+  char * toencode = "llllllll";
+  
+  char * data = NULL;
+  size_t data_cnt = 0;
+
+  void print_base63glyph(int glyph){
+    list_add((void **)&data,&data_cnt,&glyph, sizeof(char));
+  }
+
+  basen_encode(toencode, strlen(toencode), 63, print_base63glyph);
+
+  char * out_data = NULL;
+  size_t out_data_cnt = 0;
+
+  void print_invbase63glyph(int glyph){
+    list_add((void **)&out_data,&out_data_cnt,&glyph, sizeof(char));
+  }
+
+  basen_decode(data,data_cnt, 63, print_invbase63glyph);
+  for(size_t i = 0; i < strlen("hello") + 1; i++){
+    format("%i -> %i -> %i\n", toencode[i], data[i], out_data[i]);
+  }
+  format("\n");
+
+  char * ptr = toencode;
+ u8 next_glyph(bool * ctn){
+    char next = *ptr;
+    logd("> %i\n", next);
+    *ctn = next != 0;
+    ptr = ptr + 1;
+    return next;
+  }
+  char buff[100];
+  size_t buffcnt = 0;
+  void emit_glyph(u8 glyph){
+    
+    buff[buffcnt] = glyph;//base61char(glyph);
+    buffcnt++;
+  }
+  //logd("%i %i\n ", 0xFF * (0xFF + 1) + 0xFF, 0xFFFF);
+  basea2b(next_glyph, 0xFF, 0xFFFF, emit_glyph);
+
+  size_t it2 = 0;
+  u8 next_glyph2(bool *ctn){
+    *ctn = it2 != buffcnt;
+    if(!*ctn) return 0;
+    char glyph = buff[it2];
+    char glyph2 = glyph;//ibase61char(glyph);
+    //logd(">> %i\n", glyph2);
+    it2++;
+    return glyph2;
+  }
+  
+  void emit_glyph2(u8 glyph){
+    format("--> %c %i\n", glyph);
+  }
+  basea2b(next_glyph2, 0xFFFF, 0xFF, emit_glyph2);
+  
+  format("\n");
+
+
   return TEST_FAIL;
   return TEST_SUCCESS;
 }
