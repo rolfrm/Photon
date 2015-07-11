@@ -3,13 +3,18 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <iron/full.h>
+#include <unistd.h>
 #include <stdarg.h>
+#include <iron/types.h>
+#include <iron/log.h>
+#include <iron/test.h>
+//#include <iron/full.h>
 
 #include "lisp_parser.h"
 #include "lisp_types.h"
 #include "lisp_compiler.h"
 #include "repl.h"
+
 const char * allowed_errors[] ={
   "Unknown touch device",
   "Invalid renderer"
@@ -68,9 +73,16 @@ int main(int argc, char *argv[] ){
   }
 
   if(argc == 2){
+    char * filename = argv[1];
+    if(access(filename, F_OK) == -1){
+      loge("Error: File '%s' does not exist\n", filename);
+      return 1;
+    }
     compiler_state * c = compiler_make();
     push_compiler(c);
     lisp_load_base();
+
+
     compile_status status = lisp_run_script_file(argv[1]);
     if(status == COMPILE_ERROR){
       return -1;

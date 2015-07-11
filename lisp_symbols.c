@@ -101,26 +101,30 @@ typedef struct {
   UT_hash_handle hh;
 }symbol_lookup;
 
-void basea2b(u8 (* read_glyph)(bool * ctn), u32 from_base, u32 to_base, void (*emit_glyph)(u8 glyph)){
-  //buffer is a gigantic number that we stream the data into / from
-  u32 buffer = 0;
-  u32 basecount = 0;
-  bool ctn = true;
-  while(ctn){
-    while(basecount < to_base && ctn){
-      //read bits until we have a whole 'from' symbol
-      buffer = (buffer * (from_base + 1)) + read_glyph(&ctn);
-      basecount = basecount * (from_base + 1) + from_base;
-      //logd(":: %i %i\n",basecount, to_base);
+void basea2b(bool (* read_glyph)(u8 * ctn), u32 from_base, u32 to_base, void (*emit_glyph)(u8 glyph)){
+  //bitstack is a gigantic number that we stream the data into / from
+  double bitstack = 0;
+  double basecount = 1;
+
+  while(true){
+    while(basecount < to_base){
+      u8 chr;
+      if(!read_glyph(&chr)) goto exit;
+      bitstack = bitstack + basecount * chr;
+      basecount *=  from_base;
+      //format("---> %i\n", basecount);
     }
-    
-    // emit the char
-    emit_glyph(buffer % (to_base + 1));
-    buffer /=  (to_base + 0);
-    basecount /= (to_base + 0);
-    //logd("::: %i\n",basecount);
+
+    //format("--- %i %i\n", bitstack, basecount);
+    emit_glyph((u32)bitstack % to_base);
+    bitstack /= to_base;
+    basecount /= to_base;
+    //format("--- %i %i\n", bitstack, basecount);
   }
-  emit_glyph(buffer);
+ exit:
+  // format("basecount: %i\n", basecount);
+  if(basecount > 1)
+    emit_glyph(bitstack);
 }
 
 
@@ -364,7 +368,7 @@ bool test_symbol_table(){
   format("\n");
 
   format("\n Better test:\n");
-  char * toencode = "llllllll";
+  char * toencode = "abcdefgh";
   
   char * data = NULL;
   size_t data_cnt = 0;
@@ -388,39 +392,48 @@ bool test_symbol_table(){
   }
   format("\n");
 
-  char * ptr = toencode;
- u8 next_glyph(bool * ctn){
-    char next = *ptr;
-    logd("> %i\n", next);
-    *ctn = next != 0;
-    ptr = ptr + 1;
-    return next;
+  int tobase = 64;
+  int frombase = 256;
+  char testdata[] = {0,3,0,3,0,3,1,1,1};
+  //char * ptr = testdata;
+  int it3 = 0;
+  bool next_glyph(u8 * chr){
+    if(it3 == array_count(testdata)){
+      return false;
+    }
+    *chr = testdata[it3];
+    format("read: %i\n", *chr);
+    it3++;
+    return true;
   }
   char buff[100];
   size_t buffcnt = 0;
-  void emit_glyph(u8 glyph){
-    
+  void emit_glyph(u8 glyph){ 
+    format("emit: %i\n", glyph);
     buff[buffcnt] = glyph;//base61char(glyph);
     buffcnt++;
   }
-  //logd("%i %i\n ", 0xFF * (0xFF + 1) + 0xFF, 0xFFFF);
-  basea2b(next_glyph, 0xFF, 0xFFFF, emit_glyph);
+  basea2b(next_glyph, frombase, tobase, emit_glyph);
 
   size_t it2 = 0;
-  u8 next_glyph2(bool *ctn){
-    *ctn = it2 != buffcnt;
-    if(!*ctn) return 0;
+  bool next_glyph2(u8 *chr){
+    if(it2 >= buffcnt) return false;
     char glyph = buff[it2];
     char glyph2 = glyph;//ibase61char(glyph);
+    *chr = glyph2;
     //logd(">> %i\n", glyph2);
     it2++;
-    return glyph2;
+    return true;
   }
   
   void emit_glyph2(u8 glyph){
-    format("--> %c %i\n", glyph);
+    format("--> %i\n", glyph);
   }
-  basea2b(next_glyph2, 0xFFFF, 0xFF, emit_glyph2);
+  format("buffer: cnt = %i \n", buffcnt);
+  for(size_t i = 0; i < buffcnt; i++)
+    format("%i : %i\n", i, buff[i]);
+  format("\n");
+  basea2b(next_glyph2, tobase, frombase, emit_glyph2);
   
   format("\n");
 
