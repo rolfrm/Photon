@@ -77,6 +77,8 @@ void push_compiler(compiler_state * c);
 
 char * get_c_name(symbol s);
 void format_c_name(symbol s);
+void check_name_vs_type(symbol name);
+
 type_def * _type_macro(expr typexpr);
 type_def * _compile_expr(c_block * block, c_value * val,  expr e );
 #define COMPILE_ASSERT(expr) if(!(expr)){loge("at %s : %i:", __FILE__, __LINE__);loge("Compile error '" #expr "' at %s: %l", __FILE__, __LINE__ ); logd("\n");return &error_def;}

@@ -163,8 +163,6 @@ void base61format(char * str, char * output){
   basea2b(next_glyph, 256, 63, emit_glyph);
 }
 
-
-
 char cname[1000];
 char * get_c_name(symbol s){
   char * sym = symbol_name(s);

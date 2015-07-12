@@ -352,10 +352,16 @@ void go_write(type_def ** deps, symbol * vdeps, c_root_code * codes, size_t code
 void checkvdeps(symbol * vdep){
   int it = 0;
   while(vdep[it].id != 0){
-    if(symbol_name(*vdep) == NULL)
+    if(symbol_name(*vdep) == NULL){
       ERROR("Symbol NULL %i", it);
+    }
+    logd("vdep %i: %s\n", it, symbol_name(vdep[it]));
+    if(type_pool_simple(*vdep) != NULL){
+      ERROR("Name '%s' already used as type. This usecase currently not supported.\n", symbol_name(vdep[it]));
+    }
     it++;
   }
+
 }
 
 void compile_as_c(c_root_code * codes, size_t code_cnt){

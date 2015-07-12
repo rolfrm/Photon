@@ -10,8 +10,8 @@
 (cosf 3.14)
 
 ;; Loading a library
-(defcmacro load-symbol+ (lib name cname _type)
-  (expr (load-symbol (unexpr lib) 
+(defcmacro load-symbol+ (_lib name cname _type)
+  (expr (load-symbol (unexpr _lib) 
 		     (quote (unexpr name))
 		     (quote (unexpr cname))
 		     (type (unexpr _type)))))

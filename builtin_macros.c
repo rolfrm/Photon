@@ -39,6 +39,23 @@ expr mk_sub_expr(expr * exprs, size_t cnt){
   return e;
 }
 
+bool check_decl(symbol name, type_def * type){
+  type_def * td = type_pool_simple(name);
+  type_def * td2 = type;
+  while(td2->type == POINTER){
+    td2 = td2->ptr.inner;
+  }
+  if(td == td2){
+    loge("Type/name conflict for variable named '%s'.\n", symbol_name(name));
+    return false;
+  }
+  return true;
+}
+
+void testdcl(expr * e, i32 expr){
+  UNUSED(e);UNUSED(expr);
+}
+
 type_def * var_macro(c_block * block, c_value * val, expr vars, expr body){
   COMPILE_ASSERT(vars.type == EXPR);
   sub_expr sexpr = vars.sub_expr;
@@ -52,6 +69,8 @@ type_def * var_macro(c_block * block, c_value * val, expr vars, expr body){
     c_var var;
     var.var.name = expr_symbol(var_expr.exprs[0]);
     var.var.type = _compile_expr(block, cvals + i, var_expr.exprs[1]);
+    if(!check_decl(var.var.name, var.var.type))
+      return &error_def;
     var.value = cvals + i;
     lisp_vars[i].name = var.var.name;
     lisp_vars[i].type = var.var.type;
@@ -131,7 +150,9 @@ type_def * load_macro(c_block * block, c_value * val, expr file_name){
   COMPILE_ASSERT(is_string(file_name));
   char * filename = read_symbol(file_name);
   logd("Loading: %s\n", filename); 
-  lisp_run_script_file(filename);
+  compile_status s = lisp_run_script_file(filename);
+  if(s == COMPILE_ERROR)
+    return &error_def;
   return _compile_expr(block, val, file_name);
 }
 
@@ -517,6 +538,9 @@ type_def * defun_macro(c_block * block, c_value * value, expr name, expr args, e
     vars[i].data = NULL;
     vars[i].name = arg_names[i];
     vars[i].type = arg_types[i];
+    if(!check_decl(vars[i].name, vars[i].type)){
+      return &error_def;
+    }
   }
   
   // ** Compile body with symbols registered ** //
