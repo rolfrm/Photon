@@ -354,7 +354,6 @@ expr lisp_parse1(char * code){
 }
 
 expr clone_expr2(expr body){
-  print_expr(&body);
   if(body.type == VALUE) return body;
   sub_expr exp = body.sub_expr;
   expr * sub = alloc0(sizeof(expr) * exp.cnt);
@@ -367,7 +366,6 @@ expr clone_expr2(expr body){
   nexpr.sub_expr.cnt = exp.cnt;
   return nexpr;
 }
-
 
 expr * clone_expr(expr * tree){
   expr * root = alloc(sizeof(expr));

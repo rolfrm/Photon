@@ -1,5 +1,5 @@
 (load "std2.lisp")
-(set-printer (quote printnl))
+
 (defvar t mat4-eye)
 (setf (member t m03) 10.0)
 t
@@ -13,3 +13,5 @@ t
 	      (printstr "Pointer!")))
       (cast null (ptr expr))))
 (overload print print-ptr)
+
+(set-printer (quote printnl))

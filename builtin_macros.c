@@ -460,7 +460,6 @@ type_def * defcmacro_macro(c_block * block, c_value * val, expr e_name, expr arg
   }
 
   macro_store * macro = alloc0(sizeof(macro_store));
-  print_expr(&body);
   macro->exp = clone_expr2(body);
   macro->args = clone(&argnames,sizeof(argnames));
   macro->arg_cnt = argcnt;
