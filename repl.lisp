@@ -17,13 +17,16 @@ t
 (set-printer (quote printnl))
 
 (defvar a :type i32)
+(defvar tid :type i32)
 (setf a 0)
-(go-init (addrof a))
+;;(go-init (addrof a))
 
 (defun test-ptr ((ptr void) (user-data (ptr void)))
   (progn
     (print "omg\n")
+    (usleep 100000)
+    (print "thread!\n")
     null))
 
-(go a test-ptr null)
+(launch (cast (addrof test-ptr) (ptr void)))
 (print "omg?\n")
