@@ -545,10 +545,23 @@ type_def * defun_macro(c_block * block, c_value * value, expr name, expr args, e
   
   // ** Compile body with symbols registered ** //
   c_value val = c_value_empty;
-  with_symbols(&vars, &varcnt, lambda(void, (){
-	type_def * td = _compile_expr(blk,&val, body);
-	ASSERT(fcnt->fcn.ret == &void_def || td == fcnt->fcn.ret);
-      }));
+  push_symbols(&vars, &varcnt);
+  type_def * td = _compile_expr(blk,&val, body);
+  pop_symbols();
+  if(td == &error_def){
+    loge("Caught error while defining function '%s'.\n", symbol_name(fcnname));
+    return td;
+  }
+  if(fcnt->fcn.ret != &void_def && td != fcnt->fcn.ret){
+    loge("Error while defining function: ");
+    logd("Function declared to return \n\"");
+    print_min_type(fcnt->fcn.ret);
+    logd("\"\nfunction body returns \n\"");
+    print_min_type(td);
+    logd("\"\n\n");
+    return &error_def;
+  }
+  
   c_expr expr;
   if(fcnt->fcn.ret == &void_def){
     expr.type = C_VALUE;

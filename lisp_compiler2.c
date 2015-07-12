@@ -248,7 +248,9 @@ type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se){
     return td->fcn.ret;
   }else if(var_type == macro_store_type()){
     type_def * _t = expand_macro(block, value, se->exprs, se->cnt);
-    ASSERT(_t != &error_def);
+    if(_t == &error_def){
+      COMPILE_ERROR("Caught error while expanding macro '%s'\n", symbol_name(name));
+    }
     return _t;
   }else{
 
@@ -355,7 +357,6 @@ void checkvdeps(symbol * vdep){
     if(symbol_name(*vdep) == NULL){
       ERROR("Symbol NULL %i", it);
     }
-    logd("vdep %i: %s\n", it, symbol_name(vdep[it]));
     if(type_pool_simple(*vdep) != NULL){
       ERROR("Name '%s' already used as type. This usecase currently not supported.\n", symbol_name(vdep[it]));
     }
