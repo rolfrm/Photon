@@ -183,7 +183,7 @@ type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se){
     cmacro_def * macro = var_data;
 
     if(macro->arg_cnt != argcnt && macro->arg_cnt != -1)
-      ERROR("Unsupported number of arguments %i for %s",argcnt, macro->name);
+      COMPILE_ERROR("Unsupported number of arguments %i for %s",argcnt, macro->name);
 
     switch(macro->arg_cnt){
     case 0:

@@ -82,8 +82,9 @@ type_def * var_macro(c_block * block, c_value * val, expr vars, expr body){
     block_add(block,cvars[i]);
   
   push_symbols(&lisp_vars, &sexpr.cnt);
-  type_def *ret_type = _compile_expr(block, val, body);
+  type_def * ret_type = _compile_expr(block, val, body);
   pop_symbols();
+
   return ret_type;
 }
 
@@ -131,6 +132,12 @@ type_def * setf_macro(c_block * block, c_value * val, expr name, expr body){
   c_value * vl = alloc0(sizeof(c_value));
   type_def * t1 = _compile_expr(block, vl, name);
   type_def * t = _compile_expr(block, vr, body);
+  if(t == &error_def){
+    loge("Compile error for body of setf at ");
+    print_expr(&body);
+    logd("\n");
+  }
+  COMPILE_ASSERT(t1 != &error_def && t != &error_def);
   if(!is_type_compatible(t,t1,body)){
     loge("same types required for setf. Requires '");
     print_min_type(t1);
@@ -161,6 +168,7 @@ type_def * progn_macro(c_block * block, c_value * val, expr * expressions, size_
   for(size_t i = 0; i < expr_cnt; i++){
     c_value _val = c_value_empty;
     d = _compile_expr(block, &_val, expressions[i]);
+    COMPILE_ASSERT(d != &error_def);
     if(i == expr_cnt -1){
       *val = _val;
       return d;
@@ -727,6 +735,7 @@ type_def * while_macro(c_block * block, c_value * val, expr cnd, expr body){
   c_value tmp = c_value_empty;
   c_block blk = c_block_empty;
   type_def * body_t = _compile_expr(&blk, &tmp, body);
+  COMPILE_ASSERT(body_t != &error_def);
   c_expr bodyexpr;
   bodyexpr.type = C_BLOCK;
   bodyexpr.block = c_block_empty;
@@ -742,7 +751,8 @@ type_def * while_macro(c_block * block, c_value * val, expr cnd, expr body){
     
     setf_macro(&bodyexpr.block, &valuexpr.value, symbol_expr("_tmp"), body);
   }else{
-    _compile_expr(&bodyexpr.block, &valuexpr.value, body);
+    type_def * t = _compile_expr(&bodyexpr.block, &valuexpr.value, body);
+    COMPILE_ASSERT(t != &error_def);
   }
   block_add(&bodyexpr.block, valuexpr);
   if(body_t != &void_def){

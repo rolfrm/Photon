@@ -82,7 +82,7 @@
 (defun expand-macro ((ptr expr) (sym (ptr symbol)) (expr2 (ptr expr)))
   (cast null (ptr expr)))
 
-(defun find-overload-macro ((ptr symbol) (ol overload) (exprs (ptr expr)))
+(defun find-overload-macro ((ptr expr) (ol overload) (exprs (ptr expr)))
   (let ((i 0) (out (cast null (ptr expr)))
 	(cnt (member ol macro-cnt))
 	(macs (member ol macros))
@@ -93,7 +93,7 @@
 	(when (eq (member macro arg-cnt) arg-cnt)
 	  (setf out (expand-macro (member macro sym) exprs)))
 	)
-      (incr i 1))
+      (setf i (i64+ i 1)))
     out))
     
 
@@ -123,8 +123,9 @@
 			  (print-type (deref (ptr+ call-type (cast j i64))))
 			  (printstr " ")
 			  (setf j (u64+ j 1)))))
-		    (printstr "\n")
-		    (expr "error")))))
+		    (printstr "\n"))
+		    (expr "error"))
+	      maco))
 	  (unfold-body (symbol2expr ol) d)
 	  ))))
 
