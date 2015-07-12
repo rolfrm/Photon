@@ -41,8 +41,17 @@
 (load-libc exit  (fcn void (status i32)))
 (load-libc strlen (fcn i64 (str (ptr char))))
 
+(type (alias i32 pthread-attr-t))
+
+(defvar pthread-lib (load-lib "/lib/x86_64-linux-gnu/libpthread.so.0"))
+(load-symbol pthread-lib (quote go-init) (quote pthread_attr_init) (type (fcn i32 (attr (ptr i32)))))
+(load-symbol pthread-lib (quote go) (quote pthread_create) (type (fcn i32 (a i32) (go-fcn (fcn (ptr void) ( arg (ptr void)))) (arg (ptr void)))))
+
 (load-symbol+ libc std:print-f64 printf (fcn (ptr void) (fmt (ptr char)) (x f64)))
 (load-symbol+ libc std:print-i64 printf (fcn (ptr void) (fmt (ptr char)) (x i64)))
+
+
+
 
 (defun printf64 (void (x f64))
   (std:print-f64 "%f" x))

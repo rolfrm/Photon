@@ -15,3 +15,15 @@ t
 (overload print print-ptr)
 
 (set-printer (quote printnl))
+
+(defvar a :type i32)
+(setf a 0)
+(go-init (addrof a))
+
+(defun test-ptr ((ptr void) (user-data (ptr void)))
+  (progn
+    (print "omg\n")
+    null))
+
+(go a test-ptr null)
+(print "omg?\n")
