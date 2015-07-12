@@ -87,22 +87,23 @@ type_def make_ptr(type_def * def){
 void print_min_type(type_def * type){
   switch(type->type){
   case SIMPLE:
-    format("%s", get_c_name(type->simple.name));
+    format_c_name(type->simple.name);
     break;
   case UNION:  
   case STRUCT:
   case OPAQUE_STRUCT:
-    format("struct %s", get_c_name(type->cstruct.name));
+    format("struct ");
+    format_c_name(type->cstruct.name);
     break;
   case POINTER:
     print_min_type(type->ptr.inner);
     format(" *");
     break;
   case ENUM:
-    format("%s",get_c_name(type->cenum.name));
+    format_c_name(type->cenum.name);
     break;
   case TYPEDEF:
-   format("%s",get_c_name(type->ctypedef.name));
+    format_c_name(type->ctypedef.name);
    break;
   case FUNCTION:
     ERROR("Cannot print function definition, only as decleration (named) ");
@@ -125,7 +126,9 @@ type_def * get_fcn_ptr_function(type_def * td, int * _ptrs){
 void print_function_decl(int ptrs, type_def * def, symbol name){
   ASSERT(def->type == FUNCTION);
   print_min_type(def->fcn.ret);
-  format(" (%.*s %s)(",ptrs,"*",get_c_name(name));
+  format(" (%.*s ",ptrs,"*");
+  format_c_name(name);
+  format(")(");
   for(i64 i = 0; i < def->fcn.cnt; i++){
     int fptr_ptrs;
     type_def * fptr = get_fcn_ptr_function(def->fcn.args[i], &fptr_ptrs);
@@ -158,7 +161,8 @@ void print_cdecl(decl idecl){
 	print_function_decl(inner_ptrs, fptr, idecl.name);
       }else{
 	print_min_type(def);
-	format(" %s",get_c_name(idecl.name));
+	format(" ");
+	format_c_name(idecl.name);
       }
     }
     break;
@@ -181,21 +185,27 @@ void print_def(type_def * type){
   type_def * inner;
   switch(type->type){
   case SIMPLE:
-    format("%s", get_c_name(type->simple.name));
+    format_c_name(type->simple.name);
     break;
   case OPAQUE_STRUCT:
-    format("struct %s", get_c_name(type->cstruct.name));
+    format("struct ");
+    format_c_name(type->cstruct.name);
     break;
   case STRUCT:
-    format("struct %s{\n", type->cstruct.name.id == 0 ? "" : get_c_name(type->cstruct.name));
+    format("struct ");
+    if(type->cstruct.name.id != 0)
+      format_c_name(type->cstruct.name);
+    format("{\n");
     for(i64 i = 0; i < type->cstruct.cnt; i++){	
       if(type->cstruct.members[i].name.id != 0){
 	print_min_type(type->cstruct.members[i].type);
-	format(" %s;\n",get_c_name(type->cstruct.members[i].name));
+	format(" ");
+	format_c_name(type->cstruct.members[i].name);
+	format(";");
       }else{
 	print_def(type->cstruct.members[i].type);
-	format("\n");
       }
+      format("\n");
     }
     format("}"); 
     break;
@@ -218,7 +228,9 @@ void print_def(type_def * type){
     inner = type->ctypedef.inner;
     format("typedef ");
     print_def(inner);
-    format(" %s;\n", get_c_name(type->ctypedef.name));
+    format(" ");
+    format_c_name(type->ctypedef.name);
+    format(";\n");
     break;
   case FUNCTION:
     ERROR("Cannot print function definition, only as decleration (named) ");
@@ -423,8 +435,9 @@ void write_dependencies(type_def ** deps){
 	  char * comma = (j !=(inner->cenum.cnt-1) ? "," : "");
 	  format("   %s = %i%s\n", symbol_name(inner->cenum.names[j]), inner->cenum.values[j], comma);
 	}
-	format("}%s;\n", get_c_name(t->ctypedef.name));
-      
+	format("}");
+	format_c_name(t->ctypedef.name);
+	format(";\n");
       }else{
 	//print_min_def(t);format(";\n");
 	ASSERT(inner->type == STRUCT || inner->type == OPAQUE_STRUCT || (inner->type == POINTER && (inner->ptr.inner->type == STRUCT || inner->ptr.inner->type == OPAQUE_STRUCT)));

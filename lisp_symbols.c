@@ -101,8 +101,9 @@ typedef struct {
   UT_hash_handle hh;
 }symbol_lookup;
 
+// Converts from base radix A numbers to radix B.
 void basea2b(bool (* read_glyph)(u8 * ctn), u32 from_base, u32 to_base, void (*emit_glyph)(u8 glyph)){
-  //bitstack is a gigantic number that we stream the data into / from
+  
   double bitstack = 0;
   double basecount = 1;
 
@@ -112,17 +113,13 @@ void basea2b(bool (* read_glyph)(u8 * ctn), u32 from_base, u32 to_base, void (*e
       if(!read_glyph(&chr)) goto exit;
       bitstack = bitstack + basecount * chr;
       basecount *=  from_base;
-      //format("---> %i\n", basecount);
     }
 
-    //format("--- %i %i\n", bitstack, basecount);
     emit_glyph((u32)bitstack % to_base);
     bitstack /= to_base;
     basecount /= to_base;
-    //format("--- %i %i\n", bitstack, basecount);
   }
  exit:
-  // format("basecount: %i\n", basecount);
   if(basecount > 1)
     emit_glyph(bitstack);
 }
@@ -135,7 +132,8 @@ char base61char(int i){
     return 'A' + (i - 10);
   if(i < 10 + 26 + 26)
     return 'a' + (i - 10 - 26);
-  return '_';
+  if(i == 62) return '_';
+  return '=';
 }
 
 int ibase61char(char c){
@@ -145,125 +143,29 @@ int ibase61char(char c){
     return c - 'A' + 10;
   if(c >= 'a' && c <= 'z')
     return c - 'a' + 10 + 26;
-  return 62; //'_'
+  if(c == '_')
+    return 62; //'_'
+  else return 63;
 }
 
-void basen_encode(char * data, int len, int base, void (* newglyph)(int glyph)){
-  int buffer = 0;
-  int basecount = 0;
-  for(int i = 0; i < len;){
-    while(basecount < base){
-      //read in a 
-      buffer = buffer * 0xFF + data[i];
-      basecount = (basecount * 0xFF) + 0xFF;
-      i++;
-    }
-    // eat the first base bits
-    newglyph(buffer % base);
-    buffer /= base;
-    basecount /= base;
-  }
-  newglyph(buffer % base);
-}
-
-
-void basen_decode(char * data, int len, int base, void (*newglyph)(int glyph)){
-  int buffer = 0;
-  int basecount = 0;
-  for(int i = 0; i < len;){
-    while(basecount < 0xFF){
-      //read bits until we have a whole char
-      buffer = (buffer * base) + data[i];
-      basecount = basecount * base + base;
-      i++;
-    }
-    // emit the char
-    newglyph(buffer % 0xFF);
-    buffer /=  0xFF;
-    basecount /= 0xFF;
-  }
-  newglyph(buffer);
-}
-
-void base61_format(char * str){
-  //{0-9, A-Z, a-z, _ }.
-  int c = 0;
-  int code = 0;
-  while(*str != 0){
-    c = (c << 8) | *str;
-    //logd("C: %i\n",c);
-    code = (code << 8) + 0xFF;
-    while(code > 63){
-      char c2 = base61char(c % 63);
-      format("%c", c2);
-      c = c / 63;
-      code = code / 63;
-    }
+void base61format(char * str, char * output){
+  bool next_glyph(u8 * chr){
+    if(*str == 0) return false;
+    *chr = *str;
     str++;
+    return true;
   }
-  char last = base61char(c);
-  format("%c", last);
+  void emit_glyph(u8 chr){
+    *output = base61char(chr);
+    output++;
+    *output = 0;
+  }
+  basea2b(next_glyph, 256, 63, emit_glyph);
 }
 
-void base61_inverse_format(char * str){
-  int nchar = 0;
-  int bitcount = 0;
-  while(*str != 0){
-    bitcount = (bitcount << 8) + 0xFF;
-    format("----\n");
-    while(bitcount > 63 && *str != 0){
-      int inv = ibase61char(*str);
-      format("inv: %i %i %i\n", inv,  nchar, bitcount);
-      nchar = nchar * 63 + inv;
-      bitcount /= 63;
-      str++;
-    }
-    
-    format("c: %c %i %i\n", nchar, nchar, bitcount);
-    nchar /= 63;
-   
-  }
-}
 
-void format_c_name(symbol s){
-  char * sym = symbol_name(s);
-  bool first_alpha = isalpha(sym[0]) || '_' == sym[0];
-  bool all_alphanum = true;
-  for(size_t i = 0; sym[i];i++){
-    if(isalnum(sym[i]) == false && sym[i] !='_'){
-      all_alphanum = false;
-      break;
-    }
-  }
-  
-  if(all_alphanum){
-    if(first_alpha){
-      format("%s", sym);
-    }else{
-      format("S_%s",sym);
-    }
-    return;
-  }else{
-    static i32 uniqueid = 0;
-    static symbol_lookup * lut = NULL;
-    symbol_lookup _lut_item;
-    symbol_lookup * lut_item = &_lut_item;
-    HASH_FIND_STR(lut, sym, lut_item);
-    if(lut_item != NULL){
-      format("%s", lut_item->cname);
-      return;
-    }
-    lut_item = alloc0(sizeof(symbol_lookup));
-    char * value = fmtstr("S__%i", uniqueid);
 
-    lut_item->key = sym;
-    lut_item->cname = value;
-    HASH_ADD_KEYPTR(hh, lut, lut_item->key, strlen(lut_item->key), lut_item);
-    uniqueid += 1;
-    format("%s", value);
-  }
-}
-
+char cname[1000];
 char * get_c_name(symbol s){
   char * sym = symbol_name(s);
   bool first_alpha = isalpha(sym[0]) || '_' == sym[0];
@@ -277,25 +179,18 @@ char * get_c_name(symbol s){
   
   if(all_alphanum){
     if(first_alpha) return sym;
-    return fmtstr("S_%s",sym);
+    sprintf(cname, "S_%s", sym);
+    return cname;
   }else{
-    static i32 uniqueid = 0;
-    static symbol_lookup * lut = NULL;
-    symbol_lookup _lut_item;
-    symbol_lookup * lut_item = &_lut_item;
-    HASH_FIND_STR(lut, sym, lut_item);
-    if(lut_item != NULL) return lut_item->cname;
-    lut_item = alloc0(sizeof(symbol_lookup));
-    char * value = fmtstr("S__%i", uniqueid);
-
-    lut_item->key = sym;
-    lut_item->cname = value;
-    HASH_ADD_KEYPTR(hh, lut, lut_item->key, strlen(lut_item->key), lut_item);
-    uniqueid += 1;
-    return value;
+    sprintf(cname, "S__");
+    base61format(sym, cname + 3);
+    return cname;
   }
 }
 
+void format_c_name(symbol s){
+  format("%s", get_c_name(s));
+}
 
 cmacro_def * get_cmacro_def(symbol s){
   var_def * var = get_variable(s);
@@ -357,7 +252,12 @@ bool test_symbol_table(){
     TEST_ASSERT(i == demangled);
   }
 
-  format("hello! :");
+  char testbuf[100];
+  char testinput[] = "e210hye291";
+  base61format(testinput, testbuf);
+  logd("%s\n",testbuf);
+  return TEST_FAIL;
+  /*format("hello! :");
   base61_format("hello");
   format("\n");
   base61_format("+-_)@# hello cxz_-@#!%");
@@ -392,25 +292,22 @@ bool test_symbol_table(){
   }
   format("\n");
 
-  int tobase = 64;
+  int tobase = 32;
   int frombase = 256;
-  char testdata[] = {0,3,0,3,0,3,1,1,1};
-  //char * ptr = testdata;
+  char testdata[] = "abcdefghijklmnµ³²¹ðåáþ¤éäåéüúíïhgfáæœ©®€¤`~¥×’‘«»ø¶ø¿çœïhgfðßáæœ©GÞÜÅ“Ä£½³²¹";
   int it3 = 0;
   bool next_glyph(u8 * chr){
-    if(it3 == array_count(testdata)){
+    if(it3 == (int)strlen(testdata)){
       return false;
     }
     *chr = testdata[it3];
-    format("read: %i\n", *chr);
     it3++;
     return true;
   }
-  char buff[100];
+  char buff[1000];
   size_t buffcnt = 0;
   void emit_glyph(u8 glyph){ 
-    format("emit: %i\n", glyph);
-    buff[buffcnt] = glyph;//base61char(glyph);
+    buff[buffcnt] = base61char(glyph);
     buffcnt++;
   }
   basea2b(next_glyph, frombase, tobase, emit_glyph);
@@ -419,26 +316,27 @@ bool test_symbol_table(){
   bool next_glyph2(u8 *chr){
     if(it2 >= buffcnt) return false;
     char glyph = buff[it2];
-    char glyph2 = glyph;//ibase61char(glyph);
+    char glyph2 = ibase61char(glyph);
     *chr = glyph2;
-    //logd(">> %i\n", glyph2);
     it2++;
     return true;
   }
   
+  char savebuffer[1000];
+  memset(savebuffer,0, sizeof(savebuffer));
+  char * savptr=  savebuffer;
   void emit_glyph2(u8 glyph){
-    format("--> %i\n", glyph);
+    *savptr = glyph;
+    savptr++;
   }
-  format("buffer: cnt = %i \n", buffcnt);
-  for(size_t i = 0; i < buffcnt; i++)
-    format("%i : %i\n", i, buff[i]);
-  format("\n");
   basea2b(next_glyph2, tobase, frombase, emit_glyph2);
-  
   format("\n");
+  format("input : %s\n", testdata);
+  format("encoded : %s\n", buff);
+  format("output: %s\n",savebuffer);
+  
+  */
 
-
-  return TEST_FAIL;
   return TEST_SUCCESS;
 }
 
