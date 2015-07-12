@@ -82,7 +82,7 @@ void check_name_vs_type(symbol name);
 type_def * _type_macro(expr typexpr);
 type_def * _compile_expr(c_block * block, c_value * val,  expr e );
 #define COMPILE_ASSERT(expr) if(!(expr)){loge("at %s : %i:", __FILE__, __LINE__);loge("Compile error '" #expr "' at %s: %l", __FILE__, __LINE__ ); logd("\n");return &error_def;}
-#define COMPILE_ERROR(fmt, ...) {logd(fmt,##__VA_ARGS__); return &error_def;}
+#define COMPILE_ERROR(fmt, ...) {loge(fmt,##__VA_ARGS__); logd("\n"); return &error_def;}
 void compile_as_c(c_root_code * codes, size_t code_cnt);
 type_def * compile_value(c_value * val, value_expr e);
 

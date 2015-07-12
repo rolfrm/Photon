@@ -79,7 +79,7 @@
 	(member ol default)
 	out)))
 
-(defun expand-macro ((ptr expr) (sym (ptr symbol)) (expr (ptr expr)))
+(defun expand-macro ((ptr expr) (sym (ptr symbol)) (expr2 (ptr expr)))
   (cast null (ptr expr)))
 
 (defun find-overload-macro ((ptr symbol) (ol overload) (exprs (ptr expr)))
