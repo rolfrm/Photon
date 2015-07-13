@@ -21,12 +21,14 @@ t
 (setf a 0)
 ;;(go-init (addrof a))
 
-(defun test-ptr ((ptr void) (user-data (ptr void)))
+(defun test-ptr (void)
   (progn
-    (print "omg\n")
+    (print "hello!\n")
     (usleep 100000)
     (print "thread!\n")
     null))
 
-(launch (cast (addrof test-ptr) (ptr void)))
-(print "omg?\n")
+(launch test-ptr)
+(print "..\n")
+(print "..\n")
+(print "..\n")

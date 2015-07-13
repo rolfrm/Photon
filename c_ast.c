@@ -270,8 +270,9 @@ void print_fcn_code(c_fcndef fcndef){
     vars[i].data = NULL;
     vars[i].name = fcndef.args[i];
     vars[i].type = arg_type;
-    print_min_type(arg_type);
-    format(" %s", get_c_name(vars[i].name));
+    print_decl(arg_type, vars[i].name);
+    //print_min_type(arg_type);
+    //format(" %s", get_c_name(vars[i].name));
     if(i != varcnt-1){
       format(",");
     }

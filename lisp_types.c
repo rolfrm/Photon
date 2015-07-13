@@ -440,7 +440,7 @@ void write_dependencies(type_def ** deps){
 	format(";\n");
       }else{
 	//print_min_def(t);format(";\n");
-	ASSERT(inner->type == STRUCT || inner->type == OPAQUE_STRUCT || (inner->type == POINTER && (inner->ptr.inner->type == STRUCT || inner->ptr.inner->type == OPAQUE_STRUCT)));
+	ASSERT(inner->type == STRUCT || inner->type == OPAQUE_STRUCT || (inner->type == POINTER && (inner->ptr.inner->type == STRUCT || inner->ptr.inner->type == OPAQUE_STRUCT || inner->ptr.inner->type == SIMPLE)));
 	decl dcl;
 	dcl.name = t->ctypedef.name;
 	dcl.type = inner;

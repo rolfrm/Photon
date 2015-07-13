@@ -211,11 +211,11 @@ type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se){
     c_value fargs[argcnt];
     memset(fargs,0,sizeof(c_value) * argcnt);
     type_def * farg_types[argcnt];
-    bool ok = true;
+    int err_arg = -1;
     for(i64 i = 0; i < argcnt; i++){
       farg_types[i] = _compile_expr(block, fargs + i, args[i]);
       if(!is_type_compatible(farg_types[i],td->fcn.args[i], args[i])){
-	ok = false;
+	err_arg = i;
 	logd("ERROR: got '");
 	int ptrs1;
 	type_def * t1i = get_fcn_ptr_function(farg_types[i], &ptrs1);
@@ -232,10 +232,12 @@ type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se){
 	  print_min_type(td->fcn.args[i]);
 	}
 	logd("'\n");
+	break;
       }
-      if(!ok)
-	COMPILE_ERROR("Non matching types for function '%s'\n", symbol_name(name));
     }
+    if(err_arg >= 0)
+	COMPILE_ERROR("Non matching types for function '%s' arg %i\n", symbol_name(name), err_arg);
+    
 
     c_function_call call;
     call.type = td;

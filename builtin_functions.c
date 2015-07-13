@@ -139,7 +139,7 @@ void * get_var(symbol * sym){
   return var->data;
 }
 
-void invoke (void * fcn){
+void invoke (void (* fcn)()){
   logd("hello!\n");
   void (*f)() = fcn;
   f();
@@ -196,5 +196,5 @@ void load_functions(){
   defun("fcn-arg-cnt", str2type("(fcn u64 (t (ptr type_def)))"), fcn_arg_cnt);
   defun("set-printer", str2type("(fcn void (ptr (ptr symbol)))"), set_printer);
   defun("is-type-compatible", str2type("(fcn bool (call-type (ptr type_def)) (arg-type (ptr type_def)) (call-expr (ptr expr)))"), is_type_compatible2);
-  defun("invoke", str2type("(fcn void (func (ptr void)))"), invoke);
+  defun("invoke", str2type("(fcn void (func (fcn void )))"), invoke);
 }

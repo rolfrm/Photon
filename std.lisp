@@ -22,8 +22,6 @@
 (cos 3.14)
 (cosf 3.14)
 
-
-
 (defvar libc (load-lib "/lib/x86_64-linux-gnu/libc.so.6"))
 (defcmacro load-libc (name type)
   (expr 
@@ -42,10 +40,6 @@
 (load-libc strlen (fcn i64 (str (ptr char))))
 
 (type (alias i32 pthread-attr-t))
-
-(defvar pthread-lib (load-lib "/lib/x86_64-linux-gnu/libpthread.so.0"))
-(load-symbol pthread-lib (quote pthread-attr-init) (quote pthread_attr_init) (type (fcn i32 (attr (ptr i32)))))
-(load-symbol pthread-lib (quote pthread-create) (quote pthread_create) (type (fcn i32 (id (ptr i32)) (a i32) (go-fcn (fcn (ptr void) ( arg (ptr void)))) (arg (ptr void)))))
 
 (load-symbol+ libc std:print-f64 printf (fcn (ptr void) (fmt (ptr char)) (x f64)))
 (load-symbol+ libc std:print-i64 printf (fcn (ptr void) (fmt (ptr char)) (x i64)))
@@ -100,20 +94,6 @@
 	 buffer)))
 
 
-(defun thread-launcher ((ptr void) (arg (ptr void)))
-  (progn
-    (printstr "launch\n")
-    (invoke arg)
-    null))
-
-(defvar attr (cast 0 i32))
-(defvar tid (cast 0 i32))
-(defun launch (i32 (function (ptr void)))
-  (var ()
-       (progn
-	 (pthread-attr-init (addrof attr))
-	 (pthread-create (addrof tid) attr thread-launcher (cast function (ptr void)))
-	 tid)))
 
 (defcmacro ptr+ (ptr offset)
   (var ((size_expr (number2expr (cast (size-of (ptr-inner (type-of ptr))) i64))))
