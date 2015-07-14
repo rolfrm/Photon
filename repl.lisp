@@ -6,17 +6,17 @@ t
 (defvar b (vec 1 2 3 1))
 (dot t b)
 
-(defcmacro print-ptr (expr)
+(defcmacro print-ptr (expr2)
   (progn
-    (print "THIS IS CALLED\n")
-    (if (type-is-pointer? (type-of expr))
-	(expr (progn
-		(unexpr expr)
-		(printstr "Pointer!")))
-	(cast null (ptr expr)))))
+    (if (is-ptr-type? (type-of expr2))
+	(expr 
+	 (progn
+	   (printstr "ptr: ")
+	   (printi64 (cast (unexpr expr2) i64))
+	   (printstr "\n")))
+	  (cast null (ptr expr)))))
 (overload print print-ptr)
-
-(print null)
+(print (cast 10 (ptr i64)))
 (exit 0)
 (defvar a :type i32)
 (defvar tid :type i32)

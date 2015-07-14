@@ -81,23 +81,23 @@
 ;	out)))
 
 (defun expand-macro2 ((ptr expr) (sym (ptr symbol)) (expr2 (ptr expr)))
-  (let ((v (cast (get-var sym) (ptr macro-store))))
-    (expand-macro v expr2)))
+  (let ((v (cast (get-var sym) (ptr macro_store))))
+    (let ((r (expand-macro v expr2)))
+      r)))
 
 (defun find-overload-macro ((ptr expr) (ol overload) (exprs (ptr expr)))
   (let ((i 0) (out (cast null (ptr expr)))
 	(cnt (member ol macro-cnt))
 	(macs (member ol macros))
 	(arg-cnt (sub-expr.cnt exprs)))
+
 					;(printstr "EXPANDING MACRO\n")
     (while (and (eq out (cast null (ptr expr)))
 		(not (eq (cast i u64) cnt)))
       (let ((macro (deref (ptr+ macs i))))
-	
 	(when (eq (member macro arg-cnt) arg-cnt)
-	  (setf out (expand-macro2 (member macro sym) exprs)))
-	
-	)
+	  (setf out (expand-macro2 (member macro sym) exprs))
+	  ))
       (setf i (i64+ i 1)))
     out))
     
@@ -112,8 +112,10 @@
       (setf _i (u64+ _i 1)))
     
     (let ((ol (find-overload ol-info  call-type (sub-expr.cnt d) d)))
+
       (if (eq null (cast ol (ptr void)))
 	  (let ((maco (find-overload-macro ol-info d)))
+
 	    (if (eq maco (cast null (ptr expr)))
 		(let ((def (member ol-info default)))
 		  (if (eq def (cast null (ptr symbol)))
@@ -129,12 +131,11 @@
 				(setf j (u64+ j 1)))))
 			  (printstr "\n")
 			  (expr "error"))
-			(unfold-body (symbol2expr ol) d)))
-		(progn
-		  (printstr "***\n")
-		  (print-expr maco)
-		  maco)))
-	  (unfold-body (symbol2expr ol) d)
+		      (unfold-body (symbol2expr def) d)))
+		maco))
+	  
+	    (unfold-body (symbol2expr ol) d)
+	    
 	  ))))
 
 (defcmacro defoverloaded (fcn-name)

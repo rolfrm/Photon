@@ -235,7 +235,7 @@ type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se){
       }
     }
     if(err_arg >= 0)
-	COMPILE_ERROR("Non matching types for function '%s' arg %i\n", symbol_name(name), err_arg);
+      COMPILE_ERROR("Non matching types for function '%s' arg %i\n", symbol_name(name), err_arg);
     
 
     c_function_call call;

@@ -220,8 +220,6 @@ type_def * macro_store_type(){
   return str2type("(ptr (alias (opaque-struct _macro_store) macro_store))");
 }
 
-
-
 expr * expand_macro_store(macro_store * ms, expr * exprs, size_t cnt){
   symbol rest = get_symbol("&rest");
   type_def * exprtd = opaque_expr();
@@ -475,10 +473,16 @@ type_def * defcmacro_macro(c_block * block, c_value * val, expr e_name, expr arg
 }
 
 type_def * cast_macro(c_block * block, c_value * value, expr body, expr type){
-  UNUSED(block);
   c_value * v = alloc0(sizeof(c_value));
-  _compile_expr(block,v, body);
+  type_def * td = _compile_expr(block,v, body);
+  if(td == &error_def){
+    loge("Error while compiling body\n");
+    return td;
+  }
   type_def * cast_to = _type_macro(type);
+  if(cast_to == &error_def){
+    ERROR("WTF!\n");
+  }
   value->type = C_CAST;
   value->cast.value = v;
   value->cast.type = cast_to;
@@ -902,6 +906,7 @@ expr * make_sub_expr (expr ** exprs, u64 cnt){
 
 void builtin_macros_load(){
   // Macros
+  macro_store_type();
   define_macro("type", 1, type_macro);
   define_macro("defun", 3, defun_macro);
   define_macro("var", 2, var_macro);
@@ -933,5 +938,5 @@ void builtin_macros_load(){
   defun("sub-expr.cnt", str2type("(fcn u64 (expr (ptr expr)))"), get_sub_expr_cnt);
   defun("sub-expr.expr", str2type("(fcn (ptr expr) (expr (ptr expr)) (idx u64))"), get_sub_expr);
   defun("make-sub-expr", str2type("(fcn (ptr expr) (exprs (ptr (ptr expr))) (cnt u64))"), make_sub_expr);
-  defun("expand-macro", str2type("(fcn (ptr expr) (ms (ptr macro-store)) (expr (ptr expr)))"), &expand_macro_store2);
+  defun("expand-macro", str2type("(fcn (ptr expr) (ms (ptr macro_store)) (expr2 (ptr expr)))"), &expand_macro_store2);
 }

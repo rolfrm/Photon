@@ -107,6 +107,10 @@ bool is_fcn_type(type_def * t){
   return t->type == FUNCTION;
 }
 
+bool is_ptr_type(type_def * t){
+  return t->type == POINTER;
+}
+
 type_def ** fcn_arg_types(type_def * td){
   if(td->type != FUNCTION) return NULL;
   return td->fcn.args;
@@ -190,6 +194,7 @@ void load_functions(){
   defun("var-type", str2type("(fcn (ptr type_def) (variable (ptr symbol)))"), var_type);
   defun("get-var", str2type("(fcn (ptr void) (sym (ptr symbol)))"), get_var);
   defun("is-fcn-type?", str2type("(fcn bool (type (ptr type_def)))"), is_fcn_type);
+  defun("is-ptr-type?", str2type("(fcn bool (type (ptr type_def)))"), is_ptr_type);
   defun("fcn-arg-types", str2type("(fcn (ptr (ptr type_def)) (t (ptr type_def)))"), fcn_arg_types);
   defun("fcn-arg-cnt", str2type("(fcn u64 (t (ptr type_def)))"), fcn_arg_cnt);
   defun("set-printer", str2type("(fcn void (ptr (ptr symbol)))"), set_printer);
