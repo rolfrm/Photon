@@ -7,15 +7,17 @@ t
 (dot t b)
 
 (defcmacro print-ptr (expr)
-  (if (type-is-pointer? (type-of expr))
-      (expr (progn
-	      (unexpr expr)
-	      (printstr "Pointer!")))
-      (cast null (ptr expr))))
+  (progn
+    (print "THIS IS CALLED\n")
+    (if (type-is-pointer? (type-of expr))
+	(expr (progn
+		(unexpr expr)
+		(printstr "Pointer!")))
+	(cast null (ptr expr)))))
 (overload print print-ptr)
 
-
-
+(print null)
+(exit 0)
 (defvar a :type i32)
 (defvar tid :type i32)
 (setf a 0)

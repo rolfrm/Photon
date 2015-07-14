@@ -220,6 +220,8 @@ type_def * macro_store_type(){
   return str2type("(ptr (alias (opaque-struct _macro_store) macro_store))");
 }
 
+
+
 expr * expand_macro_store(macro_store * ms, expr * exprs, size_t cnt){
   symbol rest = get_symbol("&rest");
   type_def * exprtd = opaque_expr();
@@ -281,6 +283,10 @@ expr * expand_macro_store(macro_store * ms, expr * exprs, size_t cnt){
   return exp2;
 }
 
+expr * expand_macro_store2(macro_store * ms, expr * expr){
+  return expand_macro_store(ms,expr->sub_expr.exprs, expr->sub_expr.cnt);
+}
+
 type_def * expand_macro(c_block * block, c_value * val, expr * exprs, size_t cnt){
   UNUSED(block);
   COMPILE_ASSERT(cnt > 0);
@@ -298,6 +304,7 @@ type_def * expand_macro(c_block * block, c_value * val, expr * exprs, size_t cnt
     return &error_def;
   return _compile_expr(block, val, *outexpr);
 }
+
 
 int recurse_count(expr ex){
   if(ex.type == VALUE)
@@ -926,4 +933,5 @@ void builtin_macros_load(){
   defun("sub-expr.cnt", str2type("(fcn u64 (expr (ptr expr)))"), get_sub_expr_cnt);
   defun("sub-expr.expr", str2type("(fcn (ptr expr) (expr (ptr expr)) (idx u64))"), get_sub_expr);
   defun("make-sub-expr", str2type("(fcn (ptr expr) (exprs (ptr (ptr expr))) (cnt u64))"), make_sub_expr);
+  defun("expand-macro", str2type("(fcn (ptr expr) (ms (ptr macro-store)) (expr (ptr expr)))"), &expand_macro_store2);
 }

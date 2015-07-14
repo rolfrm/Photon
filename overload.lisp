@@ -75,23 +75,28 @@
 		(setf out (member mem sym))
 		)))))
       (setf i (i64+ i 1)))
-    (if (eq (cast null (ptr symbol)) out)
-	(member ol default)
-	out)))
+    out))
+    ;(if (eq (cast null (ptr symbol)) out)
+	;(member ol default)
+;	out)))
 
-(defun expand-macro ((ptr expr) (sym (ptr symbol)) (expr2 (ptr expr)))
-  (cast null (ptr expr)))
+(defun expand-macro2 ((ptr expr) (sym (ptr symbol)) (expr2 (ptr expr)))
+  (let ((v (cast (get-var sym) (ptr macro-store))))
+    (expand-macro v expr2)))
 
 (defun find-overload-macro ((ptr expr) (ol overload) (exprs (ptr expr)))
   (let ((i 0) (out (cast null (ptr expr)))
 	(cnt (member ol macro-cnt))
 	(macs (member ol macros))
 	(arg-cnt (sub-expr.cnt exprs)))
+					;(printstr "EXPANDING MACRO\n")
     (while (and (eq out (cast null (ptr expr)))
 		(not (eq (cast i u64) cnt)))
       (let ((macro (deref (ptr+ macs i))))
+	
 	(when (eq (member macro arg-cnt) arg-cnt)
-	  (setf out (expand-macro (member macro sym) exprs)))
+	  (setf out (expand-macro2 (member macro sym) exprs)))
+	
 	)
       (setf i (i64+ i 1)))
     out))
@@ -108,24 +113,27 @@
     
     (let ((ol (find-overload ol-info  call-type (sub-expr.cnt d) d)))
       (if (eq null (cast ol (ptr void)))
-	  (progn
-	    (printstr "THIS HAPPENS!")
-	    (let ((maco (find-overload-macro ol-info d)))
-
-	      (if (not (eq maco (cast null (ptr expr))))
-		  (progn
-		    (printstr "Error no matching overload found for '")
+	  (let ((maco (find-overload-macro ol-info d)))
+	    (if (eq maco (cast null (ptr expr)))
+		(let ((def (member ol-info default)))
+		  (if (eq def (cast null (ptr symbol)))
+		      (progn
+			(printstr "Error no matching overload found for '")
 					;(print-symbol (quote (unexpr fcn-name)))
-		    (printstr "' ")
-		    (let ((j (cast 0 u64)))
-		      (while (not (eq j (sub-expr.cnt d)))
-			(progn
-			  (print-type (deref (ptr+ call-type (cast j i64))))
-			  (printstr " ")
-			  (setf j (u64+ j 1)))))
-		    (printstr "\n"))
-		    (expr "error"))
-	      maco))
+			(printstr "' ")
+			  (let ((j (cast 0 u64)))
+			    (while (not (eq j (sub-expr.cnt d)))
+			      (progn
+				(print-type (deref (ptr+ call-type (cast j i64))))
+				(printstr " ")
+				(setf j (u64+ j 1)))))
+			  (printstr "\n")
+			  (expr "error"))
+			(unfold-body (symbol2expr ol) d)))
+		(progn
+		  (printstr "***\n")
+		  (print-expr maco)
+		  maco)))
 	  (unfold-body (symbol2expr ol) d)
 	  ))))
 
@@ -135,8 +143,7 @@
      (progn
        (defcmacro (unexpr fcn-name) (&rest d)
 	 (get-overloaded-expr (unexpr s)  d)
-	 )
-       
+	 )       
        (defvar (unexpr s) prototype)
        (noop)
        ))))
