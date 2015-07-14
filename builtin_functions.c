@@ -140,9 +140,7 @@ void * get_var(symbol * sym){
 }
 
 void invoke (void (* fcn)()){
-  logd("hello!\n");
-  void (*f)() = fcn;
-  f();
+  fcn();
 }
 
 void load_functions(){

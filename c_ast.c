@@ -187,7 +187,7 @@ void print_value(c_value val){
     break;
   case C_CAST:
     format("((");
-    print_min_type(val.cast.type);
+    print_decl(val.cast.type, get_symbol(NULL));
     format(")");
     print_value(*val.cast.value);
     format(")");

@@ -21,6 +21,9 @@ symbol_table * symtbl_byid = NULL;
 u32 symbol_cnt = 1;
 
 symbol * get_symbol2(char * name){
+  if(name == NULL)
+    return (symbol *) &symbol_empty;
+  
   symbol_table * sym_item = NULL;
   HASH_FIND_STR(symtbl, name, sym_item);
   if(sym_item == NULL){

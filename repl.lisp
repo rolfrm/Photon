@@ -14,7 +14,7 @@ t
       (cast null (ptr expr))))
 (overload print print-ptr)
 
-(set-printer (quote printnl))
+
 
 (defvar a :type i32)
 (defvar tid :type i32)
@@ -28,7 +28,15 @@ t
     (print "thread!\n")
     null))
 
-(launch test-ptr)
+(defun test-launch (void)
+  (progn
+    (launch test-ptr)
+    (launch test-ptr)
+    (launch test-ptr)
+    (launch test-ptr)
+    (launch test-ptr)))
+
 (print "..\n")
 (print "..\n")
 (print "..\n")
+(set-printer (quote printnl))

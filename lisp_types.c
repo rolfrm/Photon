@@ -127,7 +127,8 @@ void print_function_decl(int ptrs, type_def * def, symbol name){
   ASSERT(def->type == FUNCTION);
   print_min_type(def->fcn.ret);
   format(" (%.*s ",ptrs,"*");
-  format_c_name(name);
+  if(name.id != 0)
+    format_c_name(name);
   format(")(");
   for(i64 i = 0; i < def->fcn.cnt; i++){
     int fptr_ptrs;
@@ -155,6 +156,11 @@ void print_cdecl(decl idecl){
   case SIMPLE:
   case POINTER:
     {
+      if(idecl.name.id == 0){
+	print_min_type(def);
+	return;
+      }
+
       int inner_ptrs;
       type_def * fptr = get_fcn_ptr_function(def, &inner_ptrs);
       if(fptr != NULL){
