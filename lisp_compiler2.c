@@ -160,8 +160,7 @@ bool is_type_compatible(type_def * call_type, type_def * arg_type, expr callexpr
 
 
 type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se){
-  if(se->cnt == 0)
-    ERROR("sub expressio count 0");
+  COMPILE_ASSERT(se->cnt != 0);
   expr name_expr = se->exprs[0];
   if(name_expr.type != VALUE && name_expr.value.type != SYMBOL) ERROR("need symbol for first car");
   
