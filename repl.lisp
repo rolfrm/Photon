@@ -11,11 +11,22 @@ t
       (expr 
        (progn
 	 (printstr "ptr: ")
-	 (print-hex (cast 0 i64))
+	 (print-hex (cast (unexpr expr2) i64))
 	 (printstr "\n"))
        )      
       (cast null (ptr expr))))
-(defmacro print-ptr _print-ptr)
+
+
+(declare-macro print-ptr _print-ptr)
+
+(defun *test-macro ((ptr expr) (take (ptr expr)) (exprs (ptr expr)))
+  (progn
+    (printstr "Test macro!\n")
+    (sub-expr.expr exprs (cast (expr2number take) u64))))
+
+(declare-macro test-macro *test-macro :rest)
+
+(test-macro 1 2 3 4)
 
 ;; (defcmacro print-ptr (expr2)
 ;;   (progn
@@ -28,9 +39,9 @@ t
 ;; 	 ;)
 ;; 	 (noop))))
 ;; 	  ;(cast null (ptr expr)))))
-;; (overload print print-ptr)
-;; (print (cast 10 (ptr i64)))
-(exit 0)
+(overload print print-ptr)
+(print (cast 131324210 (ptr i64)))
+
 (defvar a :type i32)
 (defvar tid :type i32)
 (setf a 0)

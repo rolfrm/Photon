@@ -183,21 +183,26 @@ type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se){
 
     if(macro->arg_cnt != argcnt && macro->arg_cnt != -1)
       COMPILE_ERROR("Unsupported number of arguments %i for %s",argcnt, macro->name);
+    type_def * ( *macro_fcn)(c_block * block, c_value * val, ...) = macro->fcn;
 
     switch(macro->arg_cnt){
     case 0:
-      return ((type_def *(*)(c_block * block, c_value * value)) macro->fcn)(block,value);
+      return macro_fcn(block, value);
     case 1:
-      return ((type_def *(*)(c_block * block, c_value * value,expr)) macro->fcn)(block,value,args[0]);
+      return macro_fcn(block, value, args[0]);
     case 2:
-      return ((type_def *(*)(c_block * block, c_value * value,expr,expr)) 
-	      macro->fcn)(block,value,args[0],args[1]);
+      return macro_fcn(block, value, args[0], args[1]);
     case 3:
-      return ((type_def *(*)(c_block * block, c_value * value, expr,expr,expr)) 
-	      macro->fcn)(block,value,args[0],args[1],args[2]);
+      return macro_fcn(block, value, args[0], args[1], args[2]);
+    case 4:
+      return macro_fcn(block, value, args[0], args[1], args[2], args[3]);
+    case 5:
+      return macro_fcn(block, value, args[0], args[1], args[2], args[3], args[4]);
+    case 6:
+      return macro_fcn(block, value, args[0], args[1], args[2], args[3], args[4], args[5]);
     case -1:
-
-      return ((type_def *(*)(c_block * block, c_value * value, expr *,size_t))macro->fcn)(block,value,args, argcnt);
+      return ((type_def *(*)(c_block * block, c_value * value, expr *,size_t))macro->fcn)
+	(block,value,args, argcnt);
     default:
       ERROR("Number of macro arguments not supported: %i", argcnt);
     }

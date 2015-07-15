@@ -215,6 +215,7 @@ expr * walk_expr2(expr * body){
 typedef struct{
   expr exp;
   symbol fcn;
+  bool rest;
   symbol * args;
   size_t arg_cnt;
 }macro_store;
@@ -225,22 +226,55 @@ type_def * macro_store_type(){
 
 expr * expand_macro_store(macro_store * ms, expr * exprs, size_t cnt){
   if(ms->fcn.id != 0){
+
     var_def * v = get_variable(ms->fcn);
     type_def * t = v->type;
     ASSERT(t->type == FUNCTION);
     ASSERT(t->fcn.ret == opaque_expr());
-    ASSERT(t->fcn.cnt == (i32)cnt);
+    ASSERT(t->fcn.cnt == (i32)cnt || (ms->rest && t->fcn.cnt <= (i32)cnt));
+
     expr * (* d)(expr * e, ...) = v->data;
     expr * (* d0)() = v->data;
-    switch(cnt){
-    case 0:
-      return d0();
-    case 1:
-      return d(exprs);
-    case 2:
-      return d(exprs, exprs + 1);
-    default:
-      ERROR("Unsupported number of macro args");
+    if(ms->rest == false){
+      switch(cnt){
+      case 0:
+	return d0();
+      case 1:
+	return d(exprs);
+      case 2:
+	return d(exprs, exprs + 1);
+      case 3:
+	return d(exprs, exprs + 1, exprs + 2);
+      case 4:
+	return d(exprs, exprs + 1, exprs + 2, exprs + 3);
+      default:
+	ERROR("Unsupported number of macro args");
+      }
+    }else{
+      
+      expr last_exprs[cnt - t->fcn.cnt + 1];
+      size_t extra_args = cnt - t->fcn.cnt + 1;
+      size_t offset = t->fcn.cnt - 1;
+      for(size_t i = 0; i < extra_args; i++){
+	last_exprs[i] = exprs[i + offset];
+      }
+      expr last_sub_expr;
+      last_sub_expr.type = EXPR;
+      last_sub_expr.sub_expr.exprs = last_exprs;
+      last_sub_expr.sub_expr.cnt = array_count(last_exprs);
+      
+      switch(t->fcn.cnt){
+      case 1:
+	return d(&last_sub_expr);
+      case 2:
+	return d(exprs, &last_sub_expr);
+      case 3:
+	return d(exprs, exprs + 1,&last_sub_expr);
+      case 4:
+	return d(exprs, exprs + 1, exprs + 2,&last_sub_expr);
+      default:
+	ERROR("Unsupported number of macro args");
+      }
     }
   }
 
@@ -499,8 +533,11 @@ type_def * defcmacro_macro(c_block * block, c_value * val, expr e_name, expr arg
   return compile_value(val, string_expr(symbol_name(name)).value);
 }
 
-type_def * defmacro_macro(c_block * block, c_value * val, expr macro_name, expr function_name){
+type_def * declare_macro_macro(c_block * block, c_value * val, expr * exprs, size_t cnt){
   UNUSED(block);UNUSED(val);
+  ASSERT(cnt == 2 || cnt == 3);
+  expr macro_name = exprs[0];
+  expr function_name = exprs[1];
   ASSERT(is_symbol(macro_name));
   ASSERT(is_symbol(function_name));
   
@@ -508,7 +545,8 @@ type_def * defmacro_macro(c_block * block, c_value * val, expr macro_name, expr 
   macro->fcn = expr_symbol(function_name);
   macro->args = NULL;
   macro->arg_cnt = 0;
-  
+  macro->rest = cnt == 3;
+  compiler_define_variable_ptr(expr_symbol(macro_name), macro_store_type() , macro);
   return compile_value(val, string_expr(read_symbol(macro_name)).value);
 }
 
@@ -857,6 +895,15 @@ expr * number2expr(i64 num){
   e.value.strln = strlen(str);
   return clone(&e, sizeof(e));
 }
+#include <stdlib.h>
+i64 expr2number(expr * e){
+  ASSERT(e->type == VALUE && e->value.type == NUMBER);
+  char buf[e->value.strln + 1];
+  buf[e->value.strln] = 0;
+  memcpy(buf, e->value.value, e->value.strln);
+  char * endptr = NULL;
+  return strtoll(buf, &endptr, 10);
+}
 
 type_def * boolean_operator(char * operator, c_block * blk, c_value * val, expr left, expr right){
   c_value left_value, right_value;
@@ -957,7 +1004,7 @@ void builtin_macros_load(){
   define_macro("quote", 1, quote_macro);
   define_macro("setf", 2, setf_macro);
   define_macro("defcmacro", 3, defcmacro_macro);
-  define_macro("defmacro", 2, defmacro_macro);
+  define_macro("declare-macro", -1, declare_macro_macro);
   define_macro("expand",-1,expand_macro);
   define_macro("expr", 1, expr_macro);
   define_macro("eq", 2, eq_macro);
@@ -973,8 +1020,10 @@ void builtin_macros_load(){
   opaque_expr();
   defun("walk-expr",str2type("(fcn (ptr expr) (a (ptr expr)))"), walk_expr2);
   defun("number2expr",str2type("(fcn (ptr expr) (a i64))"), number2expr);
+  defun("expr2number",str2type("(fcn i64 (a (ptr expr)))"), expr2number);
   defun("expr2symbol", str2type("(fcn (ptr symbol) (a (ptr expr)))"), expr2symbol);
   defun("symbol2expr", str2type("(fcn (ptr expr) (a (ptr symbol)))"), symbol2expr);
+  
   defun("is-sub-expr", str2type("(fcn bool (expr (ptr expr)))"), is_sub_expr);
   defun("sub-expr.cnt", str2type("(fcn u64 (expr (ptr expr)))"), get_sub_expr_cnt);
   defun("sub-expr.expr", str2type("(fcn (ptr expr) (expr (ptr expr)) (idx u64))"), get_sub_expr);

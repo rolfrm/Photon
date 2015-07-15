@@ -76,10 +76,6 @@
 		)))))
       (setf i (i64+ i 1)))
     out))
-    ;(if (eq (cast null (ptr symbol)) out)
-	;(member ol default)
-;	out)))
-
 (defun expand-macro2 ((ptr expr) (sym (ptr symbol)) (expr2 (ptr expr)))
   (let ((v (cast (get-var sym) (ptr macro_store))))
     (let ((r (expand-macro v expr2)))
@@ -90,8 +86,6 @@
 	(cnt (member ol macro-cnt))
 	(macs (member ol macros))
 	(arg-cnt (sub-expr.cnt exprs)))
-
-					;(printstr "EXPANDING MACRO\n")
     (while (and (eq out (cast null (ptr expr)))
 		(not (eq (cast i u64) cnt)))
       (let ((macro (deref (ptr+ macs i))))
@@ -101,7 +95,6 @@
       (setf i (i64+ i 1)))
     out))
     
-
 (defun get-overloaded-expr ((ptr expr) (ol-info overload) (d (ptr expr)))
   (let ((call-type (cast (alloc (u64* (sub-expr.cnt d) (size-of (type (ptr type_def)))))
 			 (ptr (ptr type_def))))
