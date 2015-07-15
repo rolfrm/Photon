@@ -24,7 +24,7 @@ bool is_whitespace(char c){
 }
 
 bool is_endexpr(char c){
-  return c == ')' || is_whitespace(c) || c == 0 || c ==';';
+  return c == ')' || c == '(' || is_whitespace(c) || c == 0 || c ==';';
 }
 
 bool is_keyword_char(char c){

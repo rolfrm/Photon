@@ -80,6 +80,9 @@
 (defun print-symbol (void (x (ptr symbol)))
   (printstr (symbol-name x)))
 
+(defun print-hex(void (x i64))
+  (std:print-i64 "%x" x))
+
 (defun write-line (void (str (ptr char)))
   (progn (printstr str)
 	 (printstr "\n")))

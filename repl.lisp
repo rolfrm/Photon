@@ -12,7 +12,7 @@ t
 	(expr 
 	 (progn
 	   (printstr "ptr: ")
-	   (printi64 (cast (unexpr expr2) i64))
+	   (print-hex (cast (unexpr expr2) i64))
 	   (printstr "\n")))
 	  (cast null (ptr expr)))))
 (overload print print-ptr)
