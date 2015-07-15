@@ -398,7 +398,6 @@ void recurse_expr(expr * ex, c_block * block, int id, int * cnt){
 }
 
 type_def * expr_macro(c_block * block, c_value * val, expr body){
-  UNUSED(block);
   static int _id = 0;
   _id++;
   int id = _id; 
@@ -447,6 +446,11 @@ type_def * expr_macro(c_block * block, c_value * val, expr body){
   return exprtd;
 }
 
+type_def * unexpr_macro(c_block * block, c_value * val, expr body){
+  UNUSED(block);UNUSED(val);UNUSED(body);
+  loge("Calls to unexpr must be nested inside an expr body\n");
+  return &error_def;
+}
 
 	 
 type_def * defcmacro_macro(c_block * block, c_value * val, expr e_name, expr args, expr body){
@@ -928,7 +932,7 @@ void builtin_macros_load(){
   define_macro("and",2,and_macro);
   define_macro("or",2,or_macro);
   define_macro("member", 2, member_macro);
-
+  define_macro("unexpr", 1, unexpr_macro);
   opaque_expr();
   defun("walk-expr",str2type("(fcn (ptr expr) (a (ptr expr)))"), walk_expr2);
   defun("number2expr",str2type("(fcn (ptr expr) (a i64))"), number2expr);
