@@ -15,37 +15,14 @@ t
 	 (printstr "\n"))
        )      
       (cast null (ptr expr))))
-
-
 (declare-macro print-ptr _print-ptr)
 
-(defun *test-macro ((ptr expr) (take (ptr expr)) (exprs (ptr expr)))
-  (progn
-    (printstr "Test macro!\n")
-    (sub-expr.expr exprs (cast (expr2number take) u64))))
-
-(declare-macro test-macro *test-macro :rest)
-
-(test-macro 1 2 3 4)
-
-;; (defcmacro print-ptr (expr2)
-;;   (progn
-;;     (if (is-ptr-type? (type-of expr2))
-;; 	;(expr 
-;; 	 (progn
-;; 	   (printstr "ptr: ")
-;; 	   (print-hex (cast 0 i64))
-;; 	   (printstr "\n"))
-;; 	 ;)
-;; 	 (noop))))
-;; 	  ;(cast null (ptr expr)))))
 (overload print print-ptr)
 (print (cast 131324210 (ptr i64)))
 
 (defvar a :type i32)
 (defvar tid :type i32)
 (setf a 0)
-;;(go-init (addrof a))
 
 (defun test-ptr (void)
   (progn
@@ -62,7 +39,41 @@ t
     (launch test-ptr)
     (launch test-ptr)))
 
-(print "..\n")
-(print "..\n")
-(print "..\n")
 (set-printer (quote printnl))
+
+
+(defun *test-macro ((ptr expr) (take (ptr expr)) (exprs (ptr expr)))
+    (sub-expr.expr exprs (cast (expr2number take) u64)))
+
+(declare-macro test-macro *test-macro :rest)
+
+(test-macro 1 2 3 4)
+
+(defun *defmacro ((ptr expr) (name (ptr expr)) (args (ptr expr)) (body (ptr expr)))
+  (let ((defun-name (symbol2expr (symbol-combine (quote **) (expr2symbol name))))
+	(arg-cnt (sub-expr.cnt args))
+	(exprtype (expr (ptr expr))))
+    (let ((convargs (cast (alloc (* (size-of (type (ptr expr))) (+ 1 arg-cnt))) (ptr (ptr expr))))
+	  (it 0))
+      (setf (deref convargs) exprtype)
+      (while (not (eq it (cast arg-cnt i64)))
+	(setf (deref (ptr+ convargs (+ 1 it)))
+	      (let ((sub-args (cast (alloc (* (size-of (type (ptr expr))) 2)) (ptr (ptr expr)))))
+		(setf (deref sub-args) (sub-expr.expr args (cast it u64)))
+		(setf (deref (ptr+ sub-args 1)) exprtype)
+		(make-sub-expr sub-args 2)))
+	(incr it 1))
+      (let (( r
+	     (expr
+	      (progn
+		(defun (unexpr defun-name) (unexpr (make-sub-expr convargs (+ 1 arg-cnt ))) (unexpr body))
+		(declare-macro (unexpr name) (unexpr defun-name))))))
+	r))))
+
+(declare-macro defmacro *defmacro)
+
+(defmacro asd (a b c)
+  a)
+
+(asd 5 4 5)
+(exit 0)
