@@ -9,6 +9,14 @@
 #include "builtin_macros.h"
 #include "expr_utils.h"
 
+type_def * opaque_expr(){
+  static type_def * exprtd = NULL;
+  if(exprtd == NULL){
+    exprtd = str2type("(ptr (alias (opaque-struct _expr) expr))");
+  }
+  return exprtd;
+}
+
 type_def * no_op(c_block * block, c_value * val){
   UNUSED(block);
   val->type = C_NOTHING;
@@ -181,13 +189,7 @@ type_def * progn_macro(c_block * block, c_value * val, expr * expressions, size_
   return &void_def;
 }
 
-type_def * opaque_expr(){
-  static type_def * exprtd = NULL;
-  if(exprtd == NULL){
-    exprtd = str2type("(ptr (alias (opaque-struct _expr) expr))");
-  }
-  return exprtd;
-}
+
 	  
 expr walk_expr(expr body){
   if(body.type == VALUE)
@@ -212,6 +214,7 @@ expr * walk_expr2(expr * body){
 
 typedef struct{
   expr exp;
+  symbol fcn;
   symbol * args;
   size_t arg_cnt;
 }macro_store;
@@ -221,6 +224,26 @@ type_def * macro_store_type(){
 }
 
 expr * expand_macro_store(macro_store * ms, expr * exprs, size_t cnt){
+  if(ms->fcn.id != 0){
+    var_def * v = get_variable(ms->fcn);
+    type_def * t = v->type;
+    ASSERT(t->type == FUNCTION);
+    ASSERT(t->fcn.ret == opaque_expr());
+    ASSERT(t->fcn.cnt == (i32)cnt);
+    expr * (* d)(expr * e, ...) = v->data;
+    expr * (* d0)() = v->data;
+    switch(cnt){
+    case 0:
+      return d0();
+    case 1:
+      return d(exprs);
+    case 2:
+      return d(exprs, exprs + 1);
+    default:
+      ERROR("Unsupported number of macro args");
+    }
+  }
+
   symbol rest = get_symbol("&rest");
   type_def * exprtd = opaque_expr();
   size_t min_args = 0;
@@ -474,6 +497,19 @@ type_def * defcmacro_macro(c_block * block, c_value * val, expr e_name, expr arg
   macro->arg_cnt = argcnt;
   compiler_define_variable_ptr(name, macro_store_type() , macro);
   return compile_value(val, string_expr(symbol_name(name)).value);
+}
+
+type_def * defmacro_macro(c_block * block, c_value * val, expr macro_name, expr function_name){
+  UNUSED(block);UNUSED(val);
+  ASSERT(is_symbol(macro_name));
+  ASSERT(is_symbol(function_name));
+  
+  macro_store * macro = alloc0(sizeof(macro_store));
+  macro->fcn = expr_symbol(function_name);
+  macro->args = NULL;
+  macro->arg_cnt = 0;
+  
+  return compile_value(val, string_expr(read_symbol(macro_name)).value);
 }
 
 type_def * cast_macro(c_block * block, c_value * value, expr body, expr type){
@@ -921,6 +957,7 @@ void builtin_macros_load(){
   define_macro("quote", 1, quote_macro);
   define_macro("setf", 2, setf_macro);
   define_macro("defcmacro", 3, defcmacro_macro);
+  define_macro("defmacro", 2, defmacro_macro);
   define_macro("expand",-1,expand_macro);
   define_macro("expr", 1, expr_macro);
   define_macro("eq", 2, eq_macro);

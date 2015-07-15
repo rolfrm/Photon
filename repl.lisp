@@ -6,17 +6,30 @@ t
 (defvar b (vec 1 2 3 1))
 (dot t b)
 
-(defcmacro print-ptr (expr2)
-  (progn
-    (if (is-ptr-type? (type-of expr2))
-	(expr 
-	 (progn
-	   (printstr "ptr: ")
-	   (print-hex (cast (unexpr expr2) i64))
-	   (printstr "\n")))
-	  (cast null (ptr expr)))))
-(overload print print-ptr)
-(print (cast 10 (ptr i64)))
+(defun _print-ptr ((ptr expr) (expr2 (ptr expr)))
+  (if (is-ptr-type? (type-of expr2))
+      (expr 
+       (progn
+	 (printstr "ptr: ")
+	 (print-hex (cast 0 i64))
+	 (printstr "\n"))
+       )      
+      (cast null (ptr expr))))
+(defmacro print-ptr _print-ptr)
+
+;; (defcmacro print-ptr (expr2)
+;;   (progn
+;;     (if (is-ptr-type? (type-of expr2))
+;; 	;(expr 
+;; 	 (progn
+;; 	   (printstr "ptr: ")
+;; 	   (print-hex (cast 0 i64))
+;; 	   (printstr "\n"))
+;; 	 ;)
+;; 	 (noop))))
+;; 	  ;(cast null (ptr expr)))))
+;; (overload print print-ptr)
+;; (print (cast 10 (ptr i64)))
 (exit 0)
 (defvar a :type i32)
 (defvar tid :type i32)
@@ -26,7 +39,7 @@ t
 (defun test-ptr (void)
   (progn
     (print "hello!\n")
-    (usleep 100000)
+    (usleep 1000000)
     (print "thread!\n")
     null))
 
