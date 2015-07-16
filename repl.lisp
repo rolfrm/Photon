@@ -76,4 +76,4 @@ t
   a)
 
 (asd 5 4 5)
-(exit 0)
+;(exit 0)

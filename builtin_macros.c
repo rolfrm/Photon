@@ -226,15 +226,21 @@ type_def * macro_store_type(){
 
 expr * expand_macro_store(macro_store * ms, expr * exprs, size_t cnt){
   if(ms->fcn.id != 0){
-
+    logd("Expanding %s\n", symbol_name(ms->fcn));
     var_def * v = get_variable(ms->fcn);
     type_def * t = v->type;
     ASSERT(t->type == FUNCTION);
     ASSERT(t->fcn.ret == opaque_expr());
     ASSERT(t->fcn.cnt == (i32)cnt || (ms->rest && t->fcn.cnt <= (i32)cnt));
-
+    logd("%p %i\n", v->data, cnt);
+    for(size_t i = 0 ; i< cnt; i++){
+      logd("----\n");
+      print_expr(exprs + i);
+      logd("\n\n");
+    }
     expr * (* d)(expr * e, ...) = v->data;
     expr * (* d0)() = v->data;
+    expr * (* d3)(expr *, expr *, expr *) = v->data;
     if(ms->rest == false){
       switch(cnt){
       case 0:
@@ -244,9 +250,18 @@ expr * expand_macro_store(macro_store * ms, expr * exprs, size_t cnt){
       case 2:
 	return d(exprs, exprs + 1);
       case 3:
-	return d(exprs, exprs + 1, exprs + 2);
+	logd("Gets here..\n");
+	return  d3(exprs, exprs + 1, exprs + 2);
       case 4:
 	return d(exprs, exprs + 1, exprs + 2, exprs + 3);
+      case 5:
+	return d(exprs, exprs + 1, exprs + 2, exprs + 3, exprs + 4);
+      case 6:
+	return d(exprs, exprs + 1, exprs + 2, exprs + 3, exprs + 4, exprs + 5);
+      case 7:
+	return d(exprs, exprs + 1, exprs + 2, exprs + 3, exprs + 4, exprs + 5, exprs + 6);
+      case 8:
+	return d(exprs, exprs + 1, exprs + 2, exprs + 3, exprs + 4, exprs + 5, exprs + 6, exprs + 7);
       default:
 	ERROR("Unsupported number of macro args");
       }
@@ -269,9 +284,17 @@ expr * expand_macro_store(macro_store * ms, expr * exprs, size_t cnt){
       case 2:
 	return d(exprs, &last_sub_expr);
       case 3:
-	return d(exprs, exprs + 1,&last_sub_expr);
+	return d(exprs, exprs + 1, &last_sub_expr);
       case 4:
-	return d(exprs, exprs + 1, exprs + 2,&last_sub_expr);
+	return d(exprs, exprs + 1, exprs + 2, &last_sub_expr);
+      case 5:
+	return d(exprs, exprs + 1, exprs + 2, exprs + 3, &last_sub_expr);
+      case 6:
+	return d(exprs, exprs + 1, exprs + 2, exprs + 3, exprs + 4, &last_sub_expr);
+      case 7:
+	return d(exprs, exprs + 1, exprs + 2, exprs + 3, exprs + 4, exprs + 5, &last_sub_expr);
+      case 8:
+	return d(exprs, exprs + 1, exprs + 2, exprs + 3, exprs + 4, exprs + 5, exprs + 6, &last_sub_expr);
       default:
 	ERROR("Unsupported number of macro args");
       }
@@ -353,7 +376,9 @@ type_def * expand_macro(c_block * block, c_value * val, expr * exprs, size_t cnt
   var_def * fcn_var = get_variable(name);
   COMPILE_ASSERT(fcn_var != NULL);
   COMPILE_ASSERT(fcn_var->type == exprtd);
-
+  logd("-- : %i\n",cnt);
+  print_expr(exprs);
+  logd("\n");
   expr * outexpr = expand_macro_store(fcn_var->data, exprs + 1, cnt - 1);
   if(outexpr == NULL)
     return &error_def;
@@ -614,8 +639,9 @@ type_def * defun_macro(c_block * block, c_value * value, expr name, expr args, e
   f->args = arg_names;
   for(size_t i = 0; i < args.sub_expr.cnt - 1; i++){
     expr arg = args.sub_expr.exprs[i + 1];
-    COMPILE_ASSERT(arg.type == EXPR);
-    COMPILE_ASSERT(arg.sub_expr.cnt == 2);
+    if(arg.type != EXPR || arg.sub_expr.cnt != 2){
+      COMPILE_ERROR("Arguments must be of the format (name type). This is the case for %i.", i);
+    }
     expr namexpr = arg.sub_expr.exprs[0];
     expr typexpr = arg.sub_expr.exprs[1];
     COMPILE_ASSERT(is_symbol(namexpr));
