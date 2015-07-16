@@ -96,37 +96,30 @@
 			   _body)))))
 
 (defun *defmacro ((ptr expr) (name (ptr expr)) (args (ptr expr)) (body (ptr expr)))
-  (progn
-    (printf "??\n" 1)
-    (let ((defun-name (symbol2expr (symbol-combine (quote **) (expr2symbol name))))
-	  (arg-cnt (sub-expr.cnt args))
-	  (exprtype (expr (ptr expr))))
-
-      (let ((convargs (cast (alloc (u64* (size-of (type (ptr expr))) (u64+ 1 arg-cnt))) (ptr (ptr expr))))
-	    (it 0))
-	(setf (deref convargs) exprtype)
-	(while (not (eq it (cast arg-cnt i64)))
-	  (setf (deref (ptr+ convargs (i64+ 1 it)))
-		(let ((sub-args (cast (alloc (u64* (size-of (type (ptr expr))) 2)) (ptr (ptr expr)))))
-		  (setf (deref sub-args) (sub-expr.expr args (cast it u64)))
-		  (setf (deref (ptr+ sub-args 1)) exprtype)
-		  (make-sub-expr sub-args 2)))
-	  (setf it (i64+ 1 it)))
-	(let (( r
-	       (expr
-		(progn
-		  (defun (unexpr defun-name) 
-		      (unexpr (make-sub-expr convargs (i64+ 1 arg-cnt ))) (unexpr body))
-		  (declare-macro (unexpr name) (unexpr defun-name))))))
-	  r)))))
+  (let ((defun-name (symbol2expr (symbol-combine (quote **) (expr2symbol name))))
+	(arg-cnt (sub-expr.cnt args))
+	(exprtype (expr (ptr expr))))
+    
+    (let ((convargs (cast (alloc (u64* (size-of (type (ptr expr))) (u64+ 1 arg-cnt))) (ptr (ptr expr))))
+	  (it 0))
+      (setf (deref convargs) exprtype)
+      (while (not (eq it (cast arg-cnt i64)))
+	(setf (deref (ptr+ convargs (i64+ 1 it)))
+	      (let ((sub-args (cast (alloc (u64* (size-of (type (ptr expr))) 2)) (ptr (ptr expr)))))
+		(setf (deref sub-args) (sub-expr.expr args (cast it u64)))
+		(setf (deref (ptr+ sub-args 1)) exprtype)
+		(make-sub-expr sub-args 2)))
+	(setf it (i64+ 1 it)))
+      (let (( r
+	     (expr
+	      (progn
+		(defun (unexpr defun-name) 
+		    (unexpr (make-sub-expr convargs (u64+ 1 arg-cnt ))) (unexpr body))
+		(declare-macro (unexpr name) (unexpr defun-name))))))
+	r))))
 
 (declare-macro defmacro *defmacro)
 
-(defmacro asd (a b)
-  (progn a))
-;(asd 1 2)
-
-(exit 0 )
 (defvar libm (load-lib "libm.so"))
 (load-symbol libm (quote cos) (quote cos) (type (fcn f64 (x f64))))
 (load-symbol libm (quote cosf) (quote cosf) (type (fcn f32 (x f32))))
@@ -210,7 +203,6 @@
 				 (unexpr (number2expr (cast size i64))))))))
 	    
 	    out-expr)))
-(exit 0)
 
 (defvar asserts (cast null (ptr (ptr expr))))
 (defvar asserts-cnt (cast 0 u64))

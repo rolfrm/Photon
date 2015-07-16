@@ -49,29 +49,6 @@ t
 
 (test-macro 1 2 3 4)
 
-(defun *defmacro ((ptr expr) (name (ptr expr)) (args (ptr expr)) (body (ptr expr)))
-  (let ((defun-name (symbol2expr (symbol-combine (quote **) (expr2symbol name))))
-	(arg-cnt (sub-expr.cnt args))
-	(exprtype (expr (ptr expr))))
-    (let ((convargs (cast (alloc (* (size-of (type (ptr expr))) (+ 1 arg-cnt))) (ptr (ptr expr))))
-	  (it 0))
-      (setf (deref convargs) exprtype)
-      (while (not (eq it (cast arg-cnt i64)))
-	(setf (deref (ptr+ convargs (+ 1 it)))
-	      (let ((sub-args (cast (alloc (* (size-of (type (ptr expr))) 2)) (ptr (ptr expr)))))
-		(setf (deref sub-args) (sub-expr.expr args (cast it u64)))
-		(setf (deref (ptr+ sub-args 1)) exprtype)
-		(make-sub-expr sub-args 2)))
-	(incr it 1))
-      (let (( r
-	     (expr
-	      (progn
-		(defun (unexpr defun-name) (unexpr (make-sub-expr convargs (+ 1 arg-cnt ))) (unexpr body))
-		(declare-macro (unexpr name) (unexpr defun-name))))))
-	r))))
-
-(declare-macro defmacro *defmacro)
-
 (defmacro asd (a b c)
   a)
 
