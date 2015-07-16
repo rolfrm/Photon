@@ -74,10 +74,12 @@ bool start_read_eval_print_loop(){
       ERROR("Invalid paren matching");
       goto reset;
     }
-    add_history(code);
-    size_t exprcnt;
-    expr * exprs = lisp_parse_all(code, &exprcnt);
-    lisp_run_exprs( exprs, exprcnt);
+    if(!all_whitespace(code)){
+      add_history(code);
+      size_t exprcnt;
+      expr * exprs = lisp_parse_all(code, &exprcnt);
+      lisp_run_exprs( exprs, exprcnt);
+    }
     
   reset:
     dealloc(code);
