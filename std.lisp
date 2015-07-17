@@ -130,7 +130,10 @@
 	      (progn
 		(defun (unexpr defun-name) 
 		    (unexpr (make-sub-expr convargs (u64+ (cast (if use-rest 0 1) u64) arg-cnt ))) (unexpr body))
-		(declare-macro (unexpr name) (unexpr defun-name))))))
+		(unexpr
+		 (if use-rest
+		     (expr (declare-macro (unexpr name) (unexpr defun-name) :rest))
+		     (expr (declare-macro (unexpr name) (unexpr defun-name)))))))))
 	r))))
 
 (declare-macro defmacro *defmacro)

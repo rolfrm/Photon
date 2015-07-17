@@ -136,10 +136,8 @@
     (expr 
      (progn
        (defvar (unexpr s) prototype)
-       (defcmacro (unexpr fcn-name) (&rest d)
-	 (get-overloaded-expr (unexpr s)  d)
-	 )       
-       
+       (defmacro (unexpr fcn-name) (&rest d)
+	 (get-overloaded-expr (unexpr s)  d))       
        (noop)
        ))))
 
