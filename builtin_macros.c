@@ -441,15 +441,19 @@ symbol get_recurse_sym(int id, int cnt){
   return get_symbol(name_buffer);
 }
 
-void recurse_expr(expr * ex, c_block * block, int id, int * cnt){
+bool recurse_expr(expr * ex, c_block * block, int id, int * cnt){
   if(ex->type == VALUE)
-    return;
+    return true;
   sub_expr exp = ex->sub_expr;
   if(exp.cnt > 0 && is_symbol(exp.exprs[0]) 
      && expr_symbol(exp.exprs[0]).id == get_symbol("unexpr").id){
     ASSERT(exp.cnt == 2);
     c_value cval;
     type_def * t =_compile_expr(block, &cval, exp.exprs[1]);
+    if(t == &error_def){
+      return false;
+    }
+    
     c_var var;
     var.var.name = get_recurse_sym(id,(*cnt)++);
     var.var.type = t;
@@ -458,12 +462,16 @@ void recurse_expr(expr * ex, c_block * block, int id, int * cnt){
     exp.type = C_VAR;
     exp.var = var;
     block_add(block, exp);
+    return true;
   }else if(exp.cnt > 0 && is_symbol(exp.exprs[0]) 
 	   && expr_symbol(exp.exprs[0]).id == get_symbol("expr").id){
-    
+    return true;
   }else{
+    bool ok = true;
     for(size_t i = 0; i < exp.cnt; i++)
-      recurse_expr(exp.exprs + i, block, id, cnt);    
+      ok &= recurse_expr(exp.exprs + i, block, id, cnt);
+    return ok;
+	
   }
 }
 
@@ -480,7 +488,10 @@ type_def * expr_macro(c_block * block, c_value * val, expr body){
   expr * ex = clone(&body, sizeof(expr));
 
   int cnt = 0;
-  recurse_expr(ex, block, id, &cnt);
+  bool ok = recurse_expr(ex, block, id, &cnt);
+  if(!ok){
+    COMPILE_ERROR("Error during compiling unexpr");
+  }
   expr ** exx = alloc0(sizeof(expr *));
   *exx = ex;
   compiler_define_variable_ptr(tmp, exprtd, exx);
@@ -571,9 +582,7 @@ type_def * cast_macro(c_block * block, c_value * value, expr body, expr type){
     return td;
   }
   type_def * cast_to = _type_macro(type);
-  if(cast_to == &error_def){
-    ERROR("WTF!\n");
-  }
+  COMPILE_ASSERT(cast_to != &error_def);
   value->type = C_CAST;
   value->cast.value = v;
   value->cast.type = cast_to;
@@ -732,7 +741,7 @@ type_def * if_macro(c_block * block, c_value * val, expr cnd, expr then, expr _e
   cmpexpr.type = C_VALUE_UNENDED;
   type_def * cmp = _compile_expr(block, inner_value, cnd);
   COMPILE_ASSERT(cmp == &bool_def);
-
+  
   c_expr then_expr;
   then_expr.type = C_VALUE;
   c_block blk = c_block_empty;

@@ -62,19 +62,25 @@
 (overload vec makevec3)
 (overload vec makevec4)
 
+
+
 (defcmacro vec2op (operator)
   (let ((name (symbol2expr (symbol-combine (quote vec2) (expr2symbol operator)))))
-    (expr
-     (progn
-       (defun (unexpr name) (vec2 (a vec2) (b vec2))
-	 (let ((out vec2-default))
-	   (setf (member out x) 
-		 ((unexpr operator) (member a x) (member b x)))
-	   (setf (member out y)
-		 ((unexpr operator) (member a y) (member b y)))
-	   out))
-       (overload (unexpr operator) (unexpr name))))))
-(vec2op *)(vec2op +) (vec2op /) (vec2op -)
+    (let ((r (expr
+	     (progn
+	       (defun (unexpr name) (vec2 (a vec2) (b vec2))
+		 (let ((out vec2-default))
+		   (setf (member out x) 
+			 ((unexpr operator) (member a x) (member b x)))
+		   (setf (member out y)
+			 ((unexpr operator) (member a y) (member b y)))
+		   out))
+	       (overload (unexpr operator) (unexpr name))))))
+      (print-expr r)
+      (printstr "\n")
+      r)))
+(vec2op *)
+(vec2op +) (vec2op /) (vec2op -)
 
 (defun vec2scale (vec2 (a vec2) (b f64))
   (progn

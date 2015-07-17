@@ -1,3 +1,7 @@
+;; this file is a bit special because it builds up most of the standard library.
+;; without this the language is very basic and so, there are a lot of dependencies
+;; here.
+
 (defvar false (cast 0 bool))
 (defvar true (cast 1 bool))
 (defun not (bool (x bool)) (eq false x))
@@ -53,7 +57,6 @@
 	      (memcpy (ptr+ buffer (cast a-len i64)) (cast b (ptr void)) b-len)
 	      (cast buffer (ptr char))))))
 
-
 (defun symbol-combine ((ptr symbol) (a (ptr symbol)) (b (ptr symbol)))
   (var ((aname (symbol-name a)) (bname (symbol-name b)))
        (var ((combined (string-concat aname bname)))
@@ -61,7 +64,6 @@
 		 (progn
 		   (dealloc (cast combined (ptr void)))
 		   sym)))))
-
 
 (defun unfold-body ((ptr expr) (header (ptr expr)) (args (ptr expr)))
   (var ((sexprs (cast
@@ -74,7 +76,7 @@
 	   (progn
 	     (setf (deref (ptr+ sexprs (i64+ 1 (cast i i64)))) (sub-expr.expr args i))
 	     (setf i (u64+ i 1))))
-	 (make-sub-expr sexprs (cast (u64+ i 1) u64)))))
+	 (make-sub-expr sexprs (u64+ i 1)))))
 
 (defcmacro let (vars &rest args)
   (expr
@@ -98,23 +100,36 @@
 (defun *defmacro ((ptr expr) (name (ptr expr)) (args (ptr expr)) (body (ptr expr)))
   (let ((defun-name (symbol2expr (symbol-combine (quote **) (expr2symbol name))))
 	(arg-cnt (sub-expr.cnt args))
-	(exprtype (expr (ptr expr))))
+	(exprtype (expr (ptr expr)))
+	(use-rest false))
     
     (let ((convargs (cast (alloc (u64* (size-of (type (ptr expr))) (u64+ 1 arg-cnt))) (ptr (ptr expr))))
-	  (it 0))
+	  (it 0)
+	  (item 0))
       (setf (deref convargs) exprtype)
       (while (not (eq it (cast arg-cnt i64)))
-	(setf (deref (ptr+ convargs (i64+ 1 it)))
-	      (let ((sub-args (cast (alloc (u64* (size-of (type (ptr expr))) 2)) (ptr (ptr expr)))))
-		(setf (deref sub-args) (sub-expr.expr args (cast it u64)))
-		(setf (deref (ptr+ sub-args 1)) exprtype)
-		(make-sub-expr sub-args 2)))
-	(setf it (i64+ 1 it)))
-      (let (( r
+	(let ((arg (sub-expr.expr args (cast it u64))))
+	  (if (and 
+	       (not (is-sub-expr arg))
+	       (eq (expr2symbol (sub-expr.expr args (cast it u64))) (quote &rest)))
+	      (progn
+		(setf use-rest true)
+	        (setf item (i64- item 1))
+		(noop))
+	      (setf (deref (ptr+ convargs (i64+ 1 item)))
+		    (let ((sub-args (cast (alloc (u64* (size-of (type (ptr expr))) 2)) (ptr (ptr expr)))))
+		      (setf (deref sub-args) arg)
+		      (setf (deref (ptr+ sub-args 1)) exprtype)
+		      (make-sub-expr sub-args 2))))
+	  )
+	(setf it (i64+ 1 it))
+	(setf item (i64+ 1 item))
+	)
+      (let ((r
 	     (expr
 	      (progn
 		(defun (unexpr defun-name) 
-		    (unexpr (make-sub-expr convargs (u64+ 1 arg-cnt ))) (unexpr body))
+		    (unexpr (make-sub-expr convargs (u64+ (cast (if use-rest 0 1) u64) arg-cnt ))) (unexpr body))
 		(declare-macro (unexpr name) (unexpr defun-name))))))
 	r))))
 
@@ -208,7 +223,7 @@
 (defvar asserts-cnt (cast 0 u64))
 (defvar last-assert :type (ptr expr))
 
-(defcmacro assert (_expr)
+(defmacro assert (_expr)
   (var ((n (number2expr (cast asserts-cnt i64))))
        (progn
 	 (add-to-list+ asserts asserts-cnt _expr)
