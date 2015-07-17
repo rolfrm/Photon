@@ -68,13 +68,13 @@
      (print-expr (expr (write_line (unexpr a)))))
 (write_line "done")
 
-(defcmacro one_expr (expr1) expr1)
+(defmacro one_expr (expr1) expr1)
 (expand one_expr (write_line "??"))
-(defcmacro two-expr (expr1 expr2)
+(defmacro two-expr (expr1 expr2)
   expr1)
 (expr 1)
 (expr (write_line "???"))
-(defcmacro no-expr ()
+(defmacro no-expr ()
    (expr (progn (write_line "???") (write_line "!!!")))) 
 (expand no-expr)
 (expand no-expr)
@@ -83,7 +83,7 @@
 
 ;; a macro is really just a function that takes exprs and compiles them to code.
 ;; unexpr is evaluated at 
-(defcmacro fun-expr (expr1 expr2)
+(defmacro fun-expr (expr1 expr2)
   (expr (progn
 	  (write_line (unexpr expr1))
 	  (unexpr expr2))))
@@ -132,7 +132,7 @@
 (deref (ptr+ add-test 1))
 (deref (ptr+ add-test 2))
 add-test-cnt
-(defcmacro show-type (exp)
+(defmacro show-type (exp)
   (progn
     (print-type (type-of exp))
     (expr (write_line "..."))))
@@ -148,7 +148,7 @@ add-test-cnt
 (write_line "asd")
 (printf "test: %i\n" (cast add-test-cnt i64))
 
-(defcmacro comment (_expr)
+(defmacro comment (_expr)
   (expr (write_line "lol..")))
 
 (write_line "the following works if libglfw is installed")

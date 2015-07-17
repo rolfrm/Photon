@@ -64,7 +64,7 @@
 
 
 
-(defcmacro vec2op (operator)
+(defmacro vec2op (operator)
   (let ((name (symbol2expr (symbol-combine (quote vec2) (expr2symbol operator)))))
     (let ((r (expr
 	     (progn
@@ -146,7 +146,7 @@
 (setf (member mat4-eye m22) 1)
 (setf (member mat4-eye m33) 1)
 
-(defcmacro matop (op)
+(defmacro matop (op)
   (let ((fcn-name (symbol2expr (symbol-combine (quote mat4) (expr2symbol op) ))))
     (expr 
      (progn
@@ -167,7 +167,7 @@
 (matop /)
 (matop -)
 
-(defcmacro vref (item)
+(defmacro vref (item)
   (expr (cast (addrof (unexpr item)) (ptr f64))))
 
 (defun mat4-scale (mat4 (mat mat4) (scalar f64))

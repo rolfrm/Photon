@@ -2,11 +2,11 @@
 (load "std.lisp")
 (load "overload.lisp")
 
-(defcmacro incr (var amount)
+(defmacro incr (var amount)
   (expr
    (setf (unexpr var) (+ (unexpr var) (unexpr amount)))))
 
-(defcmacro range (var from to &rest body)
+(defmacro range (var from to &rest body)
   (expr
    (let (((unexpr var) (unexpr from)))
      (while (not (eq (unexpr var) (unexpr to)))

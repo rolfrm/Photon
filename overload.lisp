@@ -227,7 +227,7 @@
       (printstr "false")))
 (overload print print-bool)
 
-(defcmacro print-default (body)
+(defmacro print-default (body)
   (expr
    (progn
      (unexpr body)
@@ -235,13 +235,13 @@
     
 (overload-default print print-default)
 
-(defcmacro printnl (body)
+(defmacro printnl (body)
   (expr
    (progn
      (print (unexpr body))
      (printstr "\n"))))
 
-(defcmacro no-print (body)
+(defmacro no-print (body)
   (expr
    (progn 
      (unexpr body)

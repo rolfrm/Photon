@@ -1,7 +1,7 @@
 (defvar libglfw (load-lib "libglfw.so"))
 
 
-(defcmacro glfw:load-sym (lisp-name c-name type)
+(defmacro glfw:load-sym (lisp-name c-name type)
   (expr (load-symbol libglfw (quote (unexpr lisp-name)) (quote (unexpr c-name)) (type (unexpr type)))))
 
 (glfw:load-sym glfw:init glfwInit (fcn void))

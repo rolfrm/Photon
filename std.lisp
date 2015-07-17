@@ -38,7 +38,7 @@
 	 (memset buffer 0 size)
 	 buffer)))
 
-(defcmacro ptr+ (ptr offset)
+(defun *ptr+ ((ptr expr) (ptr (ptr expr)) (offset (ptr expr)))
   (var ((size_expr (number2expr (cast (size-of (ptr-inner (type-of ptr))) i64))))
        (progn
 	 (expr
@@ -47,6 +47,7 @@
 	    (cast (unexpr ptr) i64)
 	    (i64* (unexpr offset) (unexpr size_expr)))
 	   (unexpr (type2expr (type-of ptr))))))))
+(declare-macro ptr+ *ptr+)
 
 (defun string-concat ((ptr char) (a (ptr char)) (b (ptr char)))
   (var ((a-len (cast (strlen a) u64))
@@ -78,24 +79,29 @@
 	     (setf i (u64+ i 1))))
 	 (make-sub-expr sexprs (u64+ i 1)))))
 
-(defcmacro let (vars &rest args)
+(defun *let ((ptr expr) (vars (ptr expr)) (args (ptr expr)))
   (expr
    (var (unexpr vars)
 	(unexpr (unfold-body (expr progn) args)))))
 
-(defcmacro for (_var _varval _expr _incr &rest _body)
+(declare-macro let *let :rest)
+
+(defun *for ((ptr expr) (_var (ptr expr)) (_varval (ptr expr)) (_expr (ptr expr)) (_incr (ptr expr)) ( _body (ptr expr)))
   (expr 
    (var (((unexpr _var) (unexpr _varval)))
 	(loop-while (unexpr _expr)
 	  (progn
 	    (unexpr (unfold-body (expr progn) _body))
 	    (setf (unexpr _var) (unexpr _incr)))))))
+(declare-macro for *for :rest)
 
-(defcmacro while (_expr &rest _body)
+(defun *while ((ptr expr) (_expr (ptr expr)) (_body (ptr expr)))
   (expr
    (loop-while (unexpr _expr)
       (unexpr (unfold-body (expr progn)
 			   _body)))))
+
+(declare-macro while *while :rest)
 
 (defun *defmacro ((ptr expr) (name (ptr expr)) (args (ptr expr)) (body (ptr expr)))
   (let ((defun-name (symbol2expr (symbol-combine (quote **) (expr2symbol name))))
@@ -248,7 +254,7 @@
 
 (symbol-combine (quote a) (quote b))
 
-(defcmacro vararg-test (a b &rest c)
+(defmacro vararg-test (a b &rest c)
   (sub-expr.expr c 1))
 
 (vararg-test 1 2 3 4 5)
@@ -267,7 +273,7 @@
      (printi64 it)
      (printstr "\n"))
 
-(defcmacro when (test &rest body)
+(defmacro when (test &rest body)
   (expr
    (if (unexpr test)
        (progn
@@ -275,7 +281,7 @@
 			      body))
 	 (noop))
        (noop))))
-(defcmacro unless (test &rest body)
+(defmacro unless (test &rest body)
   (expr 
    (if (unexpr test)
        (noop)

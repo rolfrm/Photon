@@ -1,5 +1,5 @@
 (defvar libgl (load-lib "libGL.so"))
-(defcmacro gl-load (name cname type)
+(defmacro gl-load (name cname type)
   (expr (load-symbol+ libgl (unexpr name) (unexpr cname) (unexpr type))))
 
 (gl-load gl:clear glClear  (fcn void (mask i32)))
@@ -68,7 +68,7 @@
 
 ;; defines
 ;;GL_SHADER_TYPE, GL_DELETE_STATUS, GL_COMPILE_STATUS, GL_INFO_LOG_LENGTH, GL_SHADER_SOURCE_LENGTH.
-(defcmacro glvar (name value)
+(defmacro glvar (name value)
   (expr (defvar (unexpr name) (cast (unexpr value) u32))))
 (defvar gl:shader-type (cast 0x8B4F u32))
 (defvar gl:delete-status (cast 0x8B80 u32))
