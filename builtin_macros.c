@@ -213,11 +213,8 @@ expr * walk_expr2(expr * body){
 }
 
 typedef struct{
-  expr exp;
   symbol fcn;
   bool rest;
-  symbol * args;
-  size_t arg_cnt;
 }macro_store;
 
 type_def * macro_store_type(){
@@ -225,131 +222,71 @@ type_def * macro_store_type(){
 }
 
 expr * expand_macro_store(macro_store * ms, expr * exprs, size_t cnt){
-  if(ms->fcn.id != 0){
-    var_def * v = get_variable(ms->fcn);
-    type_def * t = v->type;
-    ASSERT(t->type == FUNCTION);
-    ASSERT(t->fcn.ret == opaque_expr());
-    ASSERT(t->fcn.cnt == (i32)cnt || (ms->rest && t->fcn.cnt <= (i32)cnt));
-    expr * (* d)(expr * e, ...) = v->data;
-    expr * (* d0)() = v->data;
-    if(ms->rest == false){
-      switch(cnt){
-      case 0:
-	return d0();
-      case 1:
-	return d(exprs);
-      case 2:
-	return d(exprs, exprs + 1);
-      case 3:
-	return d(exprs, exprs + 1, exprs + 2);
-      case 4:
-	return d(exprs, exprs + 1, exprs + 2, exprs + 3);
-      case 5:
-	return d(exprs, exprs + 1, exprs + 2, exprs + 3, exprs + 4);
-      case 6:
-	return d(exprs, exprs + 1, exprs + 2, exprs + 3, exprs + 4, exprs + 5);
-      case 7:
-	return d(exprs, exprs + 1, exprs + 2, exprs + 3, exprs + 4, exprs + 5, exprs + 6);
-      case 8:
-	return d(exprs, exprs + 1, exprs + 2, exprs + 3, exprs + 4, exprs + 5, exprs + 6, exprs + 7);
-      default:
-	ERROR("Unsupported number of macro args");
-      }
-    }else{
-      
-      expr last_exprs[cnt - t->fcn.cnt + 1];
-      size_t extra_args = cnt - t->fcn.cnt + 1;
-      size_t offset = t->fcn.cnt - 1;
-      for(size_t i = 0; i < extra_args; i++){
-	last_exprs[i] = exprs[i + offset];
-      }
-      expr last_sub_expr;
-      last_sub_expr.type = EXPR;
-      last_sub_expr.sub_expr.exprs = last_exprs;
-      last_sub_expr.sub_expr.cnt = array_count(last_exprs);
-      
-      switch(t->fcn.cnt){
-      case 1:
-	return d(&last_sub_expr);
-      case 2:
-	return d(exprs, &last_sub_expr);
-      case 3:
-	return d(exprs, exprs + 1, &last_sub_expr);
-      case 4:
-	return d(exprs, exprs + 1, exprs + 2, &last_sub_expr);
-      case 5:
-	return d(exprs, exprs + 1, exprs + 2, exprs + 3, &last_sub_expr);
-      case 6:
-	return d(exprs, exprs + 1, exprs + 2, exprs + 3, exprs + 4, &last_sub_expr);
-      case 7:
-	return d(exprs, exprs + 1, exprs + 2, exprs + 3, exprs + 4, exprs + 5, &last_sub_expr);
-      case 8:
-	return d(exprs, exprs + 1, exprs + 2, exprs + 3, exprs + 4, exprs + 5, exprs + 6, &last_sub_expr);
-      default:
-	ERROR("Unsupported number of macro args");
-      }
+  var_def * v = get_variable(ms->fcn);
+  type_def * t = v->type;
+  ASSERT(t->type == FUNCTION);
+  ASSERT(t->fcn.ret == opaque_expr());
+  ASSERT(t->fcn.cnt == (i32)cnt || (ms->rest && t->fcn.cnt <= (i32)cnt));
+  expr * (* d)(expr * e, ...) = v->data;
+  expr * (* d0)() = v->data;
+  if(ms->rest == false){
+    switch(cnt){
+    case 0:
+      return d0();
+    case 1:
+      return d(exprs);
+    case 2:
+      return d(exprs, exprs + 1);
+    case 3:
+      return d(exprs, exprs + 1, exprs + 2);
+    case 4:
+      return d(exprs, exprs + 1, exprs + 2, exprs + 3);
+    case 5:
+      return d(exprs, exprs + 1, exprs + 2, exprs + 3, exprs + 4);
+    case 6:
+      return d(exprs, exprs + 1, exprs + 2, exprs + 3, exprs + 4, exprs + 5);
+    case 7:
+      return d(exprs, exprs + 1, exprs + 2, exprs + 3, exprs + 4, exprs + 5, exprs + 6);
+    case 8:
+      return d(exprs, exprs + 1, exprs + 2, exprs + 3, exprs + 4, exprs + 5, exprs + 6, exprs + 7);
+    default:
+      ERROR("Unsupported number of macro args");
     }
-  }
-
-  symbol rest = get_symbol("&rest");
-  type_def * exprtd = opaque_expr();
-  size_t min_args = 0;
-  bool is_varadic = false;
-  for(u32 i = 0; i < ms->arg_cnt; i++){
-    if(ms->args[i].id != rest.id){
-      min_args++;
-    }else{
-      is_varadic = true;
-      break;
-    }
-  }
-  
-  if(is_varadic){
-    if(cnt < min_args){
-      loge("%i is an invalid number of arguments expected at least %i\n", cnt, min_args);
-      return NULL;
-    }
-    ASSERT(ms->arg_cnt == min_args + 2);
   }else{
-    if(cnt != min_args){
-      loge("%i is an invalid number of arguments expected %i\n", cnt, min_args);
-      return NULL;
+      
+    expr last_exprs[cnt - t->fcn.cnt + 1];
+    size_t extra_args = cnt - t->fcn.cnt + 1;
+    size_t offset = t->fcn.cnt - 1;
+    for(size_t i = 0; i < extra_args; i++){
+      last_exprs[i] = exprs[i + offset];
+    }
+    expr last_sub_expr;
+    last_sub_expr.type = EXPR;
+    last_sub_expr.sub_expr.exprs = last_exprs;
+    last_sub_expr.sub_expr.cnt = array_count(last_exprs);
+      
+    switch(t->fcn.cnt){
+    case 1:
+      return d(&last_sub_expr);
+    case 2:
+      return d(exprs, &last_sub_expr);
+    case 3:
+      return d(exprs, exprs + 1, &last_sub_expr);
+    case 4:
+      return d(exprs, exprs + 1, exprs + 2, &last_sub_expr);
+    case 5:
+      return d(exprs, exprs + 1, exprs + 2, exprs + 3, &last_sub_expr);
+    case 6:
+      return d(exprs, exprs + 1, exprs + 2, exprs + 3, exprs + 4, &last_sub_expr);
+    case 7:
+      return d(exprs, exprs + 1, exprs + 2, exprs + 3, exprs + 4, exprs + 5, &last_sub_expr);
+    case 8:
+      return d(exprs, exprs + 1, exprs + 2, exprs + 3, exprs + 4, exprs + 5, exprs + 6, &last_sub_expr);
+    default:
+      ERROR("Unsupported number of macro args");
     }
   }
-  
-  size_t var_cnt = min_args + (is_varadic ? 1 : 0);
-  
-  var_def vars[var_cnt];
-  expr * exprv[var_cnt];
-  
-  for(size_t i = 0; i < min_args; i++){
-    symbol name = ms->args[i];
-    exprv[i] = exprs + i;
-    vars[i].type = exprtd;
-    vars[i].name = name;
-    vars[i].data = exprv + i;
-  }
-
-  if(is_varadic){
-    int i = min_args;
-    exprv[i] = alloc(sizeof(expr));
-    exprv[i]->type = EXPR;
-    exprv[i]->sub_expr.exprs = exprs + i;
-    exprv[i]->sub_expr.cnt = cnt - i;
-    vars[i].type = exprtd;
-    vars[i].name = ms->args[i + 1];
-    vars[i].data = exprv + i;
-  }
-  var_def * __vars = vars;
-  var_def ** _vars = &__vars;
-  push_symbols(_vars, &var_cnt);
-  compile_status status = COMPILE_OK;
-  expr * exp2 = lisp_compile_and_run_expr(ms->exp, &status); //figure out a better way.
-  pop_symbols();
-  if(status == COMPILE_ERROR)
-    return NULL;
-  return exp2;
+  return NULL;
 }
 
 expr * expand_macro_store2(macro_store * ms, expr * expr){
@@ -532,30 +469,6 @@ type_def * unexpr_macro(c_block * block, c_value * val, expr body){
   return &error_def;
 }
 
-	 
-type_def * defcmacro_macro(c_block * block, c_value * val, expr e_name, expr args, expr body){
-  UNUSED(block);
-  COMPILE_ASSERT(is_symbol(e_name));
-  COMPILE_ASSERT(args.type == EXPR);
-
-  size_t argcnt = args.sub_expr.cnt;
-  expr * sexprs = args.sub_expr.exprs;
-  symbol name = expr_symbol(e_name);
-  logd("defining macro: '%s'\n", symbol_name(name));
-  symbol argnames[argcnt];
-  for(size_t i = 0; i < argcnt; i++){
-    COMPILE_ASSERT(is_symbol(sexprs[i]));
-    argnames[i] = expr_symbol(sexprs[i]);
-  }
-
-  macro_store * macro = alloc0(sizeof(macro_store));
-  macro->exp = clone_expr2(body);
-  macro->args = clone(&argnames,sizeof(argnames));
-  macro->arg_cnt = argcnt;
-  compiler_define_variable_ptr(name, macro_store_type() , macro);
-  return compile_value(val, string_expr(symbol_name(name)).value);
-}
-
 type_def * declare_macro_macro(c_block * block, c_value * val, expr * exprs, size_t cnt){
   UNUSED(block);UNUSED(val);
   ASSERT(cnt == 2 || cnt == 3);
@@ -566,8 +479,6 @@ type_def * declare_macro_macro(c_block * block, c_value * val, expr * exprs, siz
   
   macro_store * macro = alloc0(sizeof(macro_store));
   macro->fcn = expr_symbol(function_name);
-  macro->args = NULL;
-  macro->arg_cnt = 0;
   macro->rest = cnt == 3;
   compiler_define_variable_ptr(expr_symbol(macro_name), macro_store_type() , macro);
   return compile_value(val, string_expr(read_symbol(macro_name)).value);
@@ -1025,7 +936,7 @@ void builtin_macros_load(){
   define_macro("load", 1, load_macro);
   define_macro("quote", 1, quote_macro);
   define_macro("setf", 2, setf_macro);
-  define_macro("defcmacro", 3, defcmacro_macro);
+
   define_macro("declare-macro", -1, declare_macro_macro);
   define_macro("expand",-1,expand_macro);
   define_macro("expr", 1, expr_macro);
