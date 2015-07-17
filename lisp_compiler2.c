@@ -475,7 +475,7 @@ compile_status lisp_run_expr(expr ex){
   expr _exes[20];
   UNUSED(_exes);
   
-  compile_status status;
+  compile_status status = COMPILE_OK;
   //u64 start = timestamp();
   var_def * evaldef = lisp_compile_expr(ex, &status);
   //u64 stop = timestamp();
