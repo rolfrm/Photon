@@ -7,7 +7,9 @@
 #include <iron/log.h>
 #include <iron/mem.h>
 #include "lisp_types.h"
-
+#include "c_ast.h"
+#include "lisp_parser.h"
+#include "lisp_compiler.h"
 #include "lisp_std_types.h"
 #include "type_pool.h"
 static void r(type_def * def){

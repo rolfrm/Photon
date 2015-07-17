@@ -2,6 +2,8 @@
 #include <iron/full.h>
 #include "lisp_parser.h"
 #include "lisp_types.h"
+#include "c_ast.h"
+#include "lisp_compiler.h"
 #include "lisp_std_types.h"
 #include "expr_utils.h"
 symbol vexpr_symbol(value_expr e){

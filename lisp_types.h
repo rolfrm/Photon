@@ -76,16 +76,11 @@ struct _decl{
   type_def * type;
 };
 
-#include "c_ast.h"
+//#include "c_ast.h"
 
 size_t get_sub_type_cnt(type_def * t);
 void get_sub_types(type_def * t, type_def ** out_types);
 
-extern const symbol symbol_empty;
-symbol  get_symbol(char * name);
-symbol * get_symbol2(char * name);
-char * symbol_name(symbol s);
-bool symbol_cmp(symbol a, symbol b);
 u64 size_of(type_def * t);
 type_def * function_type(type_def * ret,size_t cnt, type_def ** ts);
 
@@ -93,10 +88,6 @@ void print_cdecl(decl idecl);
 
 type_def make_simple(char * name, size_t s);
 type_def make_ptr(type_def * def);
-/*type_def * get_type_def(type_def def);
-type_def * get_type_from_string(char * name);
-void register_type(type_def * type, char * name);
-*/
 // simple function to calculate type dependencies.
 // writes the dependencies of a type in defs
 // descending order, so least dependent comes first.

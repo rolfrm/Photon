@@ -11,7 +11,9 @@
 #include <iron/mem.h>
 #include "lisp_types.h"
 #include "lisp_parser.h"
+#include "c_ast.h"
 #include "lisp_compiler.h"
+
 #include "lisp_std_types.h"
 #include "type_pool.h"
 size_t get_sub_type_cnt(type_def * t){

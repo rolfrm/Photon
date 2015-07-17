@@ -3,6 +3,7 @@
 #include "lisp_parser.h"
 #include <libtcc.h>
 #include "lisp_types.h"
+#include "c_ast.h"
 #include "lisp_compiler.h"
 #include "lisp_std_types.h"
 #include <ctype.h>
@@ -69,13 +70,6 @@ void push_symbols(var_def ** vars, size_t * vars_cnt){
 
 void pop_symbols(){
   stack_count--;
-}
-
-void with_symbols(var_def ** vars, size_t * vars_cnt, void (*fcn)()){
-
-  push_symbols(vars,vars_cnt);
-  fcn();
-  pop_symbols();
 }
 
 var_def * get_variable(symbol name){

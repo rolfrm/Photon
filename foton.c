@@ -10,6 +10,7 @@
 
 #include "lisp_parser.h"
 #include "lisp_types.h"
+#include "c_ast.h"
 #include "lisp_compiler.h"
 #include "repl.h"
 

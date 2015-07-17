@@ -3,6 +3,7 @@
 #include "lisp_parser.h"
 #include <libtcc.h>
 #include "lisp_types.h"
+#include "c_ast.h"
 #include "lisp_compiler.h"
 #include "lisp_std_types.h"
 #include "type_pool.h"

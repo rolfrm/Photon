@@ -111,20 +111,45 @@ type_def * expr2type(expr typexpr);
 // Gets the return type of an expression.
 type_def * type_of(expr * ex);
 
-// compiles an expression and returns the type.
+// Compiles an expression and returns the type.
 type_def * compile_expr(c_block * block, c_value * val,  expr e );
 
-
+// Compiles the 'codes'. The newly available functions variables will be available in the compiler variables.
 void compile_as_c(c_root_code * codes, size_t code_cnt);
+
+// Compiles a value expression. Returns the type.
 type_def * compile_value(c_value * val, value_expr e);
 
+// Defines a new function named 'sym', t and fcnptr should match. see example in builtin_functions.
 void defun(char * sym, type_def * t, void * fcnptr);
+
+// returns the macrostore type.
 type_def * macro_store_type();
+
+// Expand he macro as defined in exprs.
 type_def * expand_macro(c_block * block, c_value * val, expr * exprs, size_t cnt);
-// symbols
-void with_symbols(var_def ** vars, size_t * vars_cnt, void (*fcn)());
+
+// Empty/null symbol
+extern const symbol symbol_empty;
+
+// Interns the string 'name' as a new symbol.
+symbol  get_symbol(char * name);
+
+// Interns the string 'name' as a new symbol.
+symbol * get_symbol2(char * name);
+
+// Returns the interned name of the symbol 's'. The returned char * is guaranteed to be the same pointer if the symbol is the same.
+char * symbol_name(symbol s);
+
+// Compares two symbols. Returns true if equals.
+bool symbol_cmp(symbol a, symbol b);
+
+// Pushes a symbol array on the symbol stack. Used for new scopes. *vars is allowed to change while on the stack.
 void push_symbols(var_def ** vars, size_t * vars_cnt);
+
+// Pops the top stack from the list of symbols.
 void pop_symbols();
 
+// Testing
 bool test_lisp2c();
 void checktypepool();

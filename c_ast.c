@@ -12,6 +12,7 @@
 #include <iron/array.h>
 #include "lisp_parser.h"
 #include "lisp_types.h"
+#include "c_ast.h"
 #include "lisp_compiler.h"
 const c_block c_block_empty = {0,0};
 const c_value c_value_empty = {0};
