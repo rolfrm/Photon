@@ -3,16 +3,14 @@
 #include "lisp_types.h"
 #include "lisp_compiler.h"
 #include "expr_utils.h"
+#include <dlfcn.h>
+
 void defun(char * name, type_def * t, void * fcn){
   compiler_define_variable_ptr(get_symbol(name), t, fcn);
 }
 
 void print_type(type_def * def){
   logd("type: '"); print_def(def); logd("'\n");
-}
-
-void write_line(char * str){
-  logd("%s\n", str);
 }
 
 type_def * ptr_inner(type_def * ptr_def){
@@ -47,7 +45,6 @@ expr * type2expr(type_def * ptr_def){
   return clone(&e, sizeof(e));
 }
 
-#include <dlfcn.h>
 void * load_lib(char * path){
   return dlopen(path, RTLD_LAZY);
 }
@@ -91,12 +88,7 @@ type_def * type_of(expr * ex){
   blk.exprs = NULL;
   blk.expr_cnt = 0;
   c_value val;
-  //u64 start = timestamp();
-  type_def * otype = _compile_expr(&blk, &val, *ex);
-  //u64 stop = timestamp();
-  //print_expr(ex);
-  //  logd("Type of: %f s\n", 1e-6 * (stop - start));
-  return otype;
+  return _compile_expr(&blk, &val, *ex);
 }
 
 char * symbol_name2(symbol * sym){

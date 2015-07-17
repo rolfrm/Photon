@@ -8,6 +8,7 @@
 #include "type_pool.h"
 #include "builtin_macros.h"
 #include "expr_utils.h"
+#include <stdlib.h>
 
 type_def * opaque_expr(){
   static type_def * exprtd = NULL;
@@ -28,7 +29,7 @@ type_def * type_macro(c_block * block, c_value * value, expr e){
   static int typevarid = 0;
   type_def * t =_type_macro(e);
 
-  char buf[100];
+  char buf[30];
   sprintf(buf, "type_%i",typevarid++);
   symbol varname = get_symbol(buf);
   compiler_define_variable_ptr(varname, &type_def_ptr_def, clone(&t,sizeof(type_def *)));
@@ -47,6 +48,7 @@ expr mk_sub_expr(expr * exprs, size_t cnt){
   return e;
 }
 
+// checks for conflict in argtypename and argname.
 bool check_decl(symbol name, type_def * type){
   type_def * td = type_pool_simple(name);
   type_def * td2 = type;
@@ -283,7 +285,6 @@ type_def * expand_macro(c_block * block, c_value * val, expr * exprs, size_t cnt
   return _compile_expr(block, val, *outexpr);
 }
 
-
 int recurse_count(expr ex){
   if(ex.type == VALUE)
     return 0;
@@ -426,7 +427,6 @@ type_def * expr_macro(c_block * block, c_value * val, expr body){
     defun(_expandname, ftype2, expand_expr);
   ASSERT(expandname.id != 0);
 
-  //ASSERT(val->type == 0)
   val->type = C_FUNCTION_CALL;
   val->call.name = expandname;
   val->call.args = clone(cargs,sizeof(c_value) * (cnt + 1));
@@ -436,6 +436,7 @@ type_def * expr_macro(c_block * block, c_value * val, expr body){
   return exprtd;
 }
 
+// Really just a sanity check
 type_def * unexpr_macro(c_block * block, c_value * val, expr body){
   UNUSED(block);UNUSED(val);UNUSED(body);
   loge("Calls to unexpr must be nested inside an expr body\n");
@@ -598,9 +599,8 @@ type_def * eq_macro(c_block * block, c_value * val, expr item1, expr item2){
 }
 
 symbol get_tmp_sym(){
-
   static int tmpid = 0;
-  char tmpname[100];
+  char tmpname[30];
   symbol tmpsym;
   do{
     sprintf(tmpname,"_tmp%i", tmpid);
@@ -801,7 +801,7 @@ expr * number2expr(i64 num){
   e.value.strln = strlen(str);
   return clone(&e, sizeof(e));
 }
-#include <stdlib.h>
+
 i64 expr2number(expr * e){
   ASSERT(e->type == VALUE && e->value.type == NUMBER);
   char buf[e->value.strln + 1];
