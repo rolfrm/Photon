@@ -2,14 +2,13 @@
 #include <stdbool.h>
 #include <ctype.h>
 #include <stdint.h>
-
 #include "lisp_parser.h"
-
 #include <iron/types.h>
 #include <iron/log.h>
 #include <iron/test.h>
 #include <iron/mem.h>
 #include <iron/array.h>
+
 char * take_while(char * data, bool (* fcn)(char char_code)){
   while(fcn(data[0])) data++;
   return data;
@@ -274,7 +273,6 @@ char * value_type2str(value_type vt){
 }
 
 void print_expr(expr * expr1){
-  //logd("--- printing expr ---");
   void iprint(expr * expr2, int indent){
     value_expr value = expr2->value;
     sub_expr subexpr = expr2->sub_expr;
@@ -309,10 +307,7 @@ char * lisp_parse(char * code, expr * out_exprs, int * out_exprs_count){
     code = take_while(code, is_whitespace);
     expr out_expr;
     char * cn = parse_expr(code, &out_expr);
-    if(cn == NULL){ 
-      //ERROR("THIS HAPPENS");
-      goto end;
-    }
+    if(cn == NULL) goto end;
     code = cn;
 
     if(out_expr.type == VALUE && out_expr.value.type == COMMENT){

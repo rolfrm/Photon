@@ -6,7 +6,7 @@
 #include "lisp_compiler.h"
 #include "lisp_std_types.h"
 #include "type_pool.h"
-//static __thread comp_state * compstate = NULL;
+
 static __thread compiler_state * lisp_state = NULL;
 static __thread compiler_state * lisp_states[10] = {NULL};
 size_t state_count = 0;
@@ -24,16 +24,9 @@ void pop_compiler(){
   pop_symbols();
 }
 
-void with_compiler(compiler_state * c, void (* fcn)()){
-  push_compiler(c);
-  fcn();
-  pop_compiler();
-}
-
 compiler_state * get_compiler(){
   return lisp_state;
 }
-
 
 void compiler_define_variable_ptr(symbol name, type_def * t, void * ptr){
   // check if reassign can be done.

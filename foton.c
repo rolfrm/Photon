@@ -2,13 +2,11 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
 #include <unistd.h>
 #include <stdarg.h>
 #include <iron/types.h>
 #include <iron/log.h>
 #include <iron/test.h>
-//#include <iron/full.h>
 
 #include "lisp_parser.h"
 #include "lisp_types.h"

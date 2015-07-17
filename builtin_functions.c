@@ -88,7 +88,7 @@ type_def * type_of(expr * ex){
   blk.exprs = NULL;
   blk.expr_cnt = 0;
   c_value val;
-  return _compile_expr(&blk, &val, *ex);
+  return compile_expr(&blk, &val, *ex);
 }
 
 char * symbol_name2(symbol * sym){

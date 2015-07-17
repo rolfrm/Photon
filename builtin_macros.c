@@ -27,7 +27,7 @@ type_def * no_op(c_block * block, c_value * val){
 type_def * type_macro(c_block * block, c_value * value, expr e){
   UNUSED(block);
   static int typevarid = 0;
-  type_def * t =_type_macro(e);
+  type_def * t =expr2type(e);
 
   char buf[30];
   sprintf(buf, "type_%i",typevarid++);
@@ -36,7 +36,7 @@ type_def * type_macro(c_block * block, c_value * value, expr e){
   value->type = C_INLINE_VALUE;
   value->raw.value = "NULL";
   value->raw.type = &type_def_ptr_def;
-  type_def * rt = _compile_expr(block, value, symbol_expr2(varname));
+  type_def * rt = compile_expr(block, value, symbol_expr2(varname));
   return rt;
 }
 
@@ -74,7 +74,7 @@ type_def * var_macro(c_block * block, c_value * val, expr vars, expr body){
     COMPILE_ASSERT(var_expr.cnt == 2 && var_expr.exprs[0].type == VALUE && var_expr.exprs[0].value.type == SYMBOL);
     c_var var;
     var.var.name = expr_symbol(var_expr.exprs[0]);
-    var.var.type = _compile_expr(block, cvals + i, var_expr.exprs[1]);
+    var.var.type = compile_expr(block, cvals + i, var_expr.exprs[1]);
     if(!check_decl(var.var.name, var.var.type))
       return &error_def;
     var.value = cvals + i;
@@ -88,7 +88,7 @@ type_def * var_macro(c_block * block, c_value * val, expr vars, expr body){
     block_add(block,cvars[i]);
   
   push_symbols(&lisp_vars, &sexpr.cnt);
-  type_def * ret_type = _compile_expr(block, val, body);
+  type_def * ret_type = compile_expr(block, val, body);
   pop_symbols();
 
   return ret_type;
@@ -104,7 +104,7 @@ type_def * defvar_macro(c_block * block, c_value * val, expr * exprs, size_t cnt
 
   if(is_keyword(exprs[1]) && expr_symbol(exprs[1]).id == get_symbol("type").id && cnt == 3){
     
-    t = _type_macro(exprs[2]);
+    t = expr2type(exprs[2]);
     val->type = C_SYMBOL;
     val->symbol = sym;
   }else{
@@ -114,7 +114,7 @@ type_def * defvar_macro(c_block * block, c_value * val, expr * exprs, size_t cnt
     c_value * vl = alloc0(sizeof(c_value));
     vl->type = C_SYMBOL;
     vl->symbol = sym;
-    t = _compile_expr(block, vr, body);
+    t = compile_expr(block, vr, body);
     COMPILE_ASSERT(t != &error_def);
     val->type = C_OPERATOR;
     val->operator.left = vl;
@@ -136,8 +136,8 @@ type_def * defvar_macro(c_block * block, c_value * val, expr * exprs, size_t cnt
 type_def * setf_macro(c_block * block, c_value * val, expr name, expr body){
   c_value * vr = alloc0(sizeof(c_value));
   c_value * vl = alloc0(sizeof(c_value));
-  type_def * t1 = _compile_expr(block, vl, name);
-  type_def * t = _compile_expr(block, vr, body);
+  type_def * t1 = compile_expr(block, vl, name);
+  type_def * t = compile_expr(block, vr, body);
   if(t == &error_def){
     loge("Compile error for body of setf at ");
     print_expr(&body);
@@ -166,14 +166,14 @@ type_def * load_macro(c_block * block, c_value * val, expr file_name){
   compile_status s = lisp_run_script_file(filename);
   if(s == COMPILE_ERROR)
     return &error_def;
-  return _compile_expr(block, val, file_name);
+  return compile_expr(block, val, file_name);
 }
 
 type_def * progn_macro(c_block * block, c_value * val, expr * expressions, size_t expr_cnt){
   type_def * d;
   for(size_t i = 0; i < expr_cnt; i++){
     c_value _val = c_value_empty;
-    d = _compile_expr(block, &_val, expressions[i]);
+    d = compile_expr(block, &_val, expressions[i]);
     COMPILE_ASSERT(d != &error_def);
     if(i == expr_cnt -1){
       *val = _val;
@@ -282,7 +282,7 @@ type_def * expand_macro(c_block * block, c_value * val, expr * exprs, size_t cnt
   expr * outexpr = expand_macro_store(fcn_var->data, exprs + 1, cnt - 1);
   if(outexpr == NULL)
     return &error_def;
-  return _compile_expr(block, val, *outexpr);
+  return compile_expr(block, val, *outexpr);
 }
 
 int recurse_count(expr ex){
@@ -360,7 +360,7 @@ bool recurse_expr(expr * ex, c_block * block, int id, int * cnt){
      && expr_symbol(exp.exprs[0]).id == get_symbol("unexpr").id){
     ASSERT(exp.cnt == 2);
     c_value cval;
-    type_def * t =_compile_expr(block, &cval, exp.exprs[1]);
+    type_def * t =compile_expr(block, &cval, exp.exprs[1]);
     if(t == &error_def){
       return false;
     }
@@ -460,12 +460,12 @@ type_def * declare_macro_macro(c_block * block, c_value * val, expr * exprs, siz
 
 type_def * cast_macro(c_block * block, c_value * value, expr body, expr type){
   c_value * v = alloc0(sizeof(c_value));
-  type_def * td = _compile_expr(block,v, body);
+  type_def * td = compile_expr(block,v, body);
   if(td == &error_def){
     loge("Error while compiling body\n");
     return td;
   }
-  type_def * cast_to = _type_macro(type);
+  type_def * cast_to = expr2type(type);
   COMPILE_ASSERT(cast_to != &error_def);
   value->type = C_CAST;
   value->cast.value = v;
@@ -486,7 +486,7 @@ type_def * quote_macro(c_block * block, c_value * value, expr name){
   pexpr.type = EXPR;
   pexpr.sub_expr.exprs = nexpr;
   pexpr.sub_expr.cnt = array_count(nexpr);
-  return _compile_expr(block, value, pexpr); 
+  return compile_expr(block, value, pexpr); 
 }
 
 type_def * defun_macro(c_block * block, c_value * value, expr name, expr args, expr body){
@@ -527,10 +527,10 @@ type_def * defun_macro(c_block * block, c_value * value, expr name, expr args, e
     expr typexpr = arg.sub_expr.exprs[1];
     COMPILE_ASSERT(is_symbol(namexpr));
     arg_names[i] = expr_symbol(namexpr);
-    arg_types[i] = _type_macro(typexpr);
+    arg_types[i] = expr2type(typexpr);
   }
   
-  type_def * ret = _type_macro(args.sub_expr.exprs[0]);
+  type_def * ret = expr2type(args.sub_expr.exprs[0]);
   type_def * fcnt = function_type(ret, array_count(arg_names), (type_def **) arg_types);
   f->type = fcnt;
   // ** register arguments as symbols ** //
@@ -549,7 +549,7 @@ type_def * defun_macro(c_block * block, c_value * value, expr name, expr args, e
   // ** Compile body with symbols registered ** //
   c_value val = c_value_empty;
   push_symbols(&vars, &varcnt);
-  type_def * td = _compile_expr(blk,&val, body);
+  type_def * td = compile_expr(blk,&val, body);
   pop_symbols();
   if(td == &error_def){
     loge("Caught error while defining function '%s'.\n", symbol_name(fcnname));
@@ -582,8 +582,8 @@ type_def * eq_macro(c_block * block, c_value * val, expr item1, expr item2){
   c_value * val1 = alloc0(sizeof(c_value));
   c_value * val2 = alloc0(sizeof(c_value));
   c_value * comp = alloc0(sizeof(c_value));
-  type_def * t1 = _compile_expr(block, val1, item1);
-  type_def * t2 = _compile_expr(block, val2, item2);
+  type_def * t1 = compile_expr(block, val1, item1);
+  type_def * t2 = compile_expr(block, val2, item2);
   COMPILE_ASSERT(t1 != &error_def && t1 != &void_def);
   if(!(is_type_compatible(t1,t2,item1) || is_type_compatible(t2,t1,item2))){
     COMPILE_ERROR("Types cannot be compared by eq");
@@ -622,13 +622,13 @@ type_def * if_macro(c_block * block, c_value * val, expr cnd, expr then, expr _e
   c_value * inner_value = alloc0(sizeof(c_value));
   cmp_value->value = inner_value;
   cmpexpr.type = C_VALUE_UNENDED;
-  type_def * cmp = _compile_expr(block, inner_value, cnd);
+  type_def * cmp = compile_expr(block, inner_value, cnd);
   COMPILE_ASSERT(cmp == &bool_def);
   
   c_expr then_expr;
   then_expr.type = C_VALUE;
   c_block blk = c_block_empty;
-  type_def * then_t = _compile_expr(&blk,&then_expr.value,then);
+  type_def * then_t = compile_expr(&blk,&then_expr.value,then);
   if(then_t == &void_def){
     // things get simpler
     c_expr then_blk_expr;
@@ -644,7 +644,7 @@ type_def * if_macro(c_block * block, c_value * val, expr cnd, expr then, expr _e
     else_blk_expr.block = c_block_empty;
     c_expr else_expr;
     else_expr.type = C_VALUE;
-    type_def * else_t = _compile_expr(&else_blk_expr.block, &else_expr.value, _else);
+    type_def * else_t = compile_expr(&else_blk_expr.block, &else_expr.value, _else);
     UNUSED(else_t);
     block_add(&else_blk_expr.block, else_expr);
 
@@ -724,11 +724,11 @@ type_def * while_macro(c_block * block, c_value * val, expr cnd, expr body){
   cmpexpr.type = C_VALUE_UNENDED;
   c_value * inner_value = alloc0(sizeof(c_value));
   cmp_value->value = inner_value;
-  type_def * cmp = _compile_expr(block, inner_value, cnd);
+  type_def * cmp = compile_expr(block, inner_value, cnd);
   COMPILE_ASSERT(cmp == &bool_def);
   c_value tmp = c_value_empty;
   c_block blk = c_block_empty;
-  type_def * body_t = _compile_expr(&blk, &tmp, body);
+  type_def * body_t = compile_expr(&blk, &tmp, body);
   COMPILE_ASSERT(body_t != &error_def);
   c_expr bodyexpr;
   bodyexpr.type = C_BLOCK;
@@ -745,7 +745,7 @@ type_def * while_macro(c_block * block, c_value * val, expr cnd, expr body){
     
     setf_macro(&bodyexpr.block, &valuexpr.value, symbol_expr("_tmp"), body);
   }else{
-    type_def * t = _compile_expr(&bodyexpr.block, &valuexpr.value, body);
+    type_def * t = compile_expr(&bodyexpr.block, &valuexpr.value, body);
     COMPILE_ASSERT(t != &error_def);
   }
   block_add(&bodyexpr.block, valuexpr);
@@ -773,7 +773,7 @@ type_def * while_macro(c_block * block, c_value * val, expr cnd, expr body){
 
 type_def * deref_macro(c_block * block, c_value * val, expr ptr){
   c_value * _val = new(c_value);
-  type_def * td = _compile_expr(block, _val, ptr);
+  type_def * td = compile_expr(block, _val, ptr);
   COMPILE_ASSERT(td->type == POINTER);
   val->type = C_DEREF;
   val->deref.inner = _val;
@@ -783,7 +783,7 @@ type_def * deref_macro(c_block * block, c_value * val, expr ptr){
 
 type_def * addrof_macro(c_block * block, c_value * val, expr value){
   c_value * _val = new(c_value);
-  type_def * td = _compile_expr(block, _val, value);
+  type_def * td = compile_expr(block, _val, value);
   val->type = C_ADDRESS_OF;
   val->value = _val;
   type_def newtype;
@@ -813,8 +813,8 @@ i64 expr2number(expr * e){
 
 type_def * boolean_operator(char * operator, c_block * blk, c_value * val, expr left, expr right){
   c_value left_value, right_value;
-  type_def * left_t = _compile_expr(blk,&left_value,left);
-  type_def * right_t = _compile_expr(blk,&right_value,right);
+  type_def * left_t = compile_expr(blk,&left_value,left);
+  type_def * right_t = compile_expr(blk,&right_value,right);
   COMPILE_ASSERT(left_t == &bool_def && left_t == right_t);
   val->type = C_OPERATOR;
   val->operator.left = clone(&left_value, sizeof(c_value));
@@ -837,7 +837,7 @@ type_def * member_macro(c_block * blk, c_value * val, expr object, expr member){
   val->type = C_MEMBER;
   val->member.name = expr_symbol(member);
   val->member.item = alloc0(sizeof(c_value));
-  type_def * obj_type = _compile_expr(blk, val->member.item, object);
+  type_def * obj_type = compile_expr(blk, val->member.item, object);
   while(obj_type->type == TYPEDEF) obj_type = obj_type->ctypedef.inner;
   if(obj_type->type != STRUCT && obj_type->type != UNION){
     loge("Error: Expected objects of type struct or union. got %i\n", obj_type->type);

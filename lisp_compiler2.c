@@ -47,7 +47,7 @@ type_def * compile_value(c_value * val, value_expr e){
   COMPILE_ERROR(false);
 }
 
-type_def * _type_macro(expr typexpr){
+type_def * expr2type(expr typexpr){
   if(typexpr.type == EXPR){
     sub_expr sexp = typexpr.sub_expr;
     COMPILE_ASSERT(sexp.cnt > 0);
@@ -59,14 +59,14 @@ type_def * _type_macro(expr typexpr){
       type_def out;
       out.type = FUNCTION;
       COMPILE_ASSERT(sexp.cnt > 1);
-      type_def * ret = _type_macro(sexp.exprs[1]);
+      type_def * ret = expr2type(sexp.exprs[1]);
     
       COMPILE_ASSERT(&error_def != ret);
       type_def * args[sexp.cnt - 2];
       for(size_t i = 0; i < sexp.cnt - 2; i++){
 	expr arg = sexp.exprs[i + 2];
 	COMPILE_ASSERT(arg.type == EXPR && arg.sub_expr.cnt == 2 && is_symbol(arg.sub_expr.exprs[0]));
-	args[i] = _type_macro(arg.sub_expr.exprs[1]);
+	args[i] = expr2type(arg.sub_expr.exprs[1]);
 	COMPILE_ASSERT(args[i] != NULL && args[i] != &error_def);
       } 
       out.fcn.ret = ret;
@@ -78,7 +78,7 @@ type_def * _type_macro(expr typexpr){
       COMPILE_ASSERT(sexp.cnt == 2);
       type_def out;
       out.type = POINTER;
-      out.ptr.inner = _type_macro(sexp.exprs[1]);
+      out.ptr.inner = expr2type(sexp.exprs[1]);
       return type_pool_get(&out);
     }else if (strncmp(vkind.value, "struct",vkind.strln) == 0){
       COMPILE_ASSERT(sexp.cnt >= 2);
@@ -96,7 +96,7 @@ type_def * _type_macro(expr typexpr){
 	sub_expr sx = sub->sub_expr;
 	COMPILE_ASSERT(sx.exprs[0].type == VALUE && sx.exprs[0].value.type == SYMBOL);
 	members[i].name = vexpr_symbol(sx.exprs[0].value);
-	members[i].type = _type_macro(sx.exprs[1]);
+	members[i].type = expr2type(sx.exprs[1]);
 	sub++;
       }
       type_def out;
@@ -119,7 +119,7 @@ type_def * _type_macro(expr typexpr){
       type_def out;
       out.type = TYPEDEF;
       out.ctypedef.name = vexpr_symbol(sexp.exprs[2].value);
-      out.ctypedef.inner = _type_macro(sexp.exprs[1]);
+      out.ctypedef.inner = expr2type(sexp.exprs[1]);
       return type_pool_get(&out);
     }
   }else{
@@ -159,7 +159,7 @@ bool is_type_compatible(type_def * call_type, type_def * arg_type, expr callexpr
 }
 
 
-type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se){
+type_def * _compile_expr(c_block * block, c_value * value, sub_expr * se){
   COMPILE_ASSERT(se->cnt != 0);
   expr name_expr = se->exprs[0];
   if(name_expr.type != VALUE && name_expr.value.type != SYMBOL) ERROR("need symbol for first car");
@@ -217,7 +217,7 @@ type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se){
     type_def * farg_types[argcnt];
     int err_arg = -1;
     for(i64 i = 0; i < argcnt; i++){
-      farg_types[i] = _compile_expr(block, fargs + i, args[i]);
+      farg_types[i] = compile_expr(block, fargs + i, args[i]);
       if(!is_type_compatible(farg_types[i],td->fcn.args[i], args[i])){
 	err_arg = i;
 	logd("ERROR: got '");
@@ -265,11 +265,11 @@ type_def * __compile_expr(c_block * block, c_value * value, sub_expr * se){
   return &error_def;
 }
 	  
-type_def * _compile_expr(c_block * block, c_value * val,  expr e ){
+type_def * compile_expr(c_block * block, c_value * val,  expr e ){
   type_def * td;
   switch(e.type){
   case EXPR:
-    return __compile_expr(block, val, &e.sub_expr);
+    return _compile_expr(block, val, &e.sub_expr);
     break;
   case VALUE:
     td = compile_value(val,e.value);
@@ -291,7 +291,7 @@ c_root_code compile_lisp_to_eval(expr exp){
   f->block.exprs = NULL; 
   c_value val;
   val.type = 0;
-  type_def * t = _compile_expr(&f->block, &val, exp);
+  type_def * t = compile_expr(&f->block, &val, exp);
   type_def td;
   td.type = FUNCTION;
   td.fcn.ret = t;
@@ -311,7 +311,7 @@ c_root_code compile_lisp_to_eval(expr exp){
 }
 
 type_def * str2type(char * str){
-  return _type_macro(lisp_parse1(str));
+  return expr2type(lisp_parse1(str));
 }
 
 #include <libtcc.h>
@@ -435,7 +435,7 @@ void lisp_load_base(){
 
 }
 
-var_def * lisp_compile_expr(expr ex, compile_status * optout_status){
+var_def * lispcompile_expr(expr ex, compile_status * optout_status){
   c_root_code cl = compile_lisp_to_eval(ex);
   if(cl.fcndef.type->fcn.ret == &error_def){
     if(optout_status != NULL)*optout_status = COMPILE_ERROR;
@@ -450,7 +450,7 @@ void * lisp_compile_and_run_expr(expr ex, compile_status * optout_status){
   compile_status _status;
   if(optout_status == NULL) optout_status = &_status;
        
-  var_def * var = lisp_compile_expr(ex, optout_status);
+  var_def * var = lispcompile_expr(ex, optout_status);
   if(COMPILE_ERROR == *optout_status)
     return NULL;
   void * (*fcn)() = var->data;
@@ -477,7 +477,7 @@ compile_status lisp_run_expr(expr ex){
   
   compile_status status = COMPILE_OK;
   //u64 start = timestamp();
-  var_def * evaldef = lisp_compile_expr(ex, &status);
+  var_def * evaldef = lispcompile_expr(ex, &status);
   //u64 stop = timestamp();
   //double secs = (stop - start) * 1e-6;
   //logd("Compiling took %f s\n", secs);

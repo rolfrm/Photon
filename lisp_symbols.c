@@ -193,18 +193,6 @@ void format_c_name(symbol s){
   format("%s", get_c_name(s));
 }
 
-cmacro_def * get_cmacro_def(symbol s){
-  var_def * var = get_variable(s);
-  if(var == NULL){
-    return NULL;
-  }
-  
-  if(var->type != &cmacro_def_def){
-    return NULL;
-  }
-  return (cmacro_def *) var->data;
-}
-
 bool test_get_cname(){
   char * get_c(char * str){return get_c_name(get_symbol(str));};
   char * n1 = get_c("thingy");
