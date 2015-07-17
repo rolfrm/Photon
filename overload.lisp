@@ -136,7 +136,7 @@
     (expr 
      (progn
        (defvar (unexpr s) prototype)
-       (defcmacro (unexpr fcn-name) (&rest d)
+       (defmacro (unexpr fcn-name) (&rest d)
 	 (get-overloaded-expr (unexpr s)  d)
 	 )       
        
@@ -144,11 +144,7 @@
        ))))
 
 (defmacro overload (name fcn)
-  (let ((s (symbol2expr (symbol-combine (expr2symbol name) (quote -info)))))
-    (printstr "overloading")
-    (print-expr name)
-    (printstr "\n")
-	      
+  (let ((s (symbol2expr (symbol-combine (expr2symbol name) (quote -info)))))	      
     (let ((fcn-type (var-type (expr2symbol fcn))))
       (if (is-fcn-type? fcn-type)
 	  (expr 

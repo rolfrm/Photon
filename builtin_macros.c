@@ -470,8 +470,7 @@ bool recurse_expr(expr * ex, c_block * block, int id, int * cnt){
     bool ok = true;
     for(size_t i = 0; i < exp.cnt; i++)
       ok &= recurse_expr(exp.exprs + i, block, id, cnt);
-    return ok;
-	
+    return ok;	
   }
 }
 
