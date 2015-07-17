@@ -28,7 +28,7 @@ type_def * type_macro(c_block * block, c_value * value, expr e){
   static int typevarid = 0;
   type_def * t =_type_macro(e);
 
-  char buf[10];
+  char buf[100];
   sprintf(buf, "type_%i",typevarid++);
   symbol varname = get_symbol(buf);
   compiler_define_variable_ptr(varname, &type_def_ptr_def, clone(&t,sizeof(type_def *)));
@@ -58,10 +58,6 @@ bool check_decl(symbol name, type_def * type){
     return false;
   }
   return true;
-}
-
-void testdcl(expr * e, i32 expr){
-  UNUSED(e);UNUSED(expr);
 }
 
 type_def * var_macro(c_block * block, c_value * val, expr vars, expr body){
@@ -188,30 +184,7 @@ type_def * progn_macro(c_block * block, c_value * val, expr * expressions, size_
   }
   return &void_def;
 }
-
-
 	  
-expr walk_expr(expr body){
-  if(body.type == VALUE)
-    return body;
-
-  sub_expr exp = body.sub_expr;
-  expr sub[exp.cnt];
-  for(size_t i = 0; i < exp.cnt; i++){
-    sub[i] = walk_expr(exp.exprs[i]);
-  }
-  expr nexpr;
-  nexpr.type = EXPR;
-  nexpr.sub_expr.exprs = clone(sub,sizeof(sub));
-  nexpr.sub_expr.cnt = exp.cnt;
-  return nexpr;
-}
-	  
-expr * walk_expr2(expr * body){
-  expr r = walk_expr(*body);
-  return clone(&r, sizeof(r));
-}
-
 typedef struct{
   symbol fcn;
   bool rest;
@@ -951,7 +924,6 @@ void builtin_macros_load(){
   define_macro("member", 2, member_macro);
   define_macro("unexpr", 1, unexpr_macro);
   opaque_expr();
-  defun("walk-expr",str2type("(fcn (ptr expr) (a (ptr expr)))"), walk_expr2);
   defun("number2expr",str2type("(fcn (ptr expr) (a i64))"), number2expr);
   defun("expr2number",str2type("(fcn i64 (a (ptr expr)))"), expr2number);
   defun("expr2symbol", str2type("(fcn (ptr symbol) (a (ptr expr)))"), expr2symbol);
