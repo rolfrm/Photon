@@ -477,17 +477,11 @@ compile_status lisp_run_expr(expr ex){
   UNUSED(_exes);
   
   compile_status status = COMPILE_OK;
-  //u64 start = timestamp();
   var_def * evaldef = lispcompile_expr(ex, &status);
-  //u64 stop = timestamp();
-  //double secs = (stop - start) * 1e-6;
-  //logd("Compiling took %f s\n", secs);
   if(COMPILE_ERROR == status || evaldef == NULL) 
     return COMPILE_ERROR;
   
   ASSERT(evaldef != NULL);
-
-  
   type_def * ret = evaldef->type->fcn.ret;
   size_t ret_size = size_of(ret);
 
@@ -554,7 +548,6 @@ compile_status lisp_run_expr(expr ex){
 
 compile_status lisp_run_exprs(expr * exprs, size_t exprcnt){
   for(u32 i = 0; i < exprcnt; i++){
-    //logd(">> "); print_expr(exprs + i);logd("\n");
     compile_status s = lisp_run_expr(exprs[i]);    
     if(COMPILE_ERROR == s){
       
@@ -602,7 +595,7 @@ bool test_lisp2c(){
   
   type_def * d = str2type("(alias (ptr type_def) td)");
   print_def(d);
-  type_def * d2 = str2type("(alias (struct _s1 (x i16) (y i8) (z i16) (x2 i16) (y2 i8) (z2 i16) (x3 i16) (y3 i8) (z3 i16)) s1)");
+  type_def * d2 = str2type("(alias (struct _s1 (x i16) (y i8) (z i16) (x2 i16)) s1)");
   print_def(d2);
   type_def * d3 = str2type("(ptr s1)");
   print_def(d3);	
@@ -614,11 +607,11 @@ bool test_lisp2c(){
     i8 y;
     i16 z;
     i16 x2;
-    i8 y2;
-    i16 z2;
-    i16 x3;
-    i8 y3;
-    i16 z3;
+    // i8 y2;
+    // i16 z2;
+    // i16 x3;
+    // i8 y3;
+    // i16 z3;
   };
   logd("sizes: %i %i\n",sizeof(struct _s1), size_of(d2));
   TEST_ASSERT(sizeof(struct _s1) == size_of(d2));

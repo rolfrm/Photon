@@ -81,7 +81,6 @@ int main(int argc, char *argv[] ){
     push_compiler(c);
     lisp_load_base();
 
-
     compile_status status = lisp_run_script_file(argv[1]);
     if(status == COMPILE_ERROR){
       return -1;
@@ -89,6 +88,12 @@ int main(int argc, char *argv[] ){
     pop_compiler();
     return 0;
   }
+  
+  log("Unable to handle arguments: ");
+  for(int i = 1; i < argc; i++){
+    log("%s ", argv[i]);
+  }
+  log("\n");
 
   return 0;
 }
