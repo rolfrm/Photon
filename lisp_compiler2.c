@@ -220,13 +220,16 @@ type_def * _compile_expr(c_block * block, c_value * value, sub_expr * se){
     for(i64 i = 0; i < argcnt; i++){
       farg_types[i] = compile_expr(block, fargs + i, args[i]);
       if(!is_type_compatible(farg_types[i],td->fcn.args[i], args[i])){
-	symbol fcnsym = get_symbol("arg");
+	char buf[10];
+	sprintf(buf, "arg%i", i);
+	symbol fcnsym = get_symbol(buf);
 	err_arg = i;
-	logd("ERROR: got '");
-	print_decl(farg_types[i], fcnsym);
-	logd("' expected '");
+	loge("Error at argument %i of call to '%s'.", i, symbol_name(name));
+	logd("\nExpected: ");
 	print_decl(td->fcn.args[i], fcnsym);
-	logd("'\n");
+	logd("\nGot     : ");
+	print_decl(farg_types[i], fcnsym);
+	logd("\n\n");
 	break;
       }
     }
