@@ -5,7 +5,9 @@
 
 (defun gl-uniform-vec2 (void (location i32) (v2 vec2))
   (gl:uniform location (cast (member v2 x) f32) (cast (member v2 y) f32)))
+
 (overload gl:uniform gl-uniform-vec2)
+
 (glfw:init)
 (defvar win (glfw:create-window 512 512 "test.." null null))
 (glfw:make-current win)
@@ -133,12 +135,12 @@ glstatus
     (printstr "Shutdown..")
     (exit 0)))
 
-(glfw:set-mouse-button-callback win (addrof mouse-callback))
-(glfw:set-key-callback win (addrof key-callback))
-(glfw:set-cursor-pos-callback win (addrof cursor-pos-callback))
-(glfw:set-error-callback (addrof error-callback))
-(glfw:set-cursor-enter-callback win (addrof cursor-enter))
-(glfw:set-window-close-callback win (addrof close-window))
+(glfw:set-mouse-button-callback win mouse-callback)
+(glfw:set-key-callback win  key-callback)
+(glfw:set-cursor-pos-callback win cursor-pos-callback)
+(glfw:set-error-callback error-callback)
+(glfw:set-cursor-enter-callback win  cursor-enter)
+(glfw:set-window-close-callback win close-window)
 (glfw:joystick-present? 1)
 
 ;; Game play
@@ -176,23 +178,20 @@ glstatus
 		    (gl:uniform offset-loc fx fy)
 		    (gl:draw-arrays drawtype 0 pts)))
 	      )))))
-(print "gets here\n")
 
 (while (< iteration 2000)
-  (let ((m player-pos))
-    (gl:uniform cam-loc cam-pos)
-    (print m)(print "\n")
-    (setf iteration (+ iteration 1))
-    (gl:clear-color 0.0  0.2 0.0  1.0 )
-    (gl:clear gl:color-buffer-bit)
-    (render-tiles-in-view)
-    (gl:uniform offset-loc m)
-    (gl:uniform size-loc (vec 0.2 0.2))
-    (gl:uniform color-loc 0.5 0.6 0.7 1)
-   
-    (gl:draw-arrays drawtype 0 pts)
-    (glfw:swap-buffers win)
-    (glfw:poll-events)    
-    (usleep sleeptime)))
+  (gl:uniform cam-loc cam-pos)
+  (setf iteration (+ iteration 1))
+  (gl:clear-color 0.0  0.2 0.0  1.0 )
+  (gl:clear gl:color-buffer-bit)
+  (render-tiles-in-view)
+  (gl:uniform offset-loc player-pos)
+  (gl:uniform size-loc (vec 0.2 0.2))
+  (gl:uniform color-loc 0.5 0.6 0.7 1)
+  
+  (gl:draw-arrays drawtype 0 pts)
+  (glfw:swap-buffers win)
+  (glfw:poll-events)    
+  (usleep sleeptime))
 
 

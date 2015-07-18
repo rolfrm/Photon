@@ -15,11 +15,13 @@
 		     (quote (unexpr name))
 		     (quote (unexpr cname))
 		     (type (unexpr _type)))))
+
 (declare-macro load-symbol+ +load-symbol+)
 
 (defun -load-libc ((ptr expr) (name (ptr expr)) (type (ptr expr)))
   (expr 
    (load-symbol+ libc (unexpr name) (unexpr name) (unexpr type))))
+
 (declare-macro load-libc -load-libc)
 
 (load-libc printf (fcn void (fmt (ptr char)) (x i64)))
@@ -238,6 +240,7 @@
 	      (progn
 		(printstr "\n**** ERROR *****\n")
 		(print-expr (deref (ptr+ asserts (unexpr n))))	
+		(printstr "\n")
 		(write-line "****  *****\n")	
 		(exit 1)
 		(noop)
