@@ -4,7 +4,7 @@
 
 (gl-load gl:clear glClear  (fcn void (mask i32)))
 (gl-load gl:clear-color  glClearColor (fcn void (r f32) (g f32) (b f32) (a f32)))
-(write_line "create-shader")
+(write-line "create-shader")
 (defvar gl:fragment-shader (cast 0x8b30 u32))
 (defvar gl:vertex-shader (cast 0x8b31 u32))
 (defvar gl:color-buffer-bit (cast 0x4000 i32))

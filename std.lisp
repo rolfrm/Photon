@@ -67,6 +67,7 @@
 		   (dealloc (cast combined (ptr void)))
 		   sym)))))
 
+
 (defun unfold-body ((ptr expr) (header (ptr expr)) (args (ptr expr)))
   (var ((sexprs (cast
 		 (alloc (u64* (cast (size-of (type (ptr expr))) u64)
@@ -148,8 +149,6 @@
 (defvar libm (load-lib "libm.so"))
 (load-symbol libm (quote cos) (quote cos) (type (fcn f64 (x f64))))
 (load-symbol libm (quote cosf) (quote cosf) (type (fcn f32 (x f32))))
-(cos 3.14)
-(cosf 3.14)
 
 (type (alias i32 pthread-attr-t))
 
@@ -198,9 +197,6 @@
 (defun write-line (void (str (ptr char)))
   (progn (printstr str)
 	 (printstr "\n")))
-
-(defun write_line (void (str (ptr char)))
-  (write-line str))
 
 (defun add-to-list (void (list (ptr (ptr void)))
 		    (cnt (ptr u64)) (data (ptr void)) (elem-size u64))
@@ -282,6 +278,7 @@
 			      body))
 	 (noop))
        (noop))))
+
 (defmacro unless (test &rest body)
   (expr 
    (if (unexpr test)
@@ -293,3 +290,18 @@
 
 (unless false
   (write-line "hej!"))
+
+(defmacro max (a b)
+  (let ((as (gensym)) (bs (gensym)))
+    (expr (let (((unexpr as) (unexpr a)) ((unexpr bs) (unexpr b)))
+	    (if (< (unexpr as) (unexpr bs))
+		(unexpr bs)
+		(unexpr as))))))
+
+
+(defmacro min (a b)
+  (expr (let 
+	    ((_a (unexpr a)) (_b (unexpr b)))
+	  (if (> _a _b)
+	      _b
+	      _a))))

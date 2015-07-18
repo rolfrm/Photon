@@ -925,6 +925,14 @@ expr * make_sub_expr (expr ** exprs, u64 cnt){
   return e;
 }
 
+static int symid = 0;
+expr * gensym(){
+  char buf[100];
+  sprintf(buf, "_sym_%i", symid++);
+  expr e = symbol_expr(clone(buf, strlen(buf)));
+  return (expr *) clone(&e, sizeof(e));
+}
+
 void builtin_macros_load(){
   // Macros
   macro_store_type();
@@ -967,4 +975,5 @@ void builtin_macros_load(){
   defun("sub-expr.expr", str2type("(fcn (ptr expr) (expr (ptr expr)) (idx u64))"), get_sub_expr);
   defun("make-sub-expr", str2type("(fcn (ptr expr) (exprs (ptr (ptr expr))) (cnt u64))"), make_sub_expr);
   defun("expand-macro", str2type("(fcn (ptr expr) (ms (ptr macro_store)) (expr2 (ptr expr)))"), &expand_macro_store2);
+  defun("gensym",str2type("(fcn (ptr expr))"), gensym);
 }
