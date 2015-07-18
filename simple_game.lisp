@@ -28,8 +28,10 @@ void main(){
 #version 130
 in vec2 vertex_position;
 uniform vec2 offset;
+uniform vec2 size;
+uniform vec2 cam;
 void main(){
-  gl_Position = vec4(vertex_position + offset,0.0,1.0);
+  gl_Position = vec4(vertex_position * size + offset - cam,0.0,1.0);
 }
 ")
 (defvar frag-src-len (cast (strlen frag-src) u32))
@@ -65,7 +67,7 @@ glstatus
 
 ;;; -- Load Vertex Buffer Object -- ;;;
 (defvar vbo (cast 0 u32))
-(defvar vbo-data (cast (alloc (u64* 8 4)) (ptr f32))) ; 4 floats
+(defvar vbo-data (cast (alloc0 (u64* 8 4)) (ptr f32))) ; 4 floats
 (setf (deref (ptr+ vbo-data 2)) 0.25)
 (setf (deref (ptr+ vbo-data 4)) 0.25)
 (setf (deref (ptr+ vbo-data 5)) 0.25)
@@ -83,13 +85,33 @@ glstatus
   
 (defvar pts (cast 4 u32))
 (defvar drawtype gl:quads)
-(defvar uloc (gl:get-uniform-location prog "offset"));
+(defvar offset-loc (gl:get-uniform-location prog "offset"))
+(defvar size-loc (gl:get-uniform-location prog "size"))
+(defvar color-loc (gl:get-uniform-location prog "color"))
+(defvar cam-loc (gl:get-uniform-location prog "cam"))
 (defvar iteration 0)
 (defun mouse-callback (void (win-ptr (ptr void)) (button i32) (action i32) (mods i32))
   (write-line "mouse callback!"))
+(defvar player-pos (vec 0 0))
+(defvar cam-pos (vec 0 0))
+(defvar cam-size (vec 10 10))
 
 (defun key-callback (void (win-ptr (ptr void)) (key i32)(scancode i32) (action i32) (mods i32))
-  (printf "KEY: %c\n" (cast key i64)))
+  (let ((k64 (cast key i64)))
+    (when (eq k64 glfw:key-up)
+      (incr (member player-pos y) 0.1))
+    (when (eq k64 glfw:key-down)
+      (incr (member player-pos y) -0.1))
+    (when (eq k64 glfw:key-left)
+      (incr (member player-pos x) -0.1))
+    (when (eq k64 glfw:key-right)
+      (incr (member player-pos x) 0.1))
+    (when (eq k64 glfw:key-space)
+      (setf cam-pos player-pos))
+    (print "Key: ")
+    (print key)
+    (print "\n")
+    ))
 
 (defvar mpos (makevec2 0 0))
 
@@ -106,47 +128,68 @@ glstatus
       (write-line "ENTER")
       (write-line "LEAVE")))
 
+(defun close-window (void (win (ptr void)))
+  (progn
+    (printstr "Shutdown..")
+    (exit 0)))
+
 (glfw:set-mouse-button-callback win (addrof mouse-callback))
 (glfw:set-key-callback win (addrof key-callback))
 (glfw:set-cursor-pos-callback win (addrof cursor-pos-callback))
 (glfw:set-error-callback (addrof error-callback))
 (glfw:set-cursor-enter-callback win (addrof cursor-enter))
+(glfw:set-window-close-callback win (addrof close-window))
 (glfw:joystick-present? 1)
 
 ;; Game play
 
 (defvar tiles-height 100)
 (defvar tiles-width 1000)
-(defvar tiles (cast (alloc (cast (* tiles-height tiles-width) u64)) (ptr i8))) 
+(defvar tiles (cast (alloc0 (cast (* tiles-height tiles-width) u64)) (ptr i8))) 
 
 (defun get-tile((ptr i8) (x i64) (y i64))
   (ptr+ tiles (+ x (* tiles-width y))))
 
-(for it 0 (not (eq it 10)) (i64+ it 1)
-     (setf (deref (get-tile it 0)) 1))
+(for it2 0 (< it2 100) (i64+ it2 1)
+     (for it 0 (not (eq it 10)) (i64+ it 1)
+	  (setf (deref (get-tile it it2)) (cast (+ 1 (i64% (+ it it2) 3)) i8))))
 
-(defvar cam-pos (vec 0 0))
-(defvar cam-size (vec 10 10))
 
 (defun render-tiles-in-view (void)
   (let ((cam-left (cast (member cam-pos x) i64))
 	(cam-right (cast (+ (member cam-pos x) (member cam-size x)) i64))
 	(cam-top (cast (member cam-pos y) i64))
 	(cam-bottom (cast (+ (member cam-pos y) (member cam-size y)) i64)))
-  (for row (max 0 cam-top) (< row (min cam-bottom tiles-height)) (i64+ row 1)
-       (for col (max 0 cam-left) (< col (min cam-right tiles-width)) (i64+ col 1)
-       	    (print col)
-	    (print " ")
-	    (print row)
-	    (print "\n")))))
-(render-tiles-in-view)
-(while (not (eq iteration 200))
-  (let ((m (* (- (makevec2 256 256) mpos) 0.004)))
+    (gl:uniform size-loc 0.4 0.4)
+    (gl:uniform color-loc 1 1 1 1)
+    (for row (max 0 cam-top) (< row (min cam-bottom tiles-height)) (i64+ row 1)
+	 (for col (max 0 cam-left) (< col (min cam-right tiles-width)) (i64+ col 1)
+	      (let ((fx (* 0.1 (cast row f32)))
+		    (fy (* 0.1 (cast col f32))))
+		(let ((tile (deref (get-tile col row))))
+		  (unless (eq 0 tile)
+		    (gl:uniform color-loc 1 0 0 1)
+		    (when (eq tile 1)
+		      (gl:uniform color-loc 1 1 1 1))
+		    (when (eq tile 2)
+		      (gl:uniform color-loc 1 0 1 1))
+		    (gl:uniform offset-loc fx fy)
+		    (gl:draw-arrays drawtype 0 pts)))
+	      )))))
+(print "gets here\n")
+
+(while (< iteration 2000)
+  (let ((m player-pos))
+    (gl:uniform cam-loc cam-pos)
+    (print m)(print "\n")
     (setf iteration (+ iteration 1))
     (gl:clear-color 0.0  0.2 0.0  1.0 )
     (gl:clear gl:color-buffer-bit)
-    (gl:uniform uloc m)
-    (gl:uniform (gl:get-uniform-location prog "color") 1 0 0 1)
+    (render-tiles-in-view)
+    (gl:uniform offset-loc m)
+    (gl:uniform size-loc (vec 0.2 0.2))
+    (gl:uniform color-loc 0.5 0.6 0.7 1)
+   
     (gl:draw-arrays drawtype 0 pts)
     (glfw:swap-buffers win)
     (glfw:poll-events)    

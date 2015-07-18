@@ -83,7 +83,7 @@ f32 f32_mul(f32 a, f32 b){ return a * b; }
 f32 f32_div(f32 a, f32 b){ return a / b; }
 
 i32 i32_add(i32 a, i32 b) { return a + b; }
-
+i64 i64_mod(i64 a, i64 b) { return a % b; }
 type_def * type_of(expr * ex){
   c_block blk;
   blk.exprs = NULL;
@@ -150,6 +150,7 @@ void load_functions(){
   defun("i64-", i64fcn_def, &i64_sub);
   defun("i64*", i64fcn_def, &i64_mul);
   defun("i64/", i64fcn_def, &i64_div);
+  defun("i64%", i64fcn_def, &i64_mod);
 
   type_def * u64fcn_def = str2type("(fcn u64 (a u64) (b u64))");
   defun("u64+", u64fcn_def, &u64_add);

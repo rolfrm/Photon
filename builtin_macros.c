@@ -860,7 +860,6 @@ type_def * or_macro(c_block * blk, c_value * val, expr left, expr right){
 }
 
 type_def * member_macro(c_block * blk, c_value * val, expr object, expr member){
-  //checktypepool();
   ASSERT(is_symbol(member));
   val->type = C_MEMBER;
   val->member.name = expr_symbol(member);

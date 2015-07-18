@@ -125,9 +125,11 @@ type_def * expr2type(expr typexpr){
     }
   }else{
     type_def * td = type_pool_simple(expr_symbol(typexpr));
-    COMPILE_ASSERT(td != NULL);
-    return td;
+    if(td != NULL && td != &error_def) return td;
   }
+  loge("Unable to understand type: ");
+  print_expr(&typexpr);
+  logd("\n");
   return &error_def;
 }
 
