@@ -111,6 +111,9 @@ type_def * expr2type(expr typexpr);
 // Gets the return type of an expression.
 type_def * type_of(expr * ex);
 
+// Creates a new type from the string 'str'. for example "(struct x2 (x i64) (x_2 i64))".
+type_def * str2type(char * str);
+
 // Compiles an expression and returns the type.
 type_def * compile_expr(c_block * block, c_value * val,  expr e );
 

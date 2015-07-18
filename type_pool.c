@@ -202,9 +202,7 @@ type_def * type_pool_simple(symbol sym){
   return _type_pool_simple(sym);
 }
 	  
-	  
 bool test_type_pool(){
-  //type_def * td = str2type("(ptr i64)");
   type_def d;
   d.type = SIMPLE;
   d.simple.name = get_symbol("i64");

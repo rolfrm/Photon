@@ -76,10 +76,10 @@ struct _decl{
   type_def * type;
 };
 
-// Returns the number of sub-types in t.
+// Returns the number of sub-types in 't'.
 size_t get_sub_type_cnt(type_def * t);
 
-// Writes all the sub types into out_types.
+// Writes all the sub types of 't' into 'out_types'.
 void get_sub_types(type_def * t, type_def ** out_types);
 
 // Calculates the size of type t.
@@ -99,11 +99,15 @@ type_def make_ptr(type_def * def);
 // descending order, so least dependent comes first.
 void make_dependency_graph(type_def ** deps, type_def * def);
 
+// Prints the c typedefinition of 'type'.
 void print_def(type_def * type);
+// For printing declerations of type 'type'.
 void print_min_type(type_def * type);
-void print_cdecl(decl idecl);
+
+// Prints the c decleration of 'cdecl'.
+void print_cdecl(decl cdecl);
+
+// Prints the c decleration of type 't' and name 'name'. e.g "i64 my_integer".
 void print_decl(type_def * t, symbol name);
 
-type_def * get_fcn_ptr_function(type_def * td, int * out_ptrs);
-
-type_def * str2type(char * str);
+type_def * get_inner_function(type_def * td, int * out_ptrs);

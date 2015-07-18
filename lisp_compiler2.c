@@ -220,22 +220,12 @@ type_def * _compile_expr(c_block * block, c_value * value, sub_expr * se){
     for(i64 i = 0; i < argcnt; i++){
       farg_types[i] = compile_expr(block, fargs + i, args[i]);
       if(!is_type_compatible(farg_types[i],td->fcn.args[i], args[i])){
+	symbol fcnsym = get_symbol("arg");
 	err_arg = i;
 	logd("ERROR: got '");
-	int ptrs1;
-	type_def * t1i = get_fcn_ptr_function(farg_types[i], &ptrs1);
-	if(t1i != NULL){
-	  logd("(function %.*s)", ptrs1, "*");
-	}else{
-	  print_min_type(farg_types[i]);
-	}
+	print_decl(farg_types[i], fcnsym);
 	logd("' expected '");
-	t1i = get_fcn_ptr_function(td->fcn.args[i], &ptrs1);
-	if(t1i != NULL){
-	  logd("(function %.*s)", ptrs1, "*");
-	}else{
-	  print_min_type(td->fcn.args[i]);
-	}
+	print_decl(td->fcn.args[i], fcnsym);
 	logd("'\n");
 	break;
       }

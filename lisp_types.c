@@ -41,6 +41,16 @@ size_t get_sub_type_cnt(type_def * t){
   }
   return 0;
 }
+
+type_def * get_inner_function(type_def * td, int * _ptrs){
+  int ptrs = 0;
+  while(td->type == POINTER){td = td->ptr.inner; ptrs++;}
+  if(td->type == FUNCTION){
+    *_ptrs = ptrs;
+    return td;
+  }
+  return NULL;
+}
 	  
 void get_sub_types(type_def * t, type_def ** out_types){
   switch(t->type){
@@ -115,16 +125,6 @@ void print_min_type(type_def * type){
   }
 }
 
-type_def * get_fcn_ptr_function(type_def * td, int * _ptrs){
-  int ptrs = 0;
-  while(td->type == POINTER){td = td->ptr.inner; ptrs++;}
-  if(td->type == FUNCTION){
-    *_ptrs = ptrs;
-    return td;
-  }
-  return NULL;
-}
-
 void print_function_decl(int ptrs, type_def * def, symbol name){
   ASSERT(def->type == FUNCTION);
   print_min_type(def->fcn.ret);
@@ -134,7 +134,7 @@ void print_function_decl(int ptrs, type_def * def, symbol name){
   format(")(");
   for(i64 i = 0; i < def->fcn.cnt; i++){
     int fptr_ptrs;
-    type_def * fptr = get_fcn_ptr_function(def->fcn.args[i], &fptr_ptrs);
+    type_def * fptr = get_inner_function(def->fcn.args[i], &fptr_ptrs);
     if(fptr != NULL){
       char name[10];
       sprintf(name, "arg%i", i);
@@ -164,7 +164,7 @@ void print_cdecl(decl idecl){
       }
 
       int inner_ptrs;
-      type_def * fptr = get_fcn_ptr_function(def, &inner_ptrs);
+      type_def * fptr = get_inner_function(def, &inner_ptrs);
       if(fptr != NULL){
 	print_function_decl(inner_ptrs, fptr, idecl.name);
       }else{

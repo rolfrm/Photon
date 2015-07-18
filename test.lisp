@@ -239,7 +239,8 @@ glstatus
 (defvar iteration 0)
 (defun mouse-callback (void (win-ptr (ptr void)) (button i32) (action i32) (mods i32))
   (write-line "mouse callback!"))
-(defun key-callback (void (win-ptr (ptr void)) (key i32) (scancode i32) (action i32) (mods i32))
+
+(defun key-callback (void (win-ptr (ptr void)) (key i32)(scancode i32) (action i32) (mods i32))
   (printf "KEY: %c\n" (cast key i64)))
 
 (defvar mpos (makevec2 0 0))
