@@ -63,3 +63,5 @@ t
 (getcwd buf 100)
 (chdir "..")
 (getcwd buf 100)
+(dealloc (cast buf (ptr void)))
+(setf buf (cast null (ptr char)))

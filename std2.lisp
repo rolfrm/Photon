@@ -45,3 +45,12 @@
     (pthread-create threadid (deref attr) thread-launcher (cast function (ptr void)))
     threadid
     (noop)))
+
+(defvar last-type :type (ptr type_def))
+(defmacro show-type (exp)
+  (progn
+    (setf last-type (type-of exp))
+    (expr last-type)))
+
+(defmacro comment (_expr)
+  (expr (noop)))
