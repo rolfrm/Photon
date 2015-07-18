@@ -374,7 +374,6 @@ void checkvdeps(symbol * vdep){
     }
     it++;
   }
-
 }
 
 void compile_as_c(c_root_code * codes, size_t code_cnt){
@@ -450,8 +449,7 @@ var_def * lispcompile_expr(expr ex, compile_status * optout_status){
     return NULL;
   }
   compile_as_c(&cl,1);
-  symbol s = get_symbol("eval");
-  return get_variable(s);
+  return get_variable(get_symbol("eval"));
 }
 
 void * lisp_compile_and_run_expr(expr ex, compile_status * optout_status){
@@ -573,13 +571,19 @@ compile_status lisp_run_script_file(char * filepath){
     loge("Error: Could not read code from file '%s'\n", filepath);
     return COMPILE_ERROR;
   }
-  return lisp_run_script_string(code);
+  compile_status s = lisp_run_script_string(code);
+  dealloc(code);
+  return s;
 }
 
 compile_status lisp_run_script_string(char * code){
   size_t exprcnt;
   expr * exprs = lisp_parse_all(code, &exprcnt);
-  return lisp_run_exprs(exprs, exprcnt);
+  compile_status s = lisp_run_exprs(exprs, exprcnt);
+  for(size_t i = 0; i < exprcnt; i++)
+    delete_expr(exprs + i);
+  dealloc(exprs);
+  return s;
 }
 	  
 bool test_tcc();

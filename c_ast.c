@@ -312,3 +312,91 @@ void print_c_code(c_root_code code){
 void block_add(c_block * blk, c_expr expr){
   list_add((void **) &blk->exprs, &blk->expr_cnt, &expr, sizeof(c_expr));
 }
+
+void c_var_delete(c_var var){
+  if(var.value != NULL){
+    c_value_delete(*var.value);
+    dealloc(var.value);
+  }
+}
+
+void c_expr_delete(c_expr expr){
+  switch(expr.type){
+  case C_VAR:
+    c_var_delete(expr.var);
+    break;
+  case C_RETURN:
+  case C_VALUE_UNENDED:
+  case C_VALUE:
+    c_value_delete(expr.value);
+    break;
+  case C_BLOCK:
+    c_block_delete(expr.block);
+    break;
+  case C_KEYWORD:
+    break;
+  }
+}
+
+void c_block_delete(c_block blk){
+  for(size_t i = 0; i < blk.expr_cnt; i++){
+    c_expr_delete(blk.exprs[i]);
+  }
+  list_clean((void **) &blk.exprs);
+}
+
+void c_value_delete(c_value val){
+  switch(val.type){
+  case C_ADDRESS_OF: 
+  case C_SUB_EXPR:
+    c_value_delete(*val.value);
+    dealloc(val.value);
+    break;
+  case C_INLINE_VALUE:
+    // 
+    break;
+  case C_FUNCTION_CALL: 
+    for(size_t i = 0; i < val.call.arg_cnt; i++){
+      c_value_delete(val.call.args[i]);
+    }
+    free(val.call.args);
+    break;
+  case C_OPERATOR: 
+    c_value_delete(*val.operator.left);
+    c_value_delete(*val.operator.right);
+    dealloc(val.operator.left);
+    dealloc(val.operator.right);
+    break;
+  case C_DEREF: 
+    c_value_delete(*val.deref.inner);
+    dealloc(val.deref.inner);
+    break;
+    
+  case C_SYMBOL: break;
+  case C_CAST: 
+    c_value_delete(*val.cast.value);
+    break;
+  case C_NOTHING: break;
+  case C_MEMBER: 
+    c_value_delete(*val.member.item);
+    break;
+  }
+}
+
+void c_root_code_delete(c_root_code code){
+  switch(code.type){
+  case C_FUNCTION_DEF: 
+    c_block_delete(code.fcndef.block);
+    break;
+    
+  case C_VAR_DEF: 
+    c_var_delete(code.var);
+    break;
+  case C_INCLUDE: 
+  case C_INCLUDE_LIB: 
+    dealloc(code.include);
+    break;
+  case C_DECL: break;
+  case C_TYPE_DEF:break;
+  }
+}

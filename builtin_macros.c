@@ -395,9 +395,7 @@ type_def * expr_macro(c_block * block, c_value * val, expr body){
   char buf[30];
   sprintf(buf,"_tmp_symbol_%i",id);
   symbol tmp = get_symbol(buf);
-  
-  expr * ex = clone(&body, sizeof(expr));
-
+  expr * ex = clone_expr(&body);
   int cnt = 0;
   bool ok = recurse_expr(ex, block, id, &cnt);
   if(!ok){

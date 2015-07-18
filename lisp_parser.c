@@ -349,7 +349,10 @@ expr lisp_parse1(char * code){
 }
 
 expr clone_expr2(expr body){
-  if(body.type == VALUE) return body;
+  if(body.type == VALUE){
+    body.value.value = clone(body.value.value,body.value.strln);
+    return body;
+  }
   sub_expr exp = body.sub_expr;
   expr * sub = alloc0(sizeof(expr) * exp.cnt);
   for(size_t i = 0; i < exp.cnt; i++)

@@ -82,9 +82,9 @@ struct _c_value{
   c_value_kind type;
   union{
     c_cast cast;
-    c_raw_value raw;
+    c_raw_value raw; //inline
     symbol symbol;
-    c_value * value;//sub expr
+    c_value * value;//sub expr, address of
     c_function_call call;
     c_operator operator;
     c_member member;
@@ -130,8 +130,16 @@ void c_root_code_dep(type_def ** deps, symbol* vdeps, c_root_code code);
 // Calculates the type and variable dependencies for a c code block.
 void block_dep(type_def ** deps, symbol * vdeps, c_block blk);
 
+// Adds an expression to a block.
 void block_add(c_block * blk, c_expr expr);
 
+// ** Cleanup ** //
+
+// Cleans up the memory used by the code.
+void c_root_code_delete(c_root_code code);
+void c_block_delete(c_block blk);
+void c_value_delete(c_value val);
+void c_expr_delete(c_expr expr);
 extern const c_block c_block_empty;
 extern const c_value c_value_empty;
 // format out the c-code

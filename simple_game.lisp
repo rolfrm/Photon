@@ -1,7 +1,10 @@
 ;; The following code runs / compiles
 (load "std2.lisp")
+(printstr "loading gl..")
 (load "glfw.lisp")
 (load "gl.lisp")
+(printstr "starting game..")
+
 
 (glfw:init)
 
@@ -62,8 +65,6 @@ length
 glstatus
 (gl:use-program prog)
 
-
-
 ;;; -- Load Vertex Buffer Object -- ;;;
 (defvar vbo (cast 0 u32))
 (defvar vbo-data (cast (alloc (u64* 8 4)) (ptr f32))) ; 4 floats
@@ -113,7 +114,7 @@ glstatus
 (glfw:set-cursor-enter-callback win (addrof cursor-enter))
 (glfw:joystick-present? 1)
 
-(while (not (eq iteration 4000))
+(while (not (eq iteration 2))
   (let ((m (* (- (makevec2 256 256) mpos) 0.004)))
     (setf iteration (+ iteration 1))
     (gl:clear-color 0.0  0.2 0.0  1.0 )
