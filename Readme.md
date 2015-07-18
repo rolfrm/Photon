@@ -59,9 +59,9 @@ V1 Release Checklist (Aiming at August 21 release)
 * [ ] lvalue checking (setf 1 10) is invalid for instance. (setf a 10) might be ok.
 * [ ] Linux 32 bit / Windows 64/32 bit support
 
-
 Future Features
 ---------
+* [ ] Recursion support
 * [ ] Packages / Modules
 * [ ] libgccjit backend.
 * [ ] (and/or) Use user selected compiler backend. Fallback to tcc if necessesary.

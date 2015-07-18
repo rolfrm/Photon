@@ -202,7 +202,11 @@ expr * expand_macro_store(macro_store * ms, expr * exprs, size_t cnt){
   type_def * t = v->type;
   ASSERT(t->type == FUNCTION);
   ASSERT(t->fcn.ret == opaque_expr());
-  ASSERT(t->fcn.cnt == (i32)cnt || (ms->rest && t->fcn.cnt <= (i32)cnt));
+  if(t->fcn.cnt == (i32)cnt || (ms->rest && t->fcn.cnt <= (i32)cnt)){
+    //ok..
+  }else{
+    ERROR("Unvalid number of arguments for macro function '%s'", symbol_name(ms->fcn));
+  }
   expr * (* d)(expr * e, ...) = v->data;
   expr * (* d0)() = v->data;
   if(ms->rest == false){
@@ -283,7 +287,11 @@ type_def * expand_macro(c_block * block, c_value * val, expr * exprs, size_t cnt
   expr * outexpr = expand_macro_store(fcn_var->data, exprs + 1, cnt - 1);
   if(outexpr == NULL)
     return &error_def;
-  return compile_expr(block, val, *outexpr);
+
+  type_def * td = compile_expr(block, val, *outexpr);
+  //delete_expr(outexpr);
+  //dealloc(outexpr);
+  return td;
 }
 
 int recurse_count(expr ex){
@@ -577,7 +585,7 @@ type_def * defun_macro(c_block * block, c_value * value, expr name, expr args, e
   return compile_value(value, string_expr(symbol_name(fcnname)).value);
 }
 
-type_def * eq_macro(c_block * block, c_value * val, expr item1, expr item2){
+type_def * comparison_macro(char * operator, c_block * block, c_value * val, expr item1, expr item2){
   c_value * val1 = alloc0(sizeof(c_value));
   c_value * val2 = alloc0(sizeof(c_value));
   c_value * comp = alloc0(sizeof(c_value));
@@ -585,16 +593,37 @@ type_def * eq_macro(c_block * block, c_value * val, expr item1, expr item2){
   type_def * t2 = compile_expr(block, val2, item2);
   COMPILE_ASSERT(t1 != &error_def && t1 != &void_def);
   if(!(is_type_compatible(t1,t2,item1) || is_type_compatible(t2,t1,item2))){
-    COMPILE_ERROR("Types cannot be compared by eq");
+    COMPILE_ERROR("Types cannot be compared by '%s'", operator);
   }
   val->type = C_CAST;
   val->cast.value = comp;
   val->cast.type = str2type("bool");
   comp->type = C_OPERATOR;
-  comp->operator.operator = "==";
+  comp->operator.operator = operator;
   comp->operator.left = val1;
   comp->operator.right = val2;
   return val->cast.type;
+
+}
+
+type_def * eq_macro(c_block * block, c_value * val, expr item1, expr item2){
+  return comparison_macro("==", block, val, item1, item2);
+}
+
+type_def * less_than_macro(c_block * block, c_value * val, expr item1, expr item2){
+  return comparison_macro("<", block, val, item1, item2);
+}
+
+type_def * bigger_than_macro(c_block * block, c_value * val, expr item1, expr item2){
+  return comparison_macro(">", block, val, item1, item2);
+}
+
+type_def * leq_macro(c_block * block, c_value * val, expr item1, expr item2){
+  return comparison_macro("<=", block, val, item1, item2);
+}
+
+type_def * beq_macro(c_block * block, c_value * val, expr item1, expr item2){
+  return comparison_macro(">=", block, val, item1, item2);
 }
 
 symbol get_tmp_sym(){
@@ -913,6 +942,11 @@ void builtin_macros_load(){
   define_macro("expand",-1,expand_macro);
   define_macro("expr", 1, expr_macro);
   define_macro("eq", 2, eq_macro);
+  define_macro("==", 2, eq_macro);
+  define_macro("<", 2, less_than_macro);
+  define_macro(">", 2, bigger_than_macro);
+  define_macro("<=", 2, leq_macro);
+  define_macro(">=", 2, beq_macro);
   define_macro("if", 3, if_macro);
   define_macro("loop-while", 2, while_macro);
   define_macro("deref", 1, deref_macro);

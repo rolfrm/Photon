@@ -1,15 +1,13 @@
 ;; The following code runs / compiles
 (load "std2.lisp")
-(printstr "loading gl..")
 (load "glfw.lisp")
 (load "gl.lisp")
-(printstr "starting game..")
 
-
+(defun gl-uniform-vec2 (void (location i32) (v2 vec2))
+  (gl:uniform location (cast (member v2 x) f32) (cast (member v2 y) f32)))
+(overload gl:uniform gl-uniform-vec2)
 (glfw:init)
-
 (defvar win (glfw:create-window 512 512 "test.." null null))
-
 (glfw:make-current win)
 (glfw:set-clipboard-string win "clipboard test!")
 (defvar sleeptime (cast 30000 i32))
@@ -82,6 +80,7 @@ glstatus
 (gl:vertex-attrib-pointer 0 2 gl:float gl:false 0 null) 
 (gl:get-error)
 
+  
 (defvar pts (cast 4 u32))
 (defvar drawtype gl:quads)
 (defvar uloc (gl:get-uniform-location prog "offset"));
@@ -114,12 +113,24 @@ glstatus
 (glfw:set-cursor-enter-callback win (addrof cursor-enter))
 (glfw:joystick-present? 1)
 
-(while (not (eq iteration 2))
+;; Game play
+
+(defvar tiles-height 100)
+(defvar tiles-width 1000)
+(defvar tiles (cast (alloc (cast (* tiles-height tiles-width) u64)) (ptr i8))) 
+
+(defun get-tile((ptr i8) (x i64) (y i64))
+  (ptr+ tiles (+ x (* tiles-width y))))
+
+(for it 0 (not (eq it 10)) (i64+ it 1)
+     (setf (deref (get-tile it 0)) 1))
+
+(while (not (eq iteration 200))
   (let ((m (* (- (makevec2 256 256) mpos) 0.004)))
     (setf iteration (+ iteration 1))
     (gl:clear-color 0.0  0.2 0.0  1.0 )
     (gl:clear gl:color-buffer-bit)
-    (gl:uniform uloc (cast (- 0 (member m x)) f32) (cast (member m y) f32))
+    (gl:uniform uloc m)
     (gl:uniform (gl:get-uniform-location prog "color") 1 0 0 1)
     (gl:draw-arrays drawtype 0 pts)
     (glfw:swap-buffers win)
