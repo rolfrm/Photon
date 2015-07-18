@@ -31,7 +31,8 @@
 (load-libc memset (fcn void (dst (ptr void)) (c u8) (bytes u64)))
 (load-libc exit  (fcn void (status i32)))
 (load-libc strlen (fcn i64 (str (ptr char))))
-
+(load-libc chdir (fcn i32 (path (ptr char))))
+(load-libc getcwd (fcn (ptr char) (buf (ptr char)) (buflen u64)))
 (defun alloc0 ((ptr void) (size u64))
   (var ((buffer (alloc size)))
        (progn

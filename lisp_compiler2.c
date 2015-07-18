@@ -310,14 +310,29 @@ type_def * str2type(char * str){
 
 #include <libtcc.h>
 #include <stdlib.h>
-void tccerror(void * opaque, const char * msg){
-  UNUSED(opaque);
-  format("%s\n",msg);
+
+//#include <unistd.h>
+char *getcwd(char *buf, size_t size);
+
+char * orig_dir = NULL;
+
+char * get_orig_dir(){
+  if(orig_dir == NULL){
+    static char dirbuf[100];
+    getcwd(dirbuf,array_count(dirbuf));
+    orig_dir = dirbuf;
+  }
+  return orig_dir;
 }
 
-TCCState * mktccs(){
+void tccerror(void * opaque, const char * msg){
+  UNUSED(opaque);
+  loge("TCC error: %s\n",msg);
+}
+
+TCCState * mktccs(){ 
   TCCState * tccs = tcc_new();
-  tcc_set_lib_path(tccs,".");
+  tcc_set_lib_path(tccs, get_orig_dir());
   tcc_set_error_func(tccs, NULL, tccerror);
   tcc_set_output_type(tccs, TCC_OUTPUT_MEMORY);
   return tccs;
@@ -332,9 +347,6 @@ void go_write(type_def ** deps, symbol * vdeps, c_root_code * codes, size_t code
     type_def * t = var->type;
     while(t->type == POINTER){
       t = t->ptr.inner;
-    }
-    if(t->type == FUNCTION){
-      //continue;
     }
     if(var == NULL)
       ERROR("Cannot find variable '%s'", symbol_name(vdeps[i]));
@@ -382,8 +394,10 @@ void compile_as_c(c_root_code * codes, size_t code_cnt){
   pop_format_out();
   fclose(f);
   char header[] = "//***********\n";
-  append_buffer_to_file(header,sizeof(header) - 1,"compile_out.c");
-  append_buffer_to_file(data,cnt,"compile_out.c");
+  char compile_out_path[1000];
+  sprintf(compile_out_path,"%s/%s",get_orig_dir(), "compile_out.c");
+  append_buffer_to_file(header,sizeof(header) - 1, compile_out_path);
+  append_buffer_to_file(data,cnt,compile_out_path);
   TCCState * tccs = mktccs();
   for(size_t i = 0; i < array_count(vdeps) && vdeps[i].id != 0; i++){
     var_def * var = get_variable(vdeps[i]);

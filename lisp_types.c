@@ -366,60 +366,29 @@ void make_dependency_graph(type_def ** defs, type_def * def){
   _make_dependency_graph(defs,def,false, false);
 }
 
-/*void get_no_size_dependencies(type_def ** defs, type_def * def){
-  bool check(){
-    type_def ** defs_it = defs;
-    for(; *defs_it != NULL; defs_it++){
-      if(*defs_it == def)
-	return false;
-    }
-    return true;
-  }
-  
-  bool check_add(){
-    type_def ** defs_it = defs;
-    for(; *defs_it != NULL; defs_it++){
-      if(*defs_it == def)
-	return false;
-    }
-    *defs_it = def;
-    return true;
-  }
-  if(check() == false) return;
-  switch(def->type){
-  case UNION:
-    check_add();
-    break;
-  case STRUCT:
-    check_add();
-    break;
-  case POINTER:
-    get_no_size_dependencies(defs, def->ptr.inner);
-    break;
-  case TYPEDEF:
-    get_no_size_dependencies(defs, def->ctypedef.inner);
-    check_add();    
-    break;
-    
-  case FUNCTION:
-    get_no_size_dependencies(defs, def->fcn.ret);
-    for(int i = 0; i < def->fcn.cnt; i++)
-      get_no_size_dependencies(defs, def->fcn.args[i]);
-    break;
-  case OPAQUE_STRUCT:
-  case ENUM:
-    check_add();
-    break;
-  case SIMPLE:
-    break;
-  case type_def_kind_cnt:
-    ERROR("Unknown type: %i",def->type);
-    break;
-  }
-  }*/
+char * stdheader = "#include<stdint.h> \n\
+typedef char i8;				\n\
+typedef i8 bool;				\n\
+typedef short i16;				\n\
+typedef int i32;				\n\
+typedef int64_t i64;				\n\
+///typedef __int128 i128;			\n\
+						\n\
+typedef unsigned char u8;			\n\
+typedef unsigned short u16;			\n\
+typedef unsigned int u32;			\n\
+typedef uint64_t u64;				\n\
+///typedef unsigned __int128 u128;		\n\
+						\n\
+typedef char * str;				\n\
+						\n\
+typedef float f32;				\n\
+typedef double f64;\n";
+
 
 void write_dependencies(type_def ** deps){
-  format("#include \"cstd_header.h\"\n");
+  //format("#include \"cstd_header.h\"\n");
+  format("%s", stdheader);
   // first forward declare.
 
   for(; *deps != NULL; deps++){

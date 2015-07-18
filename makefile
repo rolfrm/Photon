@@ -10,7 +10,7 @@ CFLAGS = -Itcc -I.. -I../libconcurrency-read-only/libconcurrency/ -std=c11 -c $(
 
 all: $(TARGET)
 $(TARGET): $(OBJECTS)
-	$(CC) $(LDFLAGS) $(OBJECTS) $(LIBS) tcc/libtcc.a -ldl -o $@
+	$(CC) $(LDFLAGS) $(OBJECTS) $(LIBS) tcc/libtcc.a libtcc1.a -ldl -o $@
 
 .c.o: $(HEADERS)
 	$(CC) $(CFLAGS) $< -o $@ -MMD -MF $@.depends

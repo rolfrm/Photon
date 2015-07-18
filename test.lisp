@@ -243,8 +243,6 @@ glstatus
 (defun key-callback (void (win-ptr (ptr void)) (key i32)(scancode i32) (action i32) (mods i32))
   (printf "KEY: %c\n" (cast key i64)))
 
-;(i64+ "asd" 1)
-
 (defvar mpos (makevec2 0 0))
 
 (defun cursor-pos-callback (void (win-ptr (ptr void)) (x f64) (y f64))

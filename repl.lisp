@@ -58,3 +58,8 @@ t
   (sub-expr.expr d (cast (expr2number a) u64)))
 
 (test2 1 2 3 4 5 6 7)
+
+(defvar buf (cast (alloc 100) (ptr char)))
+(getcwd buf 100)
+(chdir "..")
+(getcwd buf 100)
