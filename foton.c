@@ -50,7 +50,26 @@ bool test_lisp2c();
 bool test_get_cname();
 bool test_symbols();
 bool test_type_pool();
+
+#include <iron/coroutines.h>
+
+void test_run(void * userdata){
+  while(true){
+    logd("yield: %s\n", (char *) userdata);
+    ccyield();
+  }
+}
+
 int main(int argc, char *argv[] ){
+  /* ccdispatch * cc = ccstart(); */
+  /* ccthread(cc, test_run, "Hello"); */
+  /* ccthread(cc, test_run, "World!"); */
+  /* ccstep(cc); */
+  /* ccstep(cc); */
+  /* ccstep(cc); */
+  /* ccstep(cc); */
+  /* return 0; */
+
 
   if(argc == 1 || (argc >= 2 && strcmp(argv[1],"--repl") == 0)){
     break_on_errors = false;

@@ -73,10 +73,18 @@ t
 ((addrof plus1) 3)
 
 
-((lambda (void (a i64))
-  (print a))
- 5)
+(defun cctest(void (userdata (ptr void)))
+  (while true
+    (print (cast userdata i64)) (print "hello cc!\n")
+    (ccyield)))
 
-(defvar y 10)
-((let ((x 5))
-  (lambda (i64) y)))
+
+(defvar cc (ccstart))
+(ccthread cc cctest (cast 0 (ptr void)))
+(ccthread cc cctest (cast 1 (ptr void)))
+(ccthread cc cctest (cast 2 (ptr void)))
+(ccthread cc cctest (cast 3 (ptr void)))
+(ccthread cc cctest (cast 4 (ptr void)))
+
+(for it 0 (< it 100) (i64+ it 1)
+     (ccstep cc))
