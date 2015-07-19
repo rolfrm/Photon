@@ -160,13 +160,19 @@ void print_cdecl(decl idecl){
   case SIMPLE:
   case POINTER:
     {
-      if(idecl.name.id == 0){
-	print_min_type(def);
-	return;
-      }
 
       int inner_ptrs;
       type_def * fptr = get_inner_function(def, &inner_ptrs);
+      
+      if(idecl.name.id == 0){
+	if(fptr == NULL)
+	  print_min_type(def);
+	else
+	  print_function_decl(inner_ptrs, fptr, idecl.name);
+	return;
+      }
+
+      
       if(fptr != NULL){
 	print_function_decl(inner_ptrs, fptr, idecl.name);
       }else{

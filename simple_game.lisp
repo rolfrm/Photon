@@ -218,25 +218,27 @@ glstatus
 
 (defvar offsets (cast (alloc (* (size-of (type vec2)) 16)) (ptr vec2)))
 (setf (deref offsets) (vec 0 0))
-(setf (deref (ptr+ offsets 1)) (vec 1 1))
-(setf (deref (ptr+ offsets 2)) (vec 2 2))
+(setf (deref (ptr+ offsets 1)) (vec 1 5))
+(setf (deref (ptr+ offsets 2)) (vec 2 4))
 (setf (deref (ptr+ offsets 3)) (vec 3 3))
-(setf (deref (ptr+ offsets 4)) (vec 4 4))
-(setf (deref (ptr+ offsets 5)) (vec 5 5))
+(setf (deref (ptr+ offsets 4)) (vec 4 2))
 
-(defvar tileupdater (lambda (void (arg (ptr void)))
-		   
-		   (let ((col 0) (row 0)
-			 (offset (deref (ptr+ offsets (cast arg i64)))))
-		     (while true
-		       
-		       (for ci 0 (< ci 25) (+ ci 1)
-			    (for ri 0 (< ri 25) (+ ri 1)
-				 (setf col (+ ci (cast (member offset x) i64)))
-				 (setf row (+ ri (cast (member offset y) i64)))
-				 (update-cell col row)
-				 (ccwait 0.00001)))
-		       ))))
+(setf (deref (ptr+ offsets 5)) (vec 5 1))
+(setf (deref (ptr+ offsets 6)) (vec 6 0))
+
+(defvar tileupdater 
+  (lambda (void (arg (ptr void)))
+    (let ((col 0) (row 0)
+	  (offset (deref (ptr+ offsets (cast arg i64)))))
+      (while true
+	(for ci 0 (< ci 25) (+ ci 1)
+	     (for ri 0 (< ri 25) (+ ri 1)
+		  (setf col (+ ci (cast (member offset x) i64)))
+		  (setf row (+ ri (cast (member offset y) i64)))
+		  (update-cell col row)
+		  (unless (eq (i64% (rand) 3) 0)
+		    (ccwait 0.00001))))
+	))))
 
 (ccthread cc  (deref tileupdater) null)
 (for it 0 (< it 200) (+ it 1) (ccstep cc))
@@ -249,6 +251,8 @@ glstatus
 (ccthread cc  (deref tileupdater) (cast 4 (ptr void)))
 (for it 0 (< it 200) (+ it 1) (ccstep cc))
 (ccthread cc  (deref tileupdater) (cast 5 (ptr void)))
+(for it 0 (< it 200) (+ it 1) (ccstep cc))
+(ccthread cc  (deref tileupdater) (cast 6 (ptr void)))
 
 (while (< iteration 4000)
 

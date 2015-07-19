@@ -30,21 +30,27 @@
 	     (type (fcn i32 
 			(id thread-handle) 
 			(attr i32) 
-			(go-fcn (fcn (ptr void) (arg (ptr void)))) 
+			(go-fcn (fcn (ptr void) (arg (ptr void))))
 			(arg (ptr void)))))
 
 (defun thread-launcher ((ptr void) (arg (ptr void)))
   (progn
-    (invoke (cast arg (fcn void)))
+    (print (cast arg i64))
+    (print "\n")
+    (let ((f (cast arg (ptr (fcn void))))) 
+      (f)
+      )
     null))
 
-(defun launch (void (function (fcn void)))
+(defun launch (void (function (ptr (fcn void))))
   (let ((attr (cast (alloc0 64) (ptr i32)))
 	(threadid (new-thread-handle)))
     (pthread-attr-init attr)
+    (print "??\n")
     (pthread-create threadid (deref attr) thread-launcher (cast function (ptr void)))
     threadid
     (noop)))
+
 
 (defvar last-type :type (ptr type_def))
 (defmacro show-type (exp)

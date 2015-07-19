@@ -33,12 +33,14 @@ t
 
 (defun test-launch (void)
   (progn
-    (launch test-ptr)
-    (launch test-ptr)
-    (launch test-ptr)
-    (launch test-ptr)
-    (launch test-ptr)))
-
+    (launch (addrof test-ptr))
+    (launch (addrof test-ptr))
+    (launch (addrof test-ptr))
+    (launch (addrof test-ptr))
+    (launch (addrof test-ptr))
+))
+(test-launch)
+(exit 0)
 (set-printer (quote printnl))
 
 
