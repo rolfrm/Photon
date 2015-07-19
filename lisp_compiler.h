@@ -153,6 +153,9 @@ void push_symbols(var_def ** vars, size_t * vars_cnt);
 // Pops the top stack from the list of symbols.
 void pop_symbols();
 
+// generates a unique symbol.
+expr * gensym();
+
 // Testing
 bool test_lisp2c();
 void checktypepool();

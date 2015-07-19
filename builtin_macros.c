@@ -485,8 +485,11 @@ type_def * quote_macro(c_block * block, c_value * value, expr name){
   expr nexpr[2];
   nexpr[1] = name;
   nexpr[1].value.type = STRING;
-  nexpr[0].value.type = SYMBOL;
+  nexpr[1].type = VALUE;
+
   char * fcn= "get-symbol";
+  nexpr[0].type = VALUE;
+  nexpr[0].value.type = SYMBOL;
   nexpr[0].value.value = fcn;
   nexpr[0].value.strln = strlen(fcn); 
   expr pexpr;
@@ -925,6 +928,8 @@ expr * make_sub_expr (expr ** exprs, u64 cnt){
 }
 
 static int symid = 0;
+
+
 expr * gensym(){
   char buf[100];
   sprintf(buf, "_sym_%i", symid++);

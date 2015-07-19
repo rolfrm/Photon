@@ -161,11 +161,12 @@ bool is_type_compatible(type_def * call_type, type_def * arg_type, expr callexpr
   return false;	   
 }
 
-
 type_def * _compile_expr(c_block * block, c_value * value, sub_expr * se){
-  COMPILE_ASSERT(se->cnt != 0);
+  COMPILE_ASSERT(se->cnt > 0);
   expr name_expr = se->exprs[0];
-  if(name_expr.type != VALUE && name_expr.value.type != SYMBOL) ERROR("need symbol for first car");
+  if(name_expr.type != VALUE || name_expr.value.type != SYMBOL) {
+    ERROR("need symbol for first car");
+  }
   
   expr * args = se->exprs + 1;
   i64 argcnt = se->cnt - 1;
