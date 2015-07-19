@@ -35,6 +35,10 @@
 (load-libc strlen (fcn i64 (str (ptr char))))
 (load-libc chdir (fcn i32 (path (ptr char))))
 (load-libc getcwd (fcn (ptr char) (buf (ptr char)) (buflen u64)))
+(load-symbol+ libc std:rand rand (fcn i32))
+(defun rand(i64)
+  (bit-or (cast (std:rand) i64) 
+	  (<< (cast (std:rand) i64) 32)))
 (defun alloc0 ((ptr void) (size u64))
   (var ((buffer (alloc size)))
        (progn
@@ -164,7 +168,7 @@
   (std:print-f64 "%f" (cast x f64)))
 
 (defun printi64 (void (x i64))
-  (std:print-i64 "%i" x))
+  (std:print-i64 "%p" x))
 
 (defun printi32 (void (x i32))
   (printi64 (cast x i64)))
@@ -303,12 +307,11 @@
 
 
 (defmacro min (a b)
-  (expr (let 
-	    ((_a (unexpr a)) (_b (unexpr b)))
-	  (if (> _a _b)
-	      _b
-	      _a))))
-
+  (let ((as (gensym)) (bs (gensym)))
+    (expr (let (((unexpr as) (unexpr a)) ((unexpr bs) (unexpr b)))
+	    (if (> (unexpr as) (unexpr bs))
+		(unexpr bs)
+		(unexpr as))))))
 
 (defmacro lambda (args body)
   (let ((s (gensym)))

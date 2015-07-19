@@ -854,6 +854,34 @@ type_def * boolean_operator(char * operator, c_block * blk, c_value * val, expr 
   return left_t;
 }
 
+type_def * bitwise_operator(char * operator, c_block * blk, c_value * val, expr left, expr right){
+  c_value left_value, right_value;
+  type_def * left_t = compile_expr(blk,&left_value,left);
+  type_def * right_t = compile_expr(blk,&right_value,right);
+  COMPILE_ASSERT(left_t == &i64_def && left_t == right_t);
+  val->type = C_OPERATOR;
+  val->operator.left = clone(&left_value, sizeof(c_value));
+  val->operator.right = clone(&right_value, sizeof(c_value));
+  val->operator.operator = operator;
+  return left_t;
+}
+
+type_def * bitor_operator(c_block * blk, c_value * val, expr left, expr right){
+  return bitwise_operator("|", blk, val, left, right);
+}
+
+type_def * bitand_operator(c_block * blk, c_value * val, expr left, expr right){
+  return bitwise_operator("&", blk, val, left, right);
+}
+
+type_def * bit_leftshift_operator(c_block * blk, c_value * val, expr left, expr right){
+  return bitwise_operator("<<", blk, val, left, right);
+}
+
+type_def * bit_rightshift_operator(c_block * blk, c_value * val, expr left, expr right){
+  return bitwise_operator(">>", blk, val, left, right);
+}
+
 type_def * and_macro(c_block * blk, c_value * val, expr left, expr right){
   return boolean_operator("&&", blk, val, left, right);
 }
@@ -960,6 +988,12 @@ void builtin_macros_load(){
   define_macro("<=", 2, leq_macro);
   define_macro(">=", 2, beq_macro);
   define_macro("if", 3, if_macro);
+
+  define_macro("bit-or", 2, bitor_operator);
+  define_macro("bit-and", 2, bitand_operator);
+  define_macro("<<", 2, bit_leftshift_operator);
+  define_macro(">>", 2, bit_rightshift_operator);
+
   define_macro("loop-while", 2, while_macro);
   define_macro("deref", 1, deref_macro);
   define_macro("addrof", 1, addrof_macro);

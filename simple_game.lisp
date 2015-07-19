@@ -165,9 +165,9 @@ glstatus
 
 
 (defun render-tiles-in-view (void)
-  (let ((cam-left (cast (member cam-pos x) i64))
+  (let ((cam-left (cast (- (member cam-pos x) (member cam-size x)) i64))
 	(cam-right (cast (+ (member cam-pos x) (member cam-size x)) i64))
-	(cam-top (cast (member cam-pos y) i64))
+	(cam-top (cast (- (member cam-pos y) (member cam-size y)) i64))
 	(cam-bottom (cast (+ (member cam-pos y) (member cam-size y)) i64)))
     (gl:uniform size-loc 1.0 1.0)
     (gl:uniform color-loc 1 1 1 1)
@@ -192,17 +192,11 @@ glstatus
 
     (when (and (>= x 0)
 	       (>= y 0))
-      (print x)
-      (print " ")
-      (print y)
-      (print "\n")
       (let ((tile (get-tile x y)))
 	(unless
 	    (or 
 	     (eq (cast null (ptr i8)) tile)
 	     (eq (deref tile) 0))
-	  (print (deref tile))
-	  (print "\n")
 	  (setf player-pos new-pos))))))
 
 
@@ -223,7 +217,6 @@ glstatus
   (glfw:poll-events)    
   (update-player)
   (setf new-pos player-pos)
-  (print new-pos)
   (usleep sleeptime))
 
 
