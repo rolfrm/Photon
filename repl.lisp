@@ -71,3 +71,12 @@ t
 (defvar plus12 (addrof plus1))
 
 ((addrof plus1) 3)
+
+
+((lambda (void (a i64))
+  (print a))
+ 5)
+
+(defvar y 10)
+((let ((x 5))
+  (lambda (i64) y)))

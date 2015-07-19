@@ -308,3 +308,13 @@
 	  (if (> _a _b)
 	      _b
 	      _a))))
+
+
+(defmacro lambda (args body)
+  (let ((s (gensym)))
+    (expr 
+     (progn
+       (defun (unexpr s) (unexpr args)
+	 (unexpr body))
+       (addrof (unexpr s))))))
+
