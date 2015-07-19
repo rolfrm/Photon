@@ -32,8 +32,9 @@ in vec2 vertex_position;
 uniform vec2 offset;
 uniform vec2 size;
 uniform vec2 cam;
+uniform vec2 cam_size;
 void main(){
-  gl_Position = vec4(vertex_position * size + offset - cam,0.0,1.0);
+  gl_Position = vec4((vertex_position * size + offset - cam) / cam_size * 2.0,0.0,1.0);
 }
 ")
 (defvar frag-src-len (cast (strlen frag-src) u32))
@@ -70,10 +71,10 @@ glstatus
 ;;; -- Load Vertex Buffer Object -- ;;;
 (defvar vbo (cast 0 u32))
 (defvar vbo-data (cast (alloc0 (u64* 8 4)) (ptr f32))) ; 4 floats
-(setf (deref (ptr+ vbo-data 2)) 0.25)
-(setf (deref (ptr+ vbo-data 4)) 0.25)
-(setf (deref (ptr+ vbo-data 5)) 0.25)
-(setf (deref (ptr+ vbo-data 7)) 0.25)
+(setf (deref (ptr+ vbo-data 2)) 1.0)
+(setf (deref (ptr+ vbo-data 4)) 1.0)
+(setf (deref (ptr+ vbo-data 5)) 1.0)
+(setf (deref (ptr+ vbo-data 7)) 1.0)
 (gl:gen-buffers 1 (addrof vbo))
 (gl:bind-buffer gl:array-buffer vbo)
 
@@ -91,27 +92,33 @@ glstatus
 (defvar size-loc (gl:get-uniform-location prog "size"))
 (defvar color-loc (gl:get-uniform-location prog "color"))
 (defvar cam-loc (gl:get-uniform-location prog "cam"))
+(defvar cam-size-loc (gl:get-uniform-location prog "cam_size"))
 (defvar iteration 0)
 (defun mouse-callback (void (win-ptr (ptr void)) (button i32) (action i32) (mods i32))
   (write-line "mouse callback!"))
 (defvar player-pos (vec 0 0))
+(defvar new-pos (vec 0 0))
 (defvar cam-pos (vec 0 0))
 (defvar cam-size (vec 10 10))
 
 (defun key-callback (void (win-ptr (ptr void)) (key i32)(scancode i32) (action i32) (mods i32))
   (let ((k64 (cast key i64)))
-    (when (eq k64 glfw:key-up)
-      (incr (member player-pos y) 0.1))
-    (when (eq k64 glfw:key-down)
-      (incr (member player-pos y) -0.1))
-    (when (eq k64 glfw:key-left)
-      (incr (member player-pos x) -0.1))
-    (when (eq k64 glfw:key-right)
-      (incr (member player-pos x) 0.1))
-    (when (eq k64 glfw:key-space)
-      (setf cam-pos player-pos))
+    (when (eq action 1)
+      (setf new-pos player-pos)
+      (when (eq k64 glfw:key-up)
+	(incr (member new-pos y) 1))
+      (when (eq k64 glfw:key-down)
+	(incr (member new-pos y) -1))
+      (when (eq k64 glfw:key-left)
+	(incr (member new-pos x) -1))
+      (when (eq k64 glfw:key-right)
+	(incr (member new-pos x) 1))
+      (when (eq k64 glfw:key-space)
+	(setf cam-pos new-pos)))
     (print "Key: ")
     (print key)
+    (print " ")
+    (print action)
     (print "\n")
     ))
 
@@ -162,12 +169,12 @@ glstatus
 	(cam-right (cast (+ (member cam-pos x) (member cam-size x)) i64))
 	(cam-top (cast (member cam-pos y) i64))
 	(cam-bottom (cast (+ (member cam-pos y) (member cam-size y)) i64)))
-    (gl:uniform size-loc 0.4 0.4)
+    (gl:uniform size-loc 1.0 1.0)
     (gl:uniform color-loc 1 1 1 1)
     (for row (max 0 cam-top) (< row (min cam-bottom tiles-height)) (i64+ row 1)
 	 (for col (max 0 cam-left) (< col (min cam-right tiles-width)) (i64+ col 1)
-	      (let ((fx (* 0.1 (cast row f32)))
-		    (fy (* 0.1 (cast col f32))))
+	      (let ((fx (cast row f32))
+		    (fy (cast col f32)))
 		(let ((tile (deref (get-tile col row))))
 		  (unless (eq 0 tile)
 		    (gl:uniform color-loc 1 0 0 1)
@@ -179,19 +186,44 @@ glstatus
 		    (gl:draw-arrays drawtype 0 pts)))
 	      )))))
 
+(defun update-player(void)
+  (let ((x (cast (member new-pos x) i64))
+	(y (cast (member new-pos y) i64)))
+
+    (when (and (>= x 0)
+	       (>= y 0))
+      (print x)
+      (print " ")
+      (print y)
+      (print "\n")
+      (let ((tile (get-tile x y)))
+	(unless
+	    (or 
+	     (eq (cast null (ptr i8)) tile)
+	     (eq (deref tile) 0))
+	  (print (deref tile))
+	  (print "\n")
+	  (setf player-pos new-pos))))))
+
+
+
 (while (< iteration 2000)
+  (gl:uniform cam-size-loc cam-size)
   (gl:uniform cam-loc cam-pos)
   (setf iteration (+ iteration 1))
-  (gl:clear-color 0.0  0.2 0.0  1.0 )
+  (gl:clear-color 0.0  0.0 0.0  1.0 )
   (gl:clear gl:color-buffer-bit)
   (render-tiles-in-view)
   (gl:uniform offset-loc player-pos)
-  (gl:uniform size-loc (vec 0.2 0.2))
+  (gl:uniform size-loc (vec 1 1))
   (gl:uniform color-loc 0.5 0.6 0.7 1)
   
   (gl:draw-arrays drawtype 0 pts)
   (glfw:swap-buffers win)
   (glfw:poll-events)    
+  (update-player)
+  (setf new-pos player-pos)
+  (print new-pos)
   (usleep sleeptime))
 
 
