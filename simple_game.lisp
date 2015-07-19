@@ -171,8 +171,8 @@ glstatus
 	(cam-bottom (cast (+ (member cam-pos y) (member cam-size y)) i64)))
     (gl:uniform size-loc 1.0 1.0)
     (gl:uniform color-loc 1 1 1 1)
-    (for row (max 0 cam-top) (< row (min cam-bottom tiles-height)) (i64+ row 1)
-	 (for col (max 0 cam-left) (< col (min cam-right tiles-width)) (i64+ col 1)
+    (for row (max 0 cam-top) (<= row (min cam-bottom tiles-height)) (i64+ row 1)
+	 (for col (max 0 cam-left) (<= col (min cam-right tiles-width)) (i64+ col 1)
 	      (let ((fx (cast row f32))
 		    (fy (cast col f32)))
 		(let ((tile (deref (get-tile col row))))
@@ -193,10 +193,9 @@ glstatus
       (when (and (>= x 0)
 		 (>= y 0))
 	(let ((tile (get-tile x y)))
-	  (unless
-	      (or 
-	       (eq (cast null (ptr i8)) tile)
-	       (eq (deref tile) 0))
+	  (print (cast (deref tile) i64))
+	  (print "\n")
+	  (unless (eq (deref tile) 0)
 	    (setf player-pos new-pos)))))
     (ccyield)))
 
