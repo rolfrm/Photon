@@ -70,4 +70,4 @@ t
 
 (defvar plus12 (addrof plus1))
 
-;((deref plus12) 3)
+((addrof plus1) 3)

@@ -43,12 +43,9 @@ size_t get_sub_type_cnt(type_def * t){
 }
 
 type_def * get_inner_function(type_def * td, int * _ptrs){
-  int ptrs = 0;
-  while(td->type == POINTER){td = td->ptr.inner; ptrs++;}
-  if(td->type == FUNCTION){
-    *_ptrs = ptrs;
-    return td;
-  }
+  *_ptrs = 0;
+  while(td->type == POINTER){td = td->ptr.inner; (*_ptrs)++;}
+  if(td->type == FUNCTION) return td;
   return NULL;
 }
 	  
@@ -128,7 +125,12 @@ void print_min_type(type_def * type){
 void print_function_decl(int ptrs, type_def * def, symbol name){
   ASSERT(def->type == FUNCTION);
   print_min_type(def->fcn.ret);
-  format(" (%.*s ",ptrs,"*");
+  
+  format(" (");
+  for(int i = 0; i < ptrs; i++){
+    format("*");
+  }
+  format(" ");
   if(name.id != 0)
     format_c_name(name);
   format(")(");

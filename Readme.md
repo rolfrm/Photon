@@ -51,7 +51,7 @@ V1 Release Checklist (Aiming at August 21 release)
 * [x] macros that do not require 'expand
 * [x] proper function printing (needed for callback functions). using printers, a bit slow..
 * [x] faster type-of macro (current version requires compiling the code to check the types. Better to just do it once. Memorizing?
-* [ ] Call function pointers
+* [x] Call function pointers
 * [ ] proper interned literal strings (checkout tries. no probably to hash tables instead.)
 * [ ] Fix massive memory leaks
 * [ ] Bugs / Stability

@@ -35,7 +35,9 @@ void value_dep(type_def ** deps, symbol * vdeps, c_value val){
     make_dependency_graph(deps, val.raw.type);
     break;
   case C_FUNCTION_CALL:
-    add_var_dep(vdeps, val.call.name);
+    if(get_variable(val.call.name) != NULL)
+      // function might be a local variable.
+      add_var_dep(vdeps, val.call.name);
     make_dependency_graph(deps, val.call.type);
     for(size_t argi = 0; argi < val.call.arg_cnt; argi++){
       value_dep(deps, vdeps, val.call.args[argi]);
@@ -51,6 +53,7 @@ void value_dep(type_def ** deps, symbol * vdeps, c_value val){
     break;
   case C_SUB_EXPR:
   case C_ADDRESS_OF:
+
     value_dep(deps, vdeps, *val.value);
     break;
   case C_SYMBOL:
@@ -77,11 +80,8 @@ void expr_dep(type_def ** deps, symbol * vdeps, c_expr expr){
   switch(expr.type){
   case C_VAR:
     make_dependency_graph(deps, expr.var.var.type);
-    if(expr.var.value != NULL){
-      //add_var_dep(vdeps, expr.var.var.name);
+    if(expr.var.value != NULL)
       value_dep(deps, vdeps, *expr.var.value);
-    }
-
     break;
   case C_VALUE:
   case C_RETURN:
