@@ -12,7 +12,7 @@
 (defvar win (glfw:create-window 512 512 "test.." null null))
 (glfw:make-current win)
 (glfw:set-clipboard-string win "clipboard test!")
-(defvar sleeptime (cast 30000 i32))
+(defvar sleeptime (cast 10000 i32))
 (defvar r 0.0)
 ;;; -- Load Shader Program -- ;;;
 (defvar prog (gl:create-program))
@@ -99,7 +99,7 @@ glstatus
 (defvar player-pos (vec 0 0))
 (defvar new-pos (vec 0 0))
 (defvar cam-pos (vec 0 0))
-(defvar cam-size (vec 10 10))
+(defvar cam-size (vec 50 50))
 
 (defun key-callback (void (win-ptr (ptr void)) (key i32)(scancode i32) (action i32) (mods i32))
   (let ((k64 (cast key i64)))
@@ -159,9 +159,9 @@ glstatus
 (defun get-tile((ptr i8) (x i64) (y i64))
   (ptr+ tiles (+ x (* tiles-width y))))
 
-(for it2 0 (< it2 100) (i64+ it2 1)
-     (for it 0 (not (eq it 10)) (i64+ it 1)
-	  (setf (deref (get-tile it it2)) (cast (+ 1 (i64% (+ it it2) 3)) i8))))
+;; (for it2 0 (< it2 100) (i64+ it2 1)
+;;      (for it 0 (not (eq it 10)) (i64+ it 1)
+;; 	  (setf (deref (get-tile it it2)) (cast (+ 1 (i64% (+ it it2) 3)) i8))))
 
 
 (defun render-tiles-in-view (void)
@@ -177,31 +177,81 @@ glstatus
 		    (fy (cast col f32)))
 		(let ((tile (deref (get-tile col row))))
 		  (unless (eq 0 tile)
-		    (gl:uniform color-loc 1 0 0 1)
+		    (gl:uniform color-loc 1 1 0 1)
 		    (when (eq tile 1)
-		      (gl:uniform color-loc 1 1 1 1))
+		      (gl:uniform color-loc 1 0.5 0.1 1))
 		    (when (eq tile 2)
-		      (gl:uniform color-loc 1 0 1 1))
+		      (gl:uniform color-loc 0.5 0.5 0.05 1))
 		    (gl:uniform offset-loc fx fy)
 		    (gl:draw-arrays drawtype 0 pts)))
 	      )))))
 
-(defun update-player(void)
-  (let ((x (cast (member new-pos x) i64))
-	(y (cast (member new-pos y) i64)))
+(defun update-player(void (data (ptr void)))
+  (while true
+    (let ((x (cast (member new-pos x) i64))
+	  (y (cast (member new-pos y) i64)))
+      (when (and (>= x 0)
+		 (>= y 0))
+	(let ((tile (get-tile x y)))
+	  (unless
+	      (or 
+	       (eq (cast null (ptr i8)) tile)
+	       (eq (deref tile) 0))
+	    (setf player-pos new-pos)))))
+    (ccyield)))
 
-    (when (and (>= x 0)
-	       (>= y 0))
-      (let ((tile (get-tile x y)))
-	(unless
-	    (or 
-	     (eq (cast null (ptr i8)) tile)
-	     (eq (deref tile) 0))
-	  (setf player-pos new-pos))))))
 
+(defvar positions (cast (alloc (* (size-of (type vec2)) 16)) (ptr vec2)))
+(defvar cc (ccstart))
 
+(ccthread cc update-player null)
 
-(while (< iteration 2000)
+(defun update-cell(void (col i64) (row i64))
+  (let (( tile (get-tile col row)))
+    (setf (deref tile) (cast (i64+ 1 (i64% (i64+ (cast (deref tile) i64) 1) 3)) i8))))
+
+(defun ccwait(void (seconds f64))
+  (let ((start (timestamp)))
+    (let ((end (+ start (cast (* 1000000 seconds) i64))))
+      (while (< (timestamp) end)
+	(ccyield)))))
+
+(defvar offsets (cast (alloc (* (size-of (type vec2)) 16)) (ptr vec2)))
+(setf (deref offsets) (vec 0 0))
+(setf (deref (ptr+ offsets 1)) (vec 1 1))
+(setf (deref (ptr+ offsets 2)) (vec 2 2))
+(setf (deref (ptr+ offsets 3)) (vec 3 3))
+(setf (deref (ptr+ offsets 4)) (vec 4 4))
+(setf (deref (ptr+ offsets 5)) (vec 5 5))
+
+(defvar tileupdater (lambda (void (arg (ptr void)))
+		   
+		   (let ((col 0) (row 0)
+			 (offset (deref (ptr+ offsets (cast arg i64)))))
+		     (while true
+		       
+		       (for ci 0 (< ci 25) (+ ci 1)
+			    (for ri 0 (< ri 25) (+ ri 1)
+				 (setf col (+ ci (cast (member offset x) i64)))
+				 (setf row (+ ri (cast (member offset y) i64)))
+				 (update-cell col row)
+				 (ccwait 0.00001)))
+		       ))))
+
+(ccthread cc  (deref tileupdater) null)
+(for it 0 (< it 200) (+ it 1) (ccstep cc))
+(ccthread cc  (deref tileupdater) (cast 1 (ptr void)))
+(for it 0 (< it 200) (+ it 1) (ccstep cc))
+(ccthread cc  (deref tileupdater) (cast 2 (ptr void)))
+(for it 0 (< it 200) (+ it 1) (ccstep cc))
+(ccthread cc  (deref tileupdater) (cast 3 (ptr void)))
+(for it 0 (< it 200) (+ it 1) (ccstep cc))
+(ccthread cc  (deref tileupdater) (cast 4 (ptr void)))
+(for it 0 (< it 200) (+ it 1) (ccstep cc))
+(ccthread cc  (deref tileupdater) (cast 5 (ptr void)))
+
+(while (< iteration 4000)
+
   (gl:uniform cam-size-loc cam-size)
   (gl:uniform cam-loc cam-pos)
   (setf iteration (+ iteration 1))
@@ -215,8 +265,10 @@ glstatus
   (gl:draw-arrays drawtype 0 pts)
   (glfw:swap-buffers win)
   (glfw:poll-events)    
-  (update-player)
-  (setf new-pos player-pos)
-  (usleep sleeptime))
+  (for it 0 (< it 2) (+ it 1)
+       (ccstep cc))
+  ;(setf new-pos player-pos)
+  (usleep sleeptime)
+  )
 
 

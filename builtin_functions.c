@@ -200,10 +200,11 @@ void load_functions(){
   defun("set-printer", str2type("(fcn void (ptr (ptr symbol)))"), set_printer);
   defun("is-type-compatible", str2type("(fcn bool (call-type (ptr type_def)) (arg-type (ptr type_def)) (call-expr (ptr expr)))"), is_type_compatible2);
   defun("invoke", str2type("(fcn void (func (fcn void )))"), invoke);
-
+  
   str2type("(alias (opaque-struct _ccdispatch) ccdispatch)");
   defun("ccstart", str2type("(fcn (ptr ccdispatch))"), ccstart);
   defun("ccyield", str2type("(fcn void)"), ccyield);
   defun("ccstep", str2type("(fcn void (cc (ptr ccdispatch)))"), ccstep);
   defun("ccthread", str2type("(fcn void (cc (ptr ccdispatch)) (fcn (fcn void (arg (ptr void)))) (userdata (ptr void)))"), ccthread);
+  defun("timestamp", str2type("(fcn i64)"), timestamp);
 }
