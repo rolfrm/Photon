@@ -277,7 +277,6 @@ glstatus
   (glfw:swap-buffers win)
   (glfw:poll-events)    
   (ccstep cc)
-  ;(setf new-pos player-pos)
   (usleep sleeptime)
   )
 

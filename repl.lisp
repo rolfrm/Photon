@@ -75,14 +75,12 @@ t
 
 (defun cctest(void (userdata (ptr void)))
   (while true
-    (print (cast userdata i64)) (print "hello cc!\n")
+    (print "hello cc: " userdata "\n")
     (ccyield)))
 
 
 (defvar cc (ccstart))
 (ccthread cc cctest (cast 0 (ptr void)))
-(ccthread cc cctest (cast 1 (ptr void)))
-(ccthread cc cctest (cast 2 (ptr void)))
 (ccthread cc cctest (cast 3 (ptr void)))
 (ccthread cc cctest (cast 4 (ptr void)))
 
