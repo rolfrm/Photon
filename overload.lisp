@@ -89,7 +89,7 @@
     (while (and (eq out (cast null (ptr expr)))
 		(not (eq (cast i u64) cnt)))
       (let ((macro (deref (ptr+ macs i))))
-	(when (or (eq arg-cnt -1) 
+	(when (or (eq (member macro arg-cnt) -1)
 		  (eq (member macro arg-cnt) (cast arg-cnt i64)))
 	  (setf out (expand-macro2 (member macro sym) exprs))
 	  ))
@@ -160,7 +160,9 @@
 	      (expr 
 	       (let ((macroitem overload-macro-default))
 		 (setf (member macroitem sym) (quote (unexpr fcn)))
-		 (setf (member macroitem arg-cnt) 1)
+		 (setf (member macroitem arg-cnt) (unexpr (number2expr (macro-store-args (cast 
+											  (get-var (expr2symbol fcn))
+											  (ptr macro_store))))))
 		 (add-to-list (cast (addrof (member (unexpr s) macros)) (ptr (ptr void)))
 			      (cast (addrof (member (unexpr s) macro-cnt)) (ptr u64))
 			      (cast (addrof macroitem) (ptr void))

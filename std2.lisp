@@ -82,4 +82,5 @@
       (cast null (ptr expr))))
 
 (overload print print-rest)
-;(print 1 2 3)
+(print 1 " " 2 " " 3 "\n")
+(print "hello" " " "world!" "\n")
