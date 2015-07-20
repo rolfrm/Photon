@@ -186,17 +186,25 @@ glstatus
 		    (gl:draw-arrays drawtype 0 pts)))
 	      )))))
 
+(defun vec2-eq(bool (a vec2) (b vec2))
+  (and
+   (eq (member a x) (member b x))
+   (eq (member a y) (member b y))))
+
 (defun update-player(void (data (ptr void)))
   (while true
-    (let ((x (cast (member new-pos x) i64))
-	  (y (cast (member new-pos y) i64)))
-      (when (and (>= x 0)
-		 (>= y 0))
-	(let ((tile (get-tile x y)))
-	  (print (cast (deref tile) i64))
-	  (print "\n")
-	  (unless (eq (deref tile) 0)
-	    (setf player-pos new-pos)))))
+    (unless (vec2-eq player-pos new-pos)
+      (print "ok")
+      (let ((x (cast (member new-pos x) i64))
+	    (y (cast (member new-pos y) i64)))
+      
+	(when (and (>= x 0)
+		   (>= y 0))
+	  (let ((tile (get-tile x y)))
+	    
+	    (unless (eq (deref tile) 0)
+	      (setf player-pos new-pos)))))
+      (setf new-pos player-pos))
     (ccyield)))
 
 
@@ -236,7 +244,7 @@ glstatus
 		  (setf row (+ ri (cast (member offset y) i64)))
 		  (update-cell col row)
 		  (unless (eq (i64% (rand) 3) 0)
-		    (ccwait 0.00001))))
+		    (ccwait 0.1))))
 	))))
 
 (ccthread cc  (deref tileupdater) null)
@@ -268,8 +276,7 @@ glstatus
   (gl:draw-arrays drawtype 0 pts)
   (glfw:swap-buffers win)
   (glfw:poll-events)    
-  (for it 0 (< it 2) (+ it 1)
-       (ccstep cc))
+  (ccstep cc)
   ;(setf new-pos player-pos)
   (usleep sleeptime)
   )

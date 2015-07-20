@@ -6,7 +6,7 @@ t
 (defvar b (vec 1 2 3 1))
 (dot t b)
 
-(defun _print-ptr ((ptr expr) (expr2 (ptr expr)))
+(defmacro print-ptr (expr2)
   (if (is-ptr-type? (type-of expr2))
       (expr 
        (progn
@@ -15,7 +15,6 @@ t
 	 (printstr "\n"))
        )      
       (cast null (ptr expr))))
-(declare-macro print-ptr _print-ptr)
 
 (overload print print-ptr)
 (print (cast 131324210 (ptr i64)))
@@ -40,7 +39,6 @@ t
     (launch (addrof test-ptr))
 ))
 (test-launch)
-(exit 0)
 (set-printer (quote printnl))
 
 

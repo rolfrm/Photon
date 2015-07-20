@@ -11,7 +11,7 @@
  (alias
   (struct _overload-macro
 	  (sym (ptr symbol))
-	  (arg-cnt u64))
+	  (arg-cnt i64))
   overload-macro))
 
 (type
@@ -89,7 +89,8 @@
     (while (and (eq out (cast null (ptr expr)))
 		(not (eq (cast i u64) cnt)))
       (let ((macro (deref (ptr+ macs i))))
-	(when (eq (member macro arg-cnt) arg-cnt)
+	(when (or (eq arg-cnt -1) 
+		  (eq (member macro arg-cnt) (cast arg-cnt i64)))
 	  (setf out (expand-macro2 (member macro sym) exprs))
 	  ))
       (setf i (i64+ i 1)))
@@ -108,7 +109,9 @@
 
       (if (eq null (cast ol (ptr void)))
 	  (let ((maco (find-overload-macro ol-info d)))
-
+	    (printstr "MACO")
+	    (printi64 (cast maco i64))
+	    (printstr "\n")
 	    (if (eq maco (cast null (ptr expr)))
 		(let ((def (member ol-info default)))
 		  (if (eq def (cast null (ptr symbol)))

@@ -60,3 +60,26 @@
 
 (defmacro comment (_expr)
   (expr (noop)))
+
+(defmacro print-rest( &rest exprs)
+  (if (> (sub-expr.cnt exprs) 1)
+      (let ((print-expr (expr print))
+	    (progn-expr (expr progn)))
+
+	(let ((sub-exprs (cast (alloc0 (* (+ 1 (sub-expr.cnt exprs)) (size-of (type (ptr expr)))))
+			       (ptr (ptr expr)))))
+	  (setf (deref sub-exprs) progn-expr)
+	  (for it (cast 0 u64) (< it (sub-expr.cnt exprs)) (+ it 1)
+	       (let ((sub-expr (cast (alloc0 (* 2 (size-of (type (ptr expr)))))
+				     (ptr (ptr expr)))))
+		 (setf (deref sub-expr) print-expr)
+		 (setf (deref (ptr+ sub-expr 1)) 
+		       (sub-expr.expr exprs it))
+		 (setf (deref (ptr+ sub-exprs (+ 1 (cast it i64)))) 
+		       (make-sub-expr sub-expr 2))
+		 ))
+	  (make-sub-expr sub-exprs (+ 1 (sub-expr.cnt exprs)))))
+      (cast null (ptr expr))))
+
+(overload print print-rest)
+;(print 1 2 3)
