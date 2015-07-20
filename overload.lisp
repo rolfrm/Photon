@@ -109,9 +109,6 @@
 
       (if (eq null (cast ol (ptr void)))
 	  (let ((maco (find-overload-macro ol-info d)))
-	    (printstr "MACO")
-	    (printi64 (cast maco i64))
-	    (printstr "\n")
 	    (if (eq maco (cast null (ptr expr)))
 		(let ((def (member ol-info default)))
 		  (if (eq def (cast null (ptr symbol)))
