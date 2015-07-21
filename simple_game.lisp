@@ -173,8 +173,8 @@ glstatus
     (gl:uniform color-loc 1 1 1 1)
     (for row (max 0 cam-top) (<= row (min cam-bottom tiles-height)) (i64+ row 1)
 	 (for col (max 0 cam-left) (<= col (min cam-right tiles-width)) (i64+ col 1)
-	      (let ((fx (cast row f32))
-		    (fy (cast col f32)))
+	      (let ((fx (cast col f32))
+		    (fy (cast row f32)))
 		(let ((tile (deref (get-tile col row))))
 		  (unless (eq 0 tile)
 		    (gl:uniform color-loc 1 1 0 1)
@@ -194,7 +194,6 @@ glstatus
 (defun update-player(void (data (ptr void)))
   (while true
     (unless (vec2-eq player-pos new-pos)
-      (print "ok")
       (let ((x (cast (member new-pos x) i64))
 	    (y (cast (member new-pos y) i64)))
       
@@ -203,7 +202,8 @@ glstatus
 	  (let ((tile (get-tile x y)))
 	    
 	    (unless (eq (deref tile) 0)
-	      (setf player-pos new-pos)))))
+	      (setf player-pos new-pos)
+	      (setf (deref tile) 0)))))
       (setf new-pos player-pos))
     (ccyield)))
 
@@ -220,7 +220,7 @@ glstatus
 (defun ccwait(void (seconds f64))
   (let ((start (timestamp)))
     (let ((end (+ start (cast (* 1000000 seconds) i64))))
-      (while (< (timestamp) end)
+      (while (<= (timestamp) end)
 	(ccyield)))))
 
 (defvar offsets (cast (alloc (* (size-of (type vec2)) 16)) (ptr vec2)))
@@ -238,30 +238,23 @@ glstatus
     (let ((col 0) (row 0)
 	  (offset (deref (ptr+ offsets (cast arg i64)))))
       (while true
-	(for ci 0 (< ci 25) (+ ci 1)
-	     (for ri 0 (< ri 25) (+ ri 1)
+	(for ri 0 (< ri 25) (+ ri 1)
+	     (for ci 0 (< ci 25) (+ ci 1)
 		  (setf col (+ ci (cast (member offset x) i64)))
 		  (setf row (+ ri (cast (member offset y) i64)))
 		  (update-cell col row)
-		  (unless (eq (i64% (rand) 3) 0)
-		    (ccwait 0.1))))
-	))))
+		  (ccwait 0.01))))
+	)))
 
 (ccthread cc  (deref tileupdater) null)
-(for it 0 (< it 200) (+ it 1) (ccstep cc))
 (ccthread cc  (deref tileupdater) (cast 1 (ptr void)))
-(for it 0 (< it 200) (+ it 1) (ccstep cc))
 (ccthread cc  (deref tileupdater) (cast 2 (ptr void)))
-(for it 0 (< it 200) (+ it 1) (ccstep cc))
 (ccthread cc  (deref tileupdater) (cast 3 (ptr void)))
-(for it 0 (< it 200) (+ it 1) (ccstep cc))
 (ccthread cc  (deref tileupdater) (cast 4 (ptr void)))
-(for it 0 (< it 200) (+ it 1) (ccstep cc))
 (ccthread cc  (deref tileupdater) (cast 5 (ptr void)))
-(for it 0 (< it 200) (+ it 1) (ccstep cc))
 (ccthread cc  (deref tileupdater) (cast 6 (ptr void)))
 
-(while (< iteration 4000)
+(while (< iteration 40000)
 
   (gl:uniform cam-size-loc cam-size)
   (gl:uniform cam-loc cam-pos)
