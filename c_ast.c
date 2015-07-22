@@ -311,6 +311,7 @@ void block_add(c_block * blk, c_expr expr){
 void c_var_delete(c_var var){
   if(var.value != NULL){
     c_value_delete(*var.value);
+    //logd("delete var: %s\n", symbol_name(var.var.name));
     dealloc(var.value);
   }
 }

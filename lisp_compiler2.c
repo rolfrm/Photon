@@ -507,6 +507,7 @@ var_def * lispcompile_expr(expr ex, compile_status * optout_status){
     return NULL;
   }
   compile_as_c(&cl,1);
+  //c_root_code_delete(cl);
   return get_variable(get_symbol("eval"));
 }
 
@@ -518,7 +519,7 @@ void * lisp_compile_and_run_expr(expr ex, compile_status * optout_status){
   if(COMPILE_ERROR == *optout_status)
     return NULL;
   void * (*fcn)() = var->data;
- 
+  
   ASSERT(fcn != NULL);
   return fcn();
 }
