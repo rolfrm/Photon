@@ -4,9 +4,19 @@
 (load "gl.lisp")
 
 (defun gl-uniform-vec2 (void (location i32) (v2 vec2))
-  (gl:uniform location (cast (member v2 x) f32) (cast (member v2 y) f32)))
-
+  (gl:uniform location 
+	      (cast (member v2 x) f32) (cast (member v2 y) f32)))
+(defun gl-uniform-vec3 (void (location i32) (v2 vec3))
+  (gl:uniform location 
+	      (cast (member v2 x) f32) (cast (member v2 y) f32) 
+	      (cast (member v2 z) f32)))
+(defun gl-uniform-vec4 (void (location i32) (v2 vec4))
+  (gl:uniform location 
+	      (cast (member v2 x) f32) (cast (member v2 y) f32) 
+	      (cast (member v2 z) f32) (cast (member v2 w) f32)))
 (overload gl:uniform gl-uniform-vec2)
+(overload gl:uniform gl-uniform-vec3)
+(overload gl:uniform gl-uniform-vec4)
 
 (glfw:init)
 (defvar win (glfw:create-window 512 512 "test.." null null))
@@ -84,7 +94,6 @@ glstatus
 (gl:bind-buffer gl:array-buffer vbo)
 (gl:vertex-attrib-pointer 0 2 gl:float gl:false 0 null) 
 (gl:get-error)
-
   
 (defvar pts (cast 4 u32))
 (defvar drawtype gl:quads)
@@ -164,6 +173,12 @@ glstatus
 ;; 	  (setf (deref (get-tile it it2)) (cast (+ 1 (i64% (+ it it2) 3)) i8))))
 
 
+(defvar color-lut (cast (alloc (* (size-of (type vec4)) 16)) (ptr vec4)))
+(setf (deref color-lut) (vec 0 0 0 0))
+(setf (deref (ptr+ color-lut 1)) (vec 1 0 0 1))
+(setf (deref (ptr+ color-lut 2)) (vec 0 1 0 1))
+(setf (deref (ptr+ color-lut 3)) (vec 0 0 1 1))
+
 (defun render-tiles-in-view (void)
   (let ((cam-left (cast (- (member cam-pos x) (member cam-size x)) i64))
 	(cam-right (cast (+ (member cam-pos x) (member cam-size x)) i64))
@@ -177,11 +192,8 @@ glstatus
 		    (fy (cast row f32)))
 		(let ((tile (deref (get-tile col row))))
 		  (unless (eq 0 tile)
-		    (gl:uniform color-loc 1 1 0 1)
-		    (when (eq tile 1)
-		      (gl:uniform color-loc 1 0.5 0.1 1))
-		    (when (eq tile 2)
-		      (gl:uniform color-loc 0.5 0.5 0.05 1))
+		    ;(print tile " " (deref (ptr+ color-lut (cast tile i64))) "\n")
+		    (gl:uniform color-loc (deref (ptr+ color-lut (cast tile i64))))
 		    (gl:uniform offset-loc fx fy)
 		    (gl:draw-arrays drawtype 0 pts)))
 	      )))))
@@ -245,6 +257,11 @@ glstatus
 		  (update-cell col row)
 		  (ccwait 0.01))))
 	)))
+
+(defun bleep (void (arg (ptr void)))
+  (progn
+    (ccwait 1)
+    (ccwait 1)))
 
 (ccthread cc  (deref tileupdater) null)
 (ccthread cc  (deref tileupdater) (cast 1 (ptr void)))

@@ -22,6 +22,7 @@
 	  (default (ptr symbol))
 	  (macros (ptr overload-macro))
 	  (macro-cnt u64)
+	  (name (ptr symbol))
 	  )
   overload))
 
@@ -114,8 +115,8 @@
 		  (if (eq def (cast null (ptr symbol)))
 		      (progn
 			(printstr "Error no matching overload found for '")
-					;(print-symbol (quote (unexpr fcn-name)))
-			(printstr "' ")
+			(print-symbol (member ol-info name))
+			(printstr "'.\n Argument types:\n ")
 			  (let ((j (cast 0 u64)))
 			    (while (not (eq j (sub-expr.cnt d)))
 			      (progn
@@ -123,7 +124,7 @@
 				(printstr " ")
 				(setf j (u64+ j 1)))))
 			  (printstr "\n")
-			  (expr "error"))
+			  (cast null (ptr expr)))
 		      (unfold-body (symbol2expr def) d)))
 		maco))
 	  
@@ -136,6 +137,7 @@
     (expr 
      (progn
        (defvar (unexpr s) prototype)
+       (setf (member (unexpr s) name) (quote (unexpr fcn-name)))
        (defmacro (unexpr fcn-name) (&rest d)
 	 (get-overloaded-expr (unexpr s)  d))       
        (noop)
