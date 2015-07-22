@@ -500,13 +500,18 @@ void lisp_load_base(){
 }
 
 var_def * lispcompile_expr(expr ex, compile_status * optout_status){
-  c_root_code cl = compile_lisp_to_eval(ex);
-  if(cl.fcndef.type->fcn.ret == &error_def){
-    if(optout_status != NULL)*optout_status = COMPILE_ERROR;
-    return NULL;
-  }
-  compile_as_c(&cl,1);
-  c_root_code_delete(cl);
+  allocator * trace_alloc = block_allocator_make();
+  with_allocator(trace_alloc, lambda(void,(){
+	c_root_code cl = compile_lisp_to_eval(ex);
+	if(cl.fcndef.type->fcn.ret == &error_def){
+	  if(optout_status != NULL)*optout_status = COMPILE_ERROR;
+	  return;
+	}
+
+	compile_as_c(&cl,1);
+	c_root_code_delete(cl);	
+      }));
+
   return get_variable(get_symbol("eval"));
 }
 

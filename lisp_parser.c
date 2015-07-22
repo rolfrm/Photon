@@ -194,7 +194,9 @@ char * parse_value(char * code, value_expr * val){
 }
 char * parse_expr(char * code, expr * out_expr);
 
+
 char * parse_subexpr(char * code, sub_expr * subexpr){
+  expr exprs[100];
   if(code[0] != '(')
     return NULL;
   code++;
@@ -206,20 +208,24 @@ char * parse_subexpr(char * code, sub_expr * subexpr){
  next_part:
   code = take_while(code,is_whitespace);
 
-  if(*code == ')') return code + 1;  
+  if(*code == ')') {
+    subexpr->exprs = clone(exprs,sizeof(expr) * len);
+    subexpr->cnt = len;
+    return code + 1;
+
+  }  
   
   expr e;
   code = parse_expr(code, &e);
   
   if(code == NULL){
-    dealloc(subexpr->exprs);
     subexpr->cnt = 0;
     return NULL;
   }
   if(e.type == VALUE && e.value.type == COMMENT){
     // skip comments
   }else{
-    list_add((void **) &subexpr->exprs, &subexpr->cnt, &e, sizeof(e));
+    exprs[len] = e;
     len++;
   }
   goto next_part;
