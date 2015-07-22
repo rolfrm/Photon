@@ -67,18 +67,19 @@ type_def * var_macro(c_block * block, c_value * val, expr vars, expr body){
   COMPILE_ASSERT(vars.type == EXPR);
   sub_expr sexpr = vars.sub_expr;
   c_expr cvars[sexpr.cnt];
-  c_value * cvals = alloc0(sizeof(c_value) * sexpr.cnt);
+
   var_def * lisp_vars = alloc(sizeof(var_def) * sexpr.cnt);
   for(size_t i = 0; i < sexpr.cnt; i++){
+    c_value * cval = alloc0(sizeof(c_value));
     COMPILE_ASSERT(sexpr.exprs[i].type == EXPR);
     sub_expr var_expr = sexpr.exprs[i].sub_expr;
     COMPILE_ASSERT(var_expr.cnt == 2 && var_expr.exprs[0].type == VALUE && var_expr.exprs[0].value.type == SYMBOL);
     c_var var;
     var.var.name = expr_symbol(var_expr.exprs[0]);
-    var.var.type = compile_expr(block, cvals + i, var_expr.exprs[1]);
+    var.var.type = compile_expr(block, cval, var_expr.exprs[1]);
     if(!check_decl(var.var.name, var.var.type))
       return &error_def;
-    var.value = cvals + i;
+    var.value = cval;
     lisp_vars[i].name = var.var.name;
     lisp_vars[i].type = var.var.type;
     lisp_vars[i].data = NULL;

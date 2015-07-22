@@ -365,7 +365,6 @@ type_def * str2type(char * str){
 #include <libtcc.h>
 #include <stdlib.h>
 
-//#include <unistd.h>
 char *getcwd(char *buf, size_t size);
 
 char * orig_dir = NULL;
@@ -507,7 +506,7 @@ var_def * lispcompile_expr(expr ex, compile_status * optout_status){
     return NULL;
   }
   compile_as_c(&cl,1);
-  //c_root_code_delete(cl);
+  c_root_code_delete(cl);
   return get_variable(get_symbol("eval"));
 }
 

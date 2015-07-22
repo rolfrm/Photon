@@ -265,13 +265,6 @@
 
 (assert (eq 4 (vararg-test 1 2 3 4 5)))
 
-
-(let ((a 10) (b 20))
-  (i64+ a b)
-  (i64+ a b)
-  (i64+ a b)
-  (i64+ (i64+ a b) 30))
-
 (for it 0 (not (eq it 10)) (i64+ it 1)
      (setf it (i64+ it 1))
      (printi64 it)
