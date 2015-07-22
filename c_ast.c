@@ -59,7 +59,6 @@ void value_dep(type_def ** deps, symbol * vdeps, c_value val){
   case C_SYMBOL:
     var = get_variable(val.symbol);
     if(var == NULL){
-      //ERROR("Undefined symbol '%s'",val.symbol);
       // might be a local variable.
       return;
     }
@@ -109,7 +108,6 @@ void c_root_code_dep(type_def ** deps, symbol * vdeps, c_root_code code){
     block_dep(deps, vdeps, code.fcndef.block);
     break;
   case C_VAR_DEF:
-    //add_var_dep(vdeps, code.var.var.name);
     make_dependency_graph(deps, code.var.var.type);
     if(code.var.value != NULL)
       value_dep(deps, vdeps, *code.var.value);
@@ -160,7 +158,6 @@ void print_value(c_value val){
 
       char * cname = get_c_name(val.call.name);
       char * lname = symbol_name(val.call.name);
-      //logd("FUNCTION NAME: %s %i\n", cname, val.call.name.id); 
       if(cname != lname){
 	format(" /*%s*/ %s(",symbol_name(val.call.name), cname);
       }else{
@@ -272,8 +269,6 @@ void print_fcn_code(c_fcndef fcndef){
     vars[i].name = fcndef.args[i];
     vars[i].type = arg_type;
     print_decl(arg_type, vars[i].name);
-    //print_min_type(arg_type);
-    //format(" %s", get_c_name(vars[i].name));
     if(i != varcnt-1){
       format(",");
     }
@@ -353,7 +348,6 @@ void c_value_delete(c_value val){
     dealloc(val.value);
     break;
   case C_INLINE_VALUE:
-    // 
     break;
   case C_FUNCTION_CALL: 
     for(size_t i = 0; i < val.call.arg_cnt; i++){

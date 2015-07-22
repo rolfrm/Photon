@@ -90,8 +90,8 @@ type_def * type_of(expr * ex){
   blk.expr_cnt = 0;
   c_value val;
   type_def * td = compile_expr(&blk, &val, *ex);
-  //c_block_delete(blk);
-  //c_value_delete(val);
+  c_block_delete(blk);
+  c_value_delete(val);
   return td;
 }
 
