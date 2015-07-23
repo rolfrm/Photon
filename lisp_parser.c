@@ -8,7 +8,7 @@
 #include <iron/test.h>
 #include <iron/mem.h>
 #include <iron/array.h>
-
+#include <iron/utils.h>
 char * take_while(char * data, bool (* fcn)(char char_code)){
   while(fcn(data[0])) data++;
   return data;
@@ -338,7 +338,9 @@ expr * lisp_parse_all(char * code, size_t * out_cnt){
     next = lisp_parse(next, &expr, &cnt);
     if(cnt == 0 || next == NULL)
       break;
-    list_add((void **) &exprs, out_cnt, &expr, sizeof(expr));
+    with_allocator(NULL,lambda(void,(){
+	  list_add((void **) &exprs, out_cnt, &expr, sizeof(expr));
+	}));
   }
   return exprs;
 }
