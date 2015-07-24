@@ -117,8 +117,8 @@ type_def * str2type(char * str);
 // Compiles an expression and returns the type.
 type_def * compile_expr(c_block * block, c_value * val,  expr e );
 
-// Compiles the 'codes'. The newly available functions variables will be available in the compiler variables.
-void compile_as_c(c_root_code * codes, size_t code_cnt);
+// Compiles the 'codes'. The newly available functions variables will be available in the compiler variables. returns the buffer for the code. This buffer can be removed unless any of the symbols defined are needed.
+void * compile_as_c(c_root_code * codes, size_t code_cnt);
 
 // Compiles a value expression. Returns the type.
 type_def * compile_value(c_value * val, value_expr e);
@@ -156,6 +156,8 @@ void pop_symbols();
 // generates a unique symbol.
 expr * gensym();
 
+void add_delete_soon(void * buffer);
+void print_current_mem();
 // Testing
 bool test_lisp2c();
 void checktypepool();

@@ -348,12 +348,13 @@ void c_value_delete(c_value val){
     dealloc(val.value);
     break;
   case C_INLINE_VALUE:
+    //dealloc(val.raw.value);
     break;
   case C_FUNCTION_CALL: 
     for(size_t i = 0; i < val.call.arg_cnt; i++){
       c_value_delete(val.call.args[i]);
     }
-    free(val.call.args);
+    dealloc(val.call.args);
     break;
   case C_OPERATOR: 
     c_value_delete(*val.operator.left);

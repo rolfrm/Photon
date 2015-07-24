@@ -433,7 +433,7 @@ void checkvdeps(symbol * vdep){
   }
 }
 
-void compile_as_c(c_root_code * codes, size_t code_cnt){
+void * compile_as_c(c_root_code * codes, size_t code_cnt){
   type_def * deps[1000];
   symbol vdeps[1000];
   memset(deps, 0, sizeof(deps));
@@ -466,7 +466,8 @@ void compile_as_c(c_root_code * codes, size_t code_cnt){
   ASSERT(!fail);
   data = NULL;
   int size = tcc_relocate(tccs, NULL);
-  fail = tcc_relocate(tccs, alloc(size));
+  void * code_buffer = alloc(size);
+  fail = tcc_relocate(tccs, code_buffer);
   ASSERT(!fail);
   
   for(size_t i = 0; i < code_cnt; i++){
@@ -485,6 +486,7 @@ void compile_as_c(c_root_code * codes, size_t code_cnt){
   }
 
   tcc_delete(tccs);
+  return code_buffer;
 }
 
 void lisp_load_base(){
@@ -499,17 +501,47 @@ void lisp_load_base(){
 
 }
 
+size_t delete_soon_cnt = 0;
+void ** delete_soon_ptrs = NULL;
+
+void add_delete_soon(void * buffer){
+  list_add((void **) &delete_soon_ptrs, &delete_soon_cnt, &buffer, sizeof(void *));
+}
+
+void run_delete(){
+  for(size_t i = 0; i < delete_soon_cnt; i++){
+    dealloc(delete_soon_ptrs[i]);
+  }
+  list_clean((void **) &delete_soon_ptrs, &delete_soon_cnt);
+}
+
+allocator * current_allocator = NULL;
+void print_current_mem(int id){
+  if(current_allocator != NULL)
+    logd("MEM%i: %i\n", id, trace_allocator_allocated_pointers(current_allocator));
+}
 var_def * lispcompile_expr(expr ex, compile_status * optout_status){
-  //allocator * trace_alloc = block_allocator_make();
-  with_allocator(NULL /*trace_alloc*/, lambda(void,(){
+  //allocator * trace_alloc = trace_allocator_make();
+  with_allocator(/*trace_alloc*/ NULL, lambda(void,(){
+	//allocator * prev = current_allocator;
+	//current_allocator = trace_alloc;
 	c_root_code cl = compile_lisp_to_eval(ex);
+	//print_current_mem(1);
 	if(cl.fcndef.type->fcn.ret == &error_def){
 	  if(optout_status != NULL)*optout_status = COMPILE_ERROR;
 	  return;
 	}
-
-	compile_as_c(&cl,1);
+	
+	void * codebuf = compile_as_c(&cl,1);
+	
+	//print_current_mem(2);
 	c_root_code_delete(cl);	
+	
+	//print_current_mem(3);
+	
+	add_delete_soon(codebuf);
+	//current_allocator = prev;
+	//logd("Will delete: %i\n", delete_soon_cnt);
       }));
   if(*optout_status == COMPILE_ERROR)
     return NULL;
@@ -526,12 +558,14 @@ void * lisp_compile_and_run_expr(expr ex, compile_status * optout_status){
   void * (*fcn)() = var->data;
   
   ASSERT(fcn != NULL);
-  return fcn();
+  void * r = fcn();
+  return r;
 }
 
 symbol * printer = NULL;
 
 compile_status lisp_run_expr(expr ex){
+  //run_delete();
   expr exes[3];
   expr _ex;
   if(printer != NULL){
