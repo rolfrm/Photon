@@ -337,7 +337,7 @@ void c_block_delete(c_block blk){
   for(size_t i = 0; i < blk.expr_cnt; i++){
     c_expr_delete(blk.exprs[i]);
   }
-  list_clean((void **) &blk.exprs);
+  list_clean((void **) &blk.exprs, &blk.expr_cnt);
 }
 
 void c_value_delete(c_value val){
