@@ -47,6 +47,7 @@ void main(){
   gl_Position = vec4((vertex_position * size + offset - cam) / cam_size * 2.0,0.0,1.0);
 }
 ")
+
 (defvar frag-src-len (cast (strlen frag-src) u32))
 (defvar vert-src-len (cast (strlen vert-src) u32))
 (gl:shader-source frag 1 (addrof frag-src) (addrof frag-src-len))

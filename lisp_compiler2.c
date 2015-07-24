@@ -16,9 +16,23 @@ type_def * compile_value(c_value * val, value_expr e){
   var_def * vdef;
   switch(e.type){
   case STRING:
-    val->raw.value = fmtstr("\"%.*s\"",e.strln,e.value);
-    val->raw.type = &char_ptr_def;
-    return type_pool_get(&char_ptr_def);
+    //val->raw.value = fmtstr("\"%.*s\"",e.strln,e.value);
+    //val->raw.type = &char_ptr_def;
+    {
+      char * chr = fmtstr("%.*s",e.strln,e.value);
+      char ** charptr = alloc(sizeof(char *));
+      symbol s = get_symbol(chr);
+      dealloc(chr);
+      chr = symbol_name(s);
+      char buf[100];
+      sprintf(buf, "__istr_%i", s.id);
+      *charptr = chr;
+      symbol bufsym = get_symbol(buf);
+      compiler_define_variable_ptr(bufsym, type_pool_get(&char_ptr_def), charptr);
+      val->type = C_SYMBOL;
+      val->symbol = bufsym;
+      return type_pool_get(&char_ptr_def);
+    }
   case KEYWORD:
   case SYMBOL:
     val->type = C_SYMBOL;
@@ -565,7 +579,7 @@ void * lisp_compile_and_run_expr(expr ex, compile_status * optout_status){
 symbol * printer = NULL;
 
 compile_status lisp_run_expr(expr ex){
-  //run_delete();
+  run_delete();
   expr exes[3];
   expr _ex;
   if(printer != NULL){
