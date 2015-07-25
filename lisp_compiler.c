@@ -9,7 +9,7 @@
 #include "type_pool.h"
 
 struct _compiler_state{
-  var_def * vars;
+  var_def * vars;//[100];
   size_t var_cnt;
 };
 
@@ -21,28 +21,43 @@ void push_compiler(compiler_state * c){
   lisp_states[state_count] = lisp_state;
   lisp_state = c;
   state_count++;
-  push_symbols(&c->vars,&c->var_cnt);
+  //push_symbols(&c->vars,&c->var_cnt);
 }
 
 void pop_compiler(){
   state_count--;
   lisp_state = lisp_states[state_count];
-  pop_symbols();
+  //pop_symbols();
 }
 
 compiler_state * get_compiler(){
   return lisp_state;
 }
 
+var_def * get_global(symbol name){
+  ASSERT(lisp_state != NULL);// sanity
+  var_def * vars = lisp_state->vars;
+  size_t varcnt = lisp_state->var_cnt;
+  for(size_t i = 0;i < varcnt; i++){
+    if(!symbol_cmp(name,vars[i].name)){
+      goto next_item;
+    }
+    return vars + i;
+  next_item:
+    continue;
+  }
+  return NULL;
+}
+
+
 void compiler_define_variable_ptr(symbol name, type_def * t, void * ptr){
   // check if reassign can be done.
   t = type_pool_get(t);
-  for(size_t i = 0; i < lisp_state->var_cnt; i++){
-    if(symbol_cmp(name, lisp_state->vars[i].name)){
-      lisp_state->vars[i].type = t;
-      lisp_state->vars[i].data = ptr;
-      return;
-    }
+  var_def * var = get_global(name);
+  if(var != NULL){
+    var->type = t;
+    var->data = ptr;
+    return;
   }
   
   var_def vdef;
@@ -54,7 +69,7 @@ void compiler_define_variable_ptr(symbol name, type_def * t, void * ptr){
 
 void define_variable(symbol name, type_def * t, void * data){
   t = type_pool_get(t);
-  var_def * var = get_variable(name);
+  var_def * var = get_global(name);
   if(var == NULL){
     var_def vdef;
     vdef.name = name;
@@ -63,7 +78,7 @@ void define_variable(symbol name, type_def * t, void * data){
     list_add((void **)&lisp_state->vars, &lisp_state->var_cnt, &vdef, sizeof(var_def));
     var = lisp_state->vars + (lisp_state->var_cnt - 1);
   }
-  ASSERT(get_variable(name) != NULL); //sanity
+  ASSERT(get_global(name) != NULL); //sanity
   if(var != NULL)
     *((void **)var->data) = data;
   

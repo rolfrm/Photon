@@ -72,7 +72,7 @@ void pop_symbols(){
   stack_count--;
 }
 
-var_def * get_variable(symbol name){
+var_def * get_stack_variable(symbol name){
 
   for(i64 j = stack_count-1; j >= 0; j--){
     symbol_stack ss = symbolstacks[j];

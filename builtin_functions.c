@@ -127,14 +127,14 @@ bool is_type_compatible2(type_def * call_type, type_def * arg_type, expr * exp){
 }
 
 type_def * var_type(symbol * sym){
-  var_def * var = get_variable(*sym);
+  var_def * var = get_any_variable(*sym);
   if(var != NULL)
     return var->type;
   return NULL;
 }
 
 void * get_var(symbol * sym){
-  var_def * var = get_variable(*sym);
+  var_def * var = get_global(*sym);
   if(var == NULL) return NULL;
   return var->data;
 }

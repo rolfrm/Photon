@@ -200,7 +200,7 @@ type_def * macro_store_type(){
 }
 
 expr * expand_macro_store(macro_store * ms, expr * exprs, size_t cnt){
-  var_def * v = get_variable(ms->fcn);
+  var_def * v = get_global(ms->fcn);
   type_def * t = v->type;
   ASSERT(t->type == FUNCTION);
   ASSERT(t->fcn.ret == opaque_expr());
@@ -283,7 +283,7 @@ type_def * expand_macro(c_block * block, c_value * val, expr * exprs, size_t cnt
   type_def * exprtd = macro_store_type();
 
   symbol name = expr_symbol(exprs[0]);
-  var_def * fcn_var = get_variable(name);
+  var_def * fcn_var = get_any_variable(name);
   COMPILE_ASSERT(fcn_var != NULL);
   COMPILE_ASSERT(fcn_var->type == exprtd);
   expr * outexpr = expand_macro_store(fcn_var->data, exprs + 1, cnt - 1);
@@ -429,7 +429,7 @@ type_def * expr_macro(c_block * block, c_value * val, expr body){
   char _expandname[20];
   sprintf(_expandname, "___expand%i",cnt);
   symbol expandname = get_symbol(_expandname);
-  if(get_variable(expandname) == NULL)
+  if(get_global(expandname) == NULL)
     defun(_expandname, ftype2, expand_expr);
   ASSERT(expandname.id != 0);
 
@@ -636,7 +636,7 @@ symbol get_tmp_sym(){
     sprintf(tmpname,"_tmp%i", tmpid);
     tmpsym = get_symbol(tmpname);
     tmpid++;
-  }while(get_variable(tmpsym) != NULL);
+  }while(get_any_variable(tmpsym) != NULL);
   return tmpsym;
 }
 	  
@@ -964,7 +964,7 @@ expr * gensym(){
 }
 
 i64 macro_store_args(macro_store * ms){
-  var_def * v = get_variable(ms->fcn);
+  var_def * v = get_global(ms->fcn);
   if(v == NULL)
     return 0;
   ASSERT(v->type->type == FUNCTION);

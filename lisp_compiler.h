@@ -89,7 +89,9 @@ comp_state comp_state_make();
 
 // warning: The returned variable will eventually get invalidated by defining new variables.
 // returns the variable named s. Returns NULL if it does not exist.
-var_def * get_variable(symbol s);
+var_def * get_global(symbol s);
+var_def * get_stack_variable(symbol name);
+var_def * get_any_variable(symbol name);
 void define_variable(symbol name, type_def * type, void * data);
 
 // Returns true if call_type is equal to arg_type or if callexpr is a literal number and call_type takes a number.

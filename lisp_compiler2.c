@@ -10,6 +10,13 @@
 #include "expr_utils.h"
 #include "builtin_macros.h"
 #include "builtin_functions.h"
+
+var_def * get_any_variable(symbol s){
+  var_def * stackvar = get_stack_variable(s);
+  if(stackvar == NULL)
+    stackvar = get_global(s);
+  return stackvar;
+}
 	  
 type_def * compile_value(c_value * val, value_expr e){
   val->type = C_INLINE_VALUE;
@@ -33,7 +40,7 @@ type_def * compile_value(c_value * val, value_expr e){
   case SYMBOL:
     val->type = C_SYMBOL;
     val->symbol = vexpr_symbol(e);
-    vdef = get_variable(val->symbol);
+    vdef = get_any_variable(val->symbol);
     if(vdef == NULL){
       COMPILE_ERROR("Unknown variable '%s'", symbol_name(val->symbol));
     }
@@ -236,7 +243,7 @@ type_def * _compile_expr(c_block * block, c_value * value, sub_expr * se){
   void * var_data;
   type_def * var_type;
   {
-    var_def * fvar = get_variable(name);
+    var_def * fvar = get_any_variable(name);
     if(fvar == NULL) COMPILE_ERROR("unknown symbol '%s'", symbol_name(name));
     var_data = fvar->data;
     var_type = fvar->type;
@@ -406,7 +413,7 @@ void go_write(type_def ** deps, symbol * vdeps, c_root_code * codes, size_t code
   
   write_dependencies(deps);
   for(size_t i = 0; vdeps[i].id != 0; i++){
-    var_def * var = get_variable(vdeps[i]);
+    var_def * var = get_global(vdeps[i]);
     if(var == NULL){
       ERROR("Cannot find variable '%s'", symbol_name(vdeps[i]));
       continue;
@@ -466,7 +473,7 @@ void * compile_as_c(c_root_code * codes, size_t code_cnt){
   append_buffer_to_file(data,cnt,compile_out_path);
   TCCState * tccs = mktccs();
   for(size_t i = 0; i < array_count(vdeps) && vdeps[i].id != 0; i++){
-    var_def * var = get_variable(vdeps[i]);
+    var_def * var = get_global(vdeps[i]);
     int fail = tcc_add_symbol(tccs,get_c_name(var->name),var->data);
     ASSERT(!fail);
   }
@@ -555,7 +562,7 @@ var_def * lispcompile_expr(expr ex, compile_status * optout_status){
       }));
   if(*optout_status == COMPILE_ERROR)
     return NULL;
-  return get_variable(get_symbol("eval"));
+  return get_global(get_symbol("eval"));
 }
 
 void * lisp_compile_and_run_expr(expr ex, compile_status * optout_status){

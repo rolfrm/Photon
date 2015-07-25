@@ -35,7 +35,7 @@ void value_dep(type_def ** deps, symbol * vdeps, c_value val){
     make_dependency_graph(deps, val.raw.type);
     break;
   case C_FUNCTION_CALL:
-    if(get_variable(val.call.name) != NULL)
+    if(get_any_variable(val.call.name) != NULL)
       // function might be a local variable.
       add_var_dep(vdeps, val.call.name);
     make_dependency_graph(deps, val.call.type);
@@ -57,7 +57,7 @@ void value_dep(type_def ** deps, symbol * vdeps, c_value val){
     value_dep(deps, vdeps, *val.value);
     break;
   case C_SYMBOL:
-    var = get_variable(val.symbol);
+    var = get_any_variable(val.symbol);
     if(var == NULL){
       // might be a local variable.
       return;
@@ -152,7 +152,7 @@ void print_value(c_value val){
   case C_FUNCTION_CALL:
     {
       ASSERT(val.call.name.id != 0);
-      var_def * fvar = get_variable(val.call.name);
+      var_def * fvar = get_any_variable(val.call.name);
       ASSERT(fvar != NULL);
       ASSERT(fvar->name.id == val.call.name.id);
 
