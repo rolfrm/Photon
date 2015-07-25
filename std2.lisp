@@ -36,7 +36,7 @@
 (defun thread-launcher ((ptr void) (arg (ptr void)))
   (progn
     (print (cast arg i64))
-    (print "\n")
+    (print-newline)
     (let ((f (cast arg (ptr (fcn void))))) 
       (f)
       )
@@ -46,7 +46,6 @@
   (let ((attr (cast (alloc0 64) (ptr i32)))
 	(threadid (new-thread-handle)))
     (pthread-attr-init attr)
-    (print "??\n")
     (pthread-create threadid (deref attr) thread-launcher (cast function (ptr void)))
     threadid
     (noop)))
@@ -82,5 +81,5 @@
       (cast null (ptr expr))))
 
 (overload print print-rest)
-(print 1 " " 2 " " 3 "\n")
-(print "hello" " " "world!" "\n")
+(print 1 " " 2 " " 3 newline)
+(print "hello" " " "world!" newline)

@@ -12,7 +12,7 @@ t
        (progn
 	 (printstr "ptr: ")
 	 (print-hex (cast (unexpr expr2) i64))
-	 (printstr "\n"))
+	 (printstr newline))
        )      
       (cast null (ptr expr))))
 
@@ -25,9 +25,9 @@ t
 
 (defun test-ptr (void)
   (progn
-    (print "hello!\n")
+    (print "hello!" newline)
     (usleep 1000000)
-    (print "thread!\n")
+    (print "thread!" newline)
     null))
 
 (defun test-launch (void)

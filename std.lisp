@@ -200,9 +200,15 @@
 (defun print-hex(void (x i64))
   (std:print-i64 "%x" x))
 
+(defvar newline "
+")
+
+(defun print-newline(void)
+  (std:print-i64 newline 0));
+
 (defun write-line (void (str (ptr char)))
   (progn (printstr str)
-	 (printstr "\n")))
+	 (print-newline)))
 
 (defun add-to-list (void (list (ptr (ptr void)))
 		    (cnt (ptr u64)) (data (ptr void)) (elem-size u64))
@@ -268,7 +274,7 @@
 (for it 0 (not (eq it 10)) (i64+ it 1)
      (setf it (i64+ it 1))
      (printi64 it)
-     (printstr "\n"))
+     print-newline)
 
 (defmacro when (test &rest body)
   (expr
