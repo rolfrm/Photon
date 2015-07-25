@@ -7,7 +7,7 @@
 #include <dlfcn.h>
 
 void defun(char * name, type_def * t, void * fcn){
-  compiler_define_variable_ptr(get_symbol(name), t, fcn);
+  define_variable(get_symbol(name), t, fcn, true);
 }
 
 void print_type(type_def * def){
@@ -54,7 +54,9 @@ void * load_symbol(void * lib, symbol * sym, symbol * name, type_def * t){
   void * ptr = dlsym(lib, get_c_name(*name));
   if(ptr == NULL) {
     loge("Error no such symbol '%s'", symbol_name(*name));}
-  else {compiler_define_variable_ptr(*sym, t, ptr);}
+  else {
+    define_variable(*sym, t, ptr, true);
+  }
   return ptr;
 }
 
@@ -136,6 +138,8 @@ type_def * var_type(symbol * sym){
 void * get_var(symbol * sym){
   var_def * var = get_global(*sym);
   if(var == NULL) return NULL;
+  if(var->is_ptr)
+    return var->data;
   return var->data;
 }
 
@@ -145,9 +149,13 @@ void invoke (void (* fcn)()){
 
 #include <iron/coroutines.h>
 
+void builtin_print_string(char * str){
+  logd("%s\n", str);
+}
 
 void load_functions(){
   defun("print-type", str2type("(fcn void (a (ptr type_def)))"), print_type);
+  defun("builtin-print-str", str2type("(fcn void (str (ptr char)))"), builtin_print_string);
   type_def * i64fcn_def = str2type("(fcn i64 (a i64) (b i64))");
   defun("i64+", i64fcn_def, &i64_add);
   defun("i64-", i64fcn_def, &i64_sub);

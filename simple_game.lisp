@@ -153,7 +153,6 @@ glstatus
   (progn
     (printstr "Shutdown..")
     (exit 0)))
-
 (glfw:set-mouse-button-callback win mouse-callback)
 (glfw:set-key-callback win  key-callback)
 (glfw:set-cursor-pos-callback win cursor-pos-callback)
@@ -163,7 +162,6 @@ glstatus
 (glfw:joystick-present? 1)
 
 ;; Game play
-
 (defvar tiles-height 100)
 (defvar tiles-width 1000)
 (defvar tiles (cast (alloc0 (cast (* tiles-height tiles-width) u64)) (ptr i8))) 

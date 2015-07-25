@@ -60,7 +60,7 @@
 (defmacro comment (_expr)
   (expr (noop)))
 
-(defmacro print-rest( &rest exprs)
+(defmacro print-rest(&rest exprs)
   (if (> (sub-expr.cnt exprs) 1)
       (let ((print-expr (expr print))
 	    (progn-expr (expr progn)))
@@ -80,6 +80,13 @@
 	  (make-sub-expr sub-exprs (+ 1 (sub-expr.cnt exprs)))))
       (cast null (ptr expr))))
 
+;; (printstr "??
+;; ")
+(defvar ms (cast (get-var (quote print-rest)) (ptr macro_store)))
+ (print-macro-store ms)
+;; (printstr "
+;; ??
+;; ")
 (overload print print-rest)
 (print 1 " " 2 " " 3 newline)
 (print "hello" " " "world!" newline)

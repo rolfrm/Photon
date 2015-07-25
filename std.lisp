@@ -4,8 +4,12 @@
 
 (defvar false (cast 0 bool))
 (defvar true (cast 1 bool))
+
 (defun not (bool (x bool)) (eq false x))
 (defvar null (cast 0 (ptr void)))
+
+
+		    
 
 (defvar libc (load-lib "/lib/x86_64-linux-gnu/libc.so.6"))
 
@@ -23,8 +27,9 @@
    (load-symbol+ libc (unexpr name) (unexpr name) (unexpr type))))
 
 (declare-macro load-libc -load-libc)
-
+(builtin-print-str "hello!")
 (load-libc printf (fcn void (fmt (ptr char)) (x i64)))
+
 (load-libc usleep (fcn void (time i32)))
 (load-symbol+ libc alloc malloc (fcn (ptr void) (bytes u64)))
 (load-symbol+ libc dealloc free (fcn void (ptr (ptr void))))
@@ -151,6 +156,7 @@
 	r))))
 
 (declare-macro defmacro *defmacro)
+
 
 (defvar libm (load-lib "libm.so"))
 (load-symbol libm (quote cos) (quote cos) (type (fcn f64 (x f64))))

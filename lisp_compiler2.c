@@ -31,7 +31,7 @@ type_def * compile_value(c_value * val, value_expr e){
       char buf[100];
       sprintf(buf, "__istr_%i", s.id);
       symbol bufsym = get_symbol(buf);
-      define_variable(bufsym, type_pool_get(&char_ptr_def), chr);
+      define_variable(bufsym, type_pool_get(&char_ptr_def), chr, false);// clone(&chr, sizeof(chr)));
       val->type = C_SYMBOL;
       val->symbol = bufsym;
       return type_pool_get(&char_ptr_def);
@@ -474,7 +474,12 @@ void * compile_as_c(c_root_code * codes, size_t code_cnt){
   TCCState * tccs = mktccs();
   for(size_t i = 0; i < array_count(vdeps) && vdeps[i].id != 0; i++){
     var_def * var = get_global(vdeps[i]);
-    int fail = tcc_add_symbol(tccs,get_c_name(var->name),var->data);
+    ASSERT(var != NULL);
+    int fail = 0;
+    if(var->is_ptr)
+      fail = tcc_add_symbol(tccs,get_c_name(var->name),var->data);
+    else
+      fail = tcc_add_symbol(tccs,get_c_name(var->name),&var->data);
     ASSERT(!fail);
   }
   
@@ -492,13 +497,13 @@ void * compile_as_c(c_root_code * codes, size_t code_cnt){
     if(r.type == C_FUNCTION_DEF){
       void * ptr = tcc_get_symbol(tccs, get_c_name(r.fcndef.name));
       ASSERT(ptr != NULL);
-      compiler_define_variable_ptr(r.fcndef.name, r.fcndef.type, ptr);
+      define_variable(r.fcndef.name, r.fcndef.type, ptr, true);
     }else if(r.type == C_VAR_DEF){
 
       decl vdecl = r.var.var;
       void * ptr = tcc_get_symbol(tccs, get_c_name(vdecl.name));
       ASSERT(ptr != NULL);
-      compiler_define_variable_ptr(vdecl.name, vdecl.type, ptr);
+      define_variable(vdecl.name, vdecl.type, ptr, true);
     }
   }
 

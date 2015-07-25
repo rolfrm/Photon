@@ -33,7 +33,7 @@ type_def * type_macro(c_block * block, c_value * value, expr e){
   char buf[30];
   sprintf(buf, "type_%i",typevarid++);
   symbol varname = get_symbol(buf);
-  define_variable(varname, &type_def_ptr_def, t);
+  define_variable(varname, &type_def_ptr_def, t, false);
   value->type = C_INLINE_VALUE;
   value->raw.value = "NULL";
   value->raw.type = &type_def_ptr_def;
@@ -102,6 +102,7 @@ type_def * defvar_macro(c_block * block, c_value * val, expr * exprs, size_t cnt
   expr name = exprs[0];
   COMPILE_ASSERT(is_symbol(name));
   symbol sym = expr_symbol(name);
+  logd("defining variable '%s'\n", symbol_name(sym));
   type_def * t;
 
   if(is_keyword(exprs[1]) && expr_symbol(exprs[1]).id == get_symbol("type").id && cnt == 3){
@@ -199,6 +200,10 @@ type_def * macro_store_type(){
   return str2type("(ptr (alias (opaque-struct _macro_store) macro_store))");
 }
 
+void print_macro_store(macro_store * ms){
+  logd("symbol : %s, is rest?: %i\n", symbol_name(ms->fcn), ms->rest);
+}
+
 expr * expand_macro_store(macro_store * ms, expr * exprs, size_t cnt){
   var_def * v = get_global(ms->fcn);
   type_def * t = v->type;
@@ -207,6 +212,7 @@ expr * expand_macro_store(macro_store * ms, expr * exprs, size_t cnt){
   if(t->fcn.cnt == (i32)cnt || (ms->rest && t->fcn.cnt <= (i32)cnt)){
     //ok..
   }else{
+    logd("Rest: %i %i\n", ms->rest, t->fcn.cnt);
     ERROR("Unvalid number of arguments for macro function '%s'", symbol_name(ms->fcn));
   }
   expr * (* d)(expr * e, ...) = v->data;
@@ -410,7 +416,7 @@ type_def * expr_macro(c_block * block, c_value * val, expr body){
   bool ok = recurse_expr(ex, block, id, &cnt);
   if(!ok) COMPILE_ERROR("Error during compiling unexpr");
   
-  define_variable(tmp, exprtd, ex);
+  define_variable(tmp, exprtd, ex, false);
   
   type_def ftype = *str2type("(fcn (ptr expr) (e (ptr expr)) )");
   type_def * args[cnt + 2];
@@ -450,7 +456,7 @@ type_def * unexpr_macro(c_block * block, c_value * val, expr body){
 }
 
 type_def * declare_macro_macro(c_block * block, c_value * val, expr * exprs, size_t cnt){
-  UNUSED(block);UNUSED(val);
+  UNUSED(block);
   ASSERT(cnt == 2 || cnt == 3);
   expr macro_name = exprs[0];
   expr function_name = exprs[1];
@@ -460,7 +466,7 @@ type_def * declare_macro_macro(c_block * block, c_value * val, expr * exprs, siz
   macro_store * macro = alloc0(sizeof(macro_store));
   macro->fcn = expr_symbol(function_name);
   macro->rest = cnt == 3;
-  compiler_define_variable_ptr(expr_symbol(macro_name), macro_store_type() , macro);
+  define_variable(expr_symbol(macro_name), macro_store_type() , macro, false);
   return compile_value(val, string_expr(read_symbol(macro_name)).value);
 }
 
@@ -1019,6 +1025,8 @@ void builtin_macros_load(){
   defun("sub-expr.expr", str2type("(fcn (ptr expr) (expr (ptr expr)) (idx u64))"), get_sub_expr);
   defun("make-sub-expr", str2type("(fcn (ptr expr) (exprs (ptr (ptr expr))) (cnt u64))"), make_sub_expr);
   defun("expand-macro", str2type("(fcn (ptr expr) (ms (ptr macro_store)) (expr2 (ptr expr)))"), &expand_macro_store2);
+  defun("print-macro-store", str2type("(fcn void (ms (ptr macro_store)))"), print_macro_store);
+  
   defun("macro-store-args", str2type("(fcn i64 (ms (ptr macro_store)))"), macro_store_args);
   defun("gensym",str2type("(fcn (ptr expr))"), gensym);
 }

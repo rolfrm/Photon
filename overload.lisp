@@ -27,6 +27,8 @@
   overload))
 
 (printstr "size: ") (size-of (type overload-info))
+(printstr "size: ") (size-of (type overload-macro))
+(printstr "size: ") (size-of (type overload))
 (assert (eq (size-of (type overload-info)) (cast 24 u64)))
 
 (progn
@@ -36,9 +38,18 @@
   (noop)
   )
 
+(addrof ol-item)
+(addrof prototype)
+(addrof overload-macro-default)
+
+
 (memset (cast (addrof prototype) (ptr void)) 0 (size-of (type overload)))
 (memset (cast (addrof ol-item) (ptr void)) 0 (size-of (type overload-info)))
 (memset (cast (addrof overload-macro-default) (ptr void)) 0 (size-of (type overload-macro)))
+
+(setf (member prototype name) (quote nothing))
+(member prototype name)
+
 
 (defun mk-ol-item (overload-info (a (ptr symbol)))
   (let ((item ol-item) (cnt 0) (fcn-type (var-type a)))
@@ -159,9 +170,11 @@
 	      (expr 
 	       (let ((macroitem overload-macro-default))
 		 (setf (member macroitem sym) (quote (unexpr fcn)))
-		 (setf (member macroitem arg-cnt) (unexpr (number2expr (macro-store-args (cast 
-											  (get-var (expr2symbol fcn))
-											  (ptr macro_store))))))
+		 (setf (member macroitem arg-cnt) (unexpr 
+						   (number2expr (macro-store-args 
+								 (cast 
+								  (get-var (expr2symbol fcn))
+								  (ptr macro_store))))))
 		 (add-to-list (cast (addrof (member (unexpr s) macros)) (ptr (ptr void)))
 			      (cast (addrof (member (unexpr s) macro-cnt)) (ptr u64))
 			      (cast (addrof macroitem) (ptr void))
@@ -243,7 +256,7 @@
   (expr
    (progn
      (print (unexpr body))
-     (printstr "\n"))))
+     (printstr newline))))
 
 (defmacro no-print (body)
   (expr
