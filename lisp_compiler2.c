@@ -546,12 +546,12 @@ void print_current_mem(int id){
     logd("MEM%i: %i\n", id, trace_allocator_allocated_pointers(current_allocator));
 }
 var_def * lispcompile_expr(expr ex, compile_status * optout_status){
-  allocator * trace_alloc = trace_allocator_make();
-  with_allocator(trace_alloc, lambda(void,(){
-	allocator * prev = current_allocator;
-	current_allocator = trace_alloc;
+  //allocator * trace_alloc = trace_allocator_make();
+  with_allocator(/*trace_alloc*/ NULL, lambda(void,(){
+	//allocator * prev = current_allocator;
+	//current_allocator = trace_alloc;
 	c_root_code cl = compile_lisp_to_eval(ex);
-	print_current_mem(1);
+	//print_current_mem(1);
 	if(cl.fcndef.type->fcn.ret == &error_def){
 	  if(optout_status != NULL)*optout_status = COMPILE_ERROR;
 	  return;
@@ -559,14 +559,14 @@ var_def * lispcompile_expr(expr ex, compile_status * optout_status){
 	
 	void * codebuf = compile_as_c(&cl,1);
 	
-	print_current_mem(2);
+	//print_current_mem(2);
 	c_root_code_delete(cl);	
 	
-	print_current_mem(3);
+	//print_current_mem(3);
 	
 	add_delete_soon(codebuf);
-	current_allocator = prev;
-	logd("Delete soon count: %i\n", delete_soon_cnt);
+	//current_allocator = prev;
+	//logd("Delete soon count: %i\n", delete_soon_cnt);
       }));
   if(*optout_status == COMPILE_ERROR)
     return NULL;
@@ -700,12 +700,13 @@ compile_status lisp_run_script_file(char * filepath){
 }
 
 compile_status lisp_run_script_string(char * code){
-  size_t exprcnt;
+  size_t exprcnt = 0;
   expr * exprs = lisp_parse_all(code, &exprcnt);
   compile_status s = lisp_run_exprs(exprs, exprcnt);
   for(size_t i = 0; i < exprcnt; i++)
     delete_expr(exprs + i);
-  //dealloc(&exprs);
+  if(exprs != NULL)
+    dealloc(exprs);
   return s;
 }
 	  

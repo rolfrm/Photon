@@ -338,9 +338,7 @@ expr * lisp_parse_all(char * code, size_t * out_cnt){
     next = lisp_parse(next, &expr, &cnt);
     if(cnt == 0 || next == NULL)
       break;
-    with_allocator(NULL,lambda(void,(){
-	  list_add((void **) &exprs, out_cnt, &expr, sizeof(expr));
-	}));
+    list_add((void **) &exprs, out_cnt, &expr, sizeof(expr));
   }
   return exprs;
 }
