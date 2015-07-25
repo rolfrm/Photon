@@ -7,10 +7,12 @@
 #include "lisp_compiler.h"
 #include "lisp_std_types.h"
 #include "type_pool.h"
+#define VAR_BLOCK_SIZE 1000
 
 struct _compiler_state{
-  var_def * vars;//[100];
-  size_t var_cnt;
+  var_def (* vars)[VAR_BLOCK_SIZE]; 
+  size_t cnt;
+  size_t used;
 };
 
 static __thread compiler_state * lisp_state = NULL;
@@ -21,13 +23,11 @@ void push_compiler(compiler_state * c){
   lisp_states[state_count] = lisp_state;
   lisp_state = c;
   state_count++;
-  //push_symbols(&c->vars,&c->var_cnt);
 }
 
 void pop_compiler(){
   state_count--;
   lisp_state = lisp_states[state_count];
-  //pop_symbols();
 }
 
 compiler_state * get_compiler(){
@@ -36,19 +36,32 @@ compiler_state * get_compiler(){
 
 var_def * get_global(symbol name){
   ASSERT(lisp_state != NULL);// sanity
-  var_def * vars = lisp_state->vars;
-  size_t varcnt = lisp_state->var_cnt;
+  size_t varcnt = lisp_state->cnt;
+  
   for(size_t i = 0;i < varcnt; i++){
-    if(!symbol_cmp(name,vars[i].name)){
-      goto next_item;
+    var_def * vars = lisp_state->vars[i];
+    for(size_t j = 0; j < VAR_BLOCK_SIZE; j++){
+      if(symbol_cmp(name,vars[j].name))
+	return vars + j;
     }
-    return vars + i;
-  next_item:
-    continue;
   }
   return NULL;
 }
 
+// check get_global first!
+var_def * new_global(compiler_state * state){
+  ASSERT(state != NULL);
+  if(state->used + 1 > state->cnt * VAR_BLOCK_SIZE){
+    logd("NEW BLOCK! %i\n", state->used);
+    var_def nvars[VAR_BLOCK_SIZE];
+    memset(nvars, 0, sizeof(nvars));
+    list_add((void **) &state->vars, &state->cnt, &nvars, sizeof(nvars));
+  }
+  state->used++;
+  size_t offset = (state->used - 1) % VAR_BLOCK_SIZE;
+  var_def * vars = state->vars[state->cnt - 1];
+  return vars + offset;
+}
 
 void compiler_define_variable_ptr(symbol name, type_def * t, void * ptr){
   // check if reassign can be done.
@@ -59,29 +72,24 @@ void compiler_define_variable_ptr(symbol name, type_def * t, void * ptr){
     var->data = ptr;
     return;
   }
-  
-  var_def vdef;
-  vdef.name = name;
-  vdef.type = t;
-  vdef.data = ptr;
-  list_add((void **)&lisp_state->vars, &lisp_state->var_cnt, &vdef, sizeof(var_def));
+  var = new_global(lisp_state);
+  var->name = name;
+  var->type = t;
+  var->data = ptr;
 }
 
 void define_variable(symbol name, type_def * t, void * data){
   t = type_pool_get(t);
   var_def * var = get_global(name);
   if(var == NULL){
-    var_def vdef;
-    vdef.name = name;
-    vdef.type = t;
-    vdef.data = alloc0(sizeof(void *));
-    list_add((void **)&lisp_state->vars, &lisp_state->var_cnt, &vdef, sizeof(var_def));
-    var = lisp_state->vars + (lisp_state->var_cnt - 1);
+    var = new_global(lisp_state);
+    var->name = name;
+    var->type = t;
+    var->data = alloc0(sizeof(void *));
   }
   ASSERT(get_global(name) != NULL); //sanity
   if(var != NULL)
     *((void **)var->data) = data;
-  
 }
 
 void define_macro(char * name, int nargs, void * fcn){

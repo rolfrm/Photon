@@ -87,10 +87,13 @@ void compiler_load_types(compiler_state *);
 // Creates a new compiler state
 comp_state comp_state_make();
 
-// warning: The returned variable will eventually get invalidated by defining new variables.
-// returns the variable named s. Returns NULL if it does not exist.
+// returns the global variable named s. Returns NULL if it does not exist.
 var_def * get_global(symbol s);
+
+// Finds a variable on the stack. Data will usually be NULL for these.
 var_def * get_stack_variable(symbol name);
+
+// Finds a variable on the stack or globally. It searches the stack from the top and last the global scope.
 var_def * get_any_variable(symbol name);
 void define_variable(symbol name, type_def * type, void * data);
 
