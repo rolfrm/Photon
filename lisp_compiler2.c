@@ -13,22 +13,18 @@
 	  
 type_def * compile_value(c_value * val, value_expr e){
   val->type = C_INLINE_VALUE;
-  var_def * vdef;
+  var_def * vdef = NULL;
   switch(e.type){
   case STRING:
-    //val->raw.value = fmtstr("\"%.*s\"",e.strln,e.value);
-    //val->raw.type = &char_ptr_def;
     {
       char * chr = fmtstr("%.*s",e.strln,e.value);
-      char ** charptr = alloc(sizeof(char *));
       symbol s = get_symbol(chr);
       dealloc(chr);
       chr = symbol_name(s);
       char buf[100];
       sprintf(buf, "__istr_%i", s.id);
-      *charptr = chr;
       symbol bufsym = get_symbol(buf);
-      compiler_define_variable_ptr(bufsym, type_pool_get(&char_ptr_def), charptr);
+      define_variable(bufsym, type_pool_get(&char_ptr_def), chr);
       val->type = C_SYMBOL;
       val->symbol = bufsym;
       return type_pool_get(&char_ptr_def);

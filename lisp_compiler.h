@@ -1,17 +1,16 @@
 // requires bitguy.h, lisp_parser.h, lisp_types
 
-typedef struct{
+// variable definition
+typedef struct _var_def{
+  // Name of the variable
   symbol name;
+  // Type of the variable
   type_def * type;
+  // Pointer to the variable data.
   void * data;
-}var_def;
+} var_def;
 
-// Currently the compiler just contains variables.
-struct _compiler_state{
-  var_def * vars;
-  size_t var_cnt;
-};
-
+struct _compiler_state;
 typedef struct _compiler_state compiler_state;
 
 typedef struct{
@@ -91,6 +90,7 @@ comp_state comp_state_make();
 // warning: The returned variable will eventually get invalidated by defining new variables.
 // returns the variable named s. Returns NULL if it does not exist.
 var_def * get_variable(symbol s);
+void define_variable(symbol name, type_def * type, void * data);
 
 // Returns true if call_type is equal to arg_type or if callexpr is a literal number and call_type takes a number.
 bool is_type_compatible(type_def * call_type, type_def * arg_type, expr callexpr);

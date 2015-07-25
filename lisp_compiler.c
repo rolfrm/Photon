@@ -8,6 +8,11 @@
 #include "lisp_std_types.h"
 #include "type_pool.h"
 
+struct _compiler_state{
+  var_def * vars;
+  size_t var_cnt;
+};
+
 static __thread compiler_state * lisp_state = NULL;
 static __thread compiler_state * lisp_states[10] = {NULL};
 size_t state_count = 0;
@@ -34,7 +39,6 @@ void compiler_define_variable_ptr(symbol name, type_def * t, void * ptr){
   t = type_pool_get(t);
   for(size_t i = 0; i < lisp_state->var_cnt; i++){
     if(symbol_cmp(name, lisp_state->vars[i].name)){
-
       lisp_state->vars[i].type = t;
       lisp_state->vars[i].data = ptr;
       return;
@@ -46,6 +50,23 @@ void compiler_define_variable_ptr(symbol name, type_def * t, void * ptr){
   vdef.type = t;
   vdef.data = ptr;
   list_add((void **)&lisp_state->vars, &lisp_state->var_cnt, &vdef, sizeof(var_def));
+}
+
+void define_variable(symbol name, type_def * t, void * data){
+  t = type_pool_get(t);
+  var_def * var = get_variable(name);
+  if(var == NULL){
+    var_def vdef;
+    vdef.name = name;
+    vdef.type = t;
+    vdef.data = alloc0(sizeof(void *));
+    list_add((void **)&lisp_state->vars, &lisp_state->var_cnt, &vdef, sizeof(var_def));
+    var = lisp_state->vars + (lisp_state->var_cnt - 1);
+  }
+  ASSERT(get_variable(name) != NULL); //sanity
+  if(var != NULL)
+    *((void **)var->data) = data;
+  
 }
 
 void define_macro(char * name, int nargs, void * fcn){

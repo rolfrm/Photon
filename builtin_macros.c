@@ -33,7 +33,7 @@ type_def * type_macro(c_block * block, c_value * value, expr e){
   char buf[30];
   sprintf(buf, "type_%i",typevarid++);
   symbol varname = get_symbol(buf);
-  compiler_define_variable_ptr(varname, &type_def_ptr_def, clone(&t,sizeof(type_def *)));
+  define_variable(varname, &type_def_ptr_def, t);
   value->type = C_INLINE_VALUE;
   value->raw.value = "NULL";
   value->raw.type = &type_def_ptr_def;
@@ -408,12 +408,9 @@ type_def * expr_macro(c_block * block, c_value * val, expr body){
   expr * ex = clone_expr(&body);
   int cnt = 0;
   bool ok = recurse_expr(ex, block, id, &cnt);
-  if(!ok){
-    COMPILE_ERROR("Error during compiling unexpr");
-  }
-  expr ** exx = alloc0(sizeof(expr *));
-  *exx = ex;
-  compiler_define_variable_ptr(tmp, exprtd, exx);
+  if(!ok) COMPILE_ERROR("Error during compiling unexpr");
+  
+  define_variable(tmp, exprtd, ex);
   
   type_def ftype = *str2type("(fcn (ptr expr) (e (ptr expr)) )");
   type_def * args[cnt + 2];
