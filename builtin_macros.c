@@ -26,18 +26,14 @@ type_def * no_op(c_block * block, c_value * val){
 }
 	  
 type_def * type_macro(c_block * block, c_value * value, expr e){
-  UNUSED(block);
   static int typevarid = 0;
-  type_def * t =expr2type(e);
-
+  type_def * t = expr2type(e);
   char buf[30];
   sprintf(buf, "type_%i",typevarid++);
   symbol varname = get_symbol(buf);
   define_variable(varname, &type_def_ptr_def, t, false);
-  value->type = C_INLINE_VALUE;
-  value->raw.value = "NULL";
-  value->raw.type = &type_def_ptr_def;
   type_def * rt = compile_expr(block, value, symbol_expr2(varname));
+  ASSERT(rt == type_pool_get(&type_def_ptr_def));
   return rt;
 }
 
@@ -92,7 +88,7 @@ type_def * var_macro(c_block * block, c_value * val, expr vars, expr body){
   push_symbols(&lisp_vars, &sexpr.cnt);
   type_def * ret_type = compile_expr(block, val, body);
   pop_symbols();
-
+  dealloc(lisp_vars);
   return ret_type;
 }
 
@@ -168,8 +164,8 @@ type_def * load_macro(c_block * block, c_value * val, expr file_name){
   char * filename = read_symbol(file_name);
   logd("Loading: %s\n", filename); 
   compile_status s = lisp_run_script_file(filename);
-  if(s == COMPILE_ERROR)
-    return &error_def;
+  dealloc(filename);
+  if(s == COMPILE_ERROR) return &error_def;
   return compile_expr(block, val, file_name);
 }
 
@@ -186,7 +182,7 @@ type_def * progn_macro(c_block * block, c_value * val, expr * expressions, size_
     c_expr expr;
     expr.type = C_VALUE;
     expr.value = _val;
-    list_add((void **) &block->exprs, &block->expr_cnt,&expr,sizeof(c_expr));
+    block_add(block, expr);
   }
   return &void_def;
 }
@@ -241,17 +237,12 @@ expr * expand_macro_store(macro_store * ms, expr * exprs, size_t cnt){
       ERROR("Unsupported number of macro args");
     }
   }else{
-      
-    expr last_exprs[cnt - t->fcn.cnt + 1];
     size_t extra_args = cnt - t->fcn.cnt + 1;
     size_t offset = t->fcn.cnt - 1;
-    for(size_t i = 0; i < extra_args; i++){
-      last_exprs[i] = exprs[i + offset];
-    }
     expr last_sub_expr;
     last_sub_expr.type = EXPR;
-    last_sub_expr.sub_expr.exprs = last_exprs;
-    last_sub_expr.sub_expr.cnt = array_count(last_exprs);
+    last_sub_expr.sub_expr.exprs = exprs + offset;
+    last_sub_expr.sub_expr.cnt = extra_args;
       
     switch(t->fcn.cnt){
     case 1:
@@ -282,7 +273,6 @@ expr * expand_macro_store2(macro_store * ms, expr * expr){
 }
 
 type_def * expand_macro(c_block * block, c_value * val, expr * exprs, size_t cnt){
-  UNUSED(block);
   COMPILE_ASSERT(cnt > 0);
   COMPILE_ASSERT(is_symbol(exprs[0]));
   
@@ -293,13 +283,14 @@ type_def * expand_macro(c_block * block, c_value * val, expr * exprs, size_t cnt
   COMPILE_ASSERT(fcn_var != NULL);
   COMPILE_ASSERT(fcn_var->type == exprtd);
   expr * outexpr = expand_macro_store(fcn_var->data, exprs + 1, cnt - 1);
+  // note: nothing going in or out from expand_macro_store can be deleted. 
+  // Anything going in is already deleted later, stuff going out might be. 
+  // The rest could be deleted, but user has to mark for deletion.
+  // furthermore there is a potential bug connected to last_sub_expr (see expand_macro_store)/
   if(outexpr == NULL)
     return &error_def;
-
-  type_def * td = compile_expr(block, val, *outexpr);
-  //delete_expr(outexpr);
-  //dealloc(outexpr);
-  return td;
+  
+  return compile_expr(block, val, *outexpr);
 }
 
 int recurse_count(expr ex){
@@ -326,17 +317,17 @@ int recurse_count(expr ex){
 
 expr recurse_expand(expr ex, expr ** exprs, int * cnt){
   if(ex.type == VALUE)
-    return ex;
+    return ex;//clone_expr2(ex);
   sub_expr exp = ex.sub_expr;
   if(exp.cnt > 0 && is_symbol(exp.exprs[0]) 
      && expr_symbol(exp.exprs[0]).id == get_symbol("unexpr").id){
     ASSERT(exp.cnt == 2);
     int idx = *cnt;
     (*cnt)++;
-    return *exprs[idx];
+    return *exprs[idx];//clone_expr2(*exprs[idx]);
   }else if(exp.cnt > 0 && is_symbol(exp.exprs[0]) 
 	   && expr_symbol(exp.exprs[0]).id == get_symbol("expr").id){
-    return ex;
+    return ex;//clone_expr2(ex);
   }
   expr sexp[exp.cnt];
   for(size_t i = 0; i < exp.cnt; i++)
@@ -589,6 +580,7 @@ type_def * defun_macro(c_block * block, c_value * value, expr name, expr args, e
   expr.value = val;
   block_add(blk,expr);
   compile_as_c(&newfcn_root,1);
+  //c_root_code_delete(newfcn_root);
   // ** Just return the function name ** //
   return compile_value(value, string_expr(symbol_name(fcnname)).value);
 }
@@ -956,7 +948,7 @@ expr * make_sub_expr (expr ** exprs, u64 cnt){
   e->sub_expr.cnt = cnt;
   e->sub_expr.exprs = alloc(sizeof(expr) * cnt);
   for(u32 i = 0; i < cnt ; i++)
-    e->sub_expr.exprs[i] = *exprs[i];
+    e->sub_expr.exprs[i] = *exprs[i];//clone_expr2(*exprs[i]);
   return e;
 }
 
@@ -967,6 +959,11 @@ expr * gensym(){
   sprintf(buf, "_sym_%i", symid++);
   expr e = symbol_expr(clone(buf, strlen(buf)));
   return (expr *) clone(&e, sizeof(e));
+}
+
+void free_expr(expr * e){
+  delete_expr(e);
+  dealloc(e);
 }
 
 i64 macro_store_args(macro_store * ms){
@@ -1029,4 +1026,5 @@ void builtin_macros_load(){
   
   defun("macro-store-args", str2type("(fcn i64 (ms (ptr macro_store)))"), macro_store_args);
   defun("gensym",str2type("(fcn (ptr expr))"), gensym);
+  defun("free-expr", str2type("(fcn void (e (ptr expr)))"), free_expr);
 }

@@ -48,7 +48,7 @@ struct _expr{
 // returns the number of parsed expres in in_out_exprs_count. returns where the parser got to.
 char * lisp_parse(char * code, expr * out_exprs, int * in_out_exprs_count);
 
-// deletes an expression tree.
+// Deletes an expression tree. Used for cleanup.
 void delete_expr(expr * expr);
 
 // prints an expression tree.

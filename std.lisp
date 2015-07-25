@@ -2,14 +2,13 @@
 ;; without this the language is very basic and so, there are a lot of dependencies
 ;; here.
 
+
+
 (defvar false (cast 0 bool))
 (defvar true (cast 1 bool))
 
 (defun not (bool (x bool)) (eq false x))
 (defvar null (cast 0 (ptr void)))
-
-
-		    
 
 (defvar libc (load-lib "/lib/x86_64-linux-gnu/libc.so.6"))
 
@@ -27,9 +26,8 @@
    (load-symbol+ libc (unexpr name) (unexpr name) (unexpr type))))
 
 (declare-macro load-libc -load-libc)
-(builtin-print-str "hello!")
-(load-libc printf (fcn void (fmt (ptr char)) (x i64)))
 
+(load-libc printf (fcn void (fmt (ptr char)) (x i64)))
 (load-libc usleep (fcn void (time i32)))
 (load-symbol+ libc alloc malloc (fcn (ptr void) (bytes u64)))
 (load-symbol+ libc dealloc free (fcn void (ptr (ptr void))))
@@ -157,6 +155,11 @@
 
 (declare-macro defmacro *defmacro)
 
+;; defmacro test
+(defmacro test1 (a b)
+  a)
+(test1 1 2)(test1 1 2)(test1 1 2)(test1 1 2)
+
 
 (defvar libm (load-lib "libm.so"))
 (load-symbol libm (quote cos) (quote cos) (type (fcn f64 (x f64))))
@@ -269,12 +272,19 @@
 (string-concat "hello" "world")
 
 (symbol-combine (quote a) (quote b))
+(defun +vararg2 ((ptr expr) (a (ptr expr)) (b (ptr expr)) (c (ptr expr)))
+  (progn
+    (sub-expr.expr c 1)))
+(declare-macro vararg2 +vararg2 :rest)
+(vararg2 1 2 3 4 5)
 
 (defmacro vararg-test (a b &rest c)
-  (sub-expr.expr c 1))
+  (progn
+    (sub-expr.expr c 1)))
 
-(vararg-test 1 2 3 4 5)
 
+;(vararg-test 1 2 3 4 5)
+;(exit 0)
 (assert (eq 4 (vararg-test 1 2 3 4 5)))
 
 (for it 0 (not (eq it 10)) (i64+ it 1)
