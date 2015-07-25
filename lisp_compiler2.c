@@ -415,7 +415,7 @@ void go_write(type_def ** deps, symbol * vdeps, c_root_code * codes, size_t code
   for(size_t i = 0; vdeps[i].id != 0; i++){
     var_def * var = get_global(vdeps[i]);
     if(var == NULL){
-      ERROR("Cannot find variable '%s'", symbol_name(vdeps[i]));
+      ERROR("No global variable named '%s'", symbol_name(vdeps[i]));
       continue;
     }
 
