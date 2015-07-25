@@ -317,17 +317,17 @@ int recurse_count(expr ex){
 
 expr recurse_expand(expr ex, expr ** exprs, int * cnt){
   if(ex.type == VALUE)
-    return ex;//clone_expr2(ex);
+    return clone_expr2(ex);
   sub_expr exp = ex.sub_expr;
   if(exp.cnt > 0 && is_symbol(exp.exprs[0]) 
      && expr_symbol(exp.exprs[0]).id == get_symbol("unexpr").id){
     ASSERT(exp.cnt == 2);
     int idx = *cnt;
     (*cnt)++;
-    return *exprs[idx];//clone_expr2(*exprs[idx]);
+    return clone_expr2(*exprs[idx]);
   }else if(exp.cnt > 0 && is_symbol(exp.exprs[0]) 
 	   && expr_symbol(exp.exprs[0]).id == get_symbol("expr").id){
-    return ex;//clone_expr2(ex);
+    return clone_expr2(ex);
   }
   expr sexp[exp.cnt];
   for(size_t i = 0; i < exp.cnt; i++)
@@ -580,7 +580,7 @@ type_def * defun_macro(c_block * block, c_value * value, expr name, expr args, e
   expr.value = val;
   block_add(blk,expr);
   compile_as_c(&newfcn_root,1);
-  //c_root_code_delete(newfcn_root);
+  c_root_code_delete(newfcn_root);
   // ** Just return the function name ** //
   return compile_value(value, string_expr(symbol_name(fcnname)).value);
 }

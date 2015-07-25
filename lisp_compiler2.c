@@ -378,7 +378,7 @@ c_root_code compile_lisp_to_eval(expr exp){
 type_def * str2type(char * str){
   expr e = lisp_parse1(str);
   type_def * td = expr2type(e);
-  //delete_expr(e);
+  delete_expr(&e);
   return td;
 }
 
@@ -703,9 +703,9 @@ compile_status lisp_run_script_string(char * code){
   size_t exprcnt;
   expr * exprs = lisp_parse_all(code, &exprcnt);
   compile_status s = lisp_run_exprs(exprs, exprcnt);
-  //for(size_t i = 0; i < exprcnt; i++)
-  //  delete_expr(exprs[i]);
-  //dealloc(exprs);
+  for(size_t i = 0; i < exprcnt; i++)
+    delete_expr(exprs + i);
+  //dealloc(&exprs);
   return s;
 }
 	  
