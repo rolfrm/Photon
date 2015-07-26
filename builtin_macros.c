@@ -114,15 +114,18 @@ type_def * var_macro(c_block * block, c_value * val, expr vars, expr body){
     tmpvar.var.var.type = ret_type;
   }else{
     ret_type = compile_expr(&sblk_expr.block, &set_expr.value, body);
+
   }
+  block_add(&sblk_expr.block, set_expr);
   if(!is_void){
-    block_add(&sblk_expr.block, set_expr);
     block_add(block, tmpvar);
   }
   block_add(block, sblk_expr);
   if(!is_void){
     type_def * ret = compile_value(val, symbol_expr2(tmpvar.var.var.name).value);
     ASSERT(ret == ret_type);
+  }else{
+    no_op(block, val);
   }
   pop_symbols();
 
