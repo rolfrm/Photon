@@ -10,7 +10,7 @@
 #include "builtin_macros.h"
 #include "expr_utils.h"
 #include <stdlib.h>
-
+type_def * setf_macro(c_block * block, c_value * val, expr name, expr body);
 type_def * opaque_expr(){
   static type_def * exprtd = NULL;
   if(exprtd == NULL){
@@ -64,7 +64,7 @@ type_def * var_macro(c_block * block, c_value * val, expr vars, expr body){
   sub_expr sexpr = vars.sub_expr;
   c_expr cvars[sexpr.cnt];
 
-  var_def * lisp_vars = alloc(sizeof(var_def) * sexpr.cnt);
+  var_def * lisp_vars = alloc(sizeof(var_def) * (sexpr.cnt + 1));
   for(size_t i = 0; i < sexpr.cnt; i++){
     c_value * cval = alloc0(sizeof(c_value));
     COMPILE_ASSERT(sexpr.exprs[i].type == EXPR);
@@ -82,12 +82,50 @@ type_def * var_macro(c_block * block, c_value * val, expr vars, expr body){
     cvars[i].type = C_VAR;
     cvars[i].var = var;
   }
-  for(size_t i = 0; i < sexpr.cnt; i++)
-    block_add(block,cvars[i]);
-  
   push_symbols(&lisp_vars, &sexpr.cnt);
-  type_def * ret_type = compile_expr(block, val, body);
+  type_def * rettype = type_of(&body);
+  bool is_void = rettype == &void_def;
   pop_symbols();
+  
+
+  c_expr sblk_expr;
+  sblk_expr.type = C_BLOCK;
+  sblk_expr.block = c_block_empty;
+
+  c_expr tmpvar;
+  if(!is_void){
+    static i64 tmpid = 0;
+    tmpvar.type = C_VAR;
+    tmpvar.var.var.name = get_symbol_format("_tmpvar_%i", tmpid++);
+    tmpvar.var.value = NULL;
+    lisp_vars[sexpr.cnt].type = rettype;
+    lisp_vars[sexpr.cnt].name = tmpvar.var.var.name;
+  }
+
+  for(size_t i = 0; i < sexpr.cnt; i++)
+    block_add(&sblk_expr.block, cvars[i]);
+  size_t varcnt = sexpr.cnt + (is_void ? 0 : 1);
+  push_symbols(&lisp_vars, &varcnt);
+  c_expr set_expr;
+  set_expr.type = C_VALUE;
+  type_def * ret_type = NULL;
+  if(!is_void){
+    ret_type = setf_macro(&sblk_expr.block, &set_expr.value, symbol_expr2(tmpvar.var.var.name), body);
+    tmpvar.var.var.type = ret_type;
+  }else{
+    ret_type = compile_expr(&sblk_expr.block, &set_expr.value, body);
+  }
+  if(!is_void){
+    block_add(&sblk_expr.block, set_expr);
+    block_add(block, tmpvar);
+  }
+  block_add(block, sblk_expr);
+  if(!is_void){
+    type_def * ret = compile_value(val, symbol_expr2(tmpvar.var.var.name).value);
+    ASSERT(ret == ret_type);
+  }
+  pop_symbols();
+
   dealloc(lisp_vars);
   return ret_type;
 }

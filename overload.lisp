@@ -26,9 +26,6 @@
 	  )
   overload))
 
-(printstr "size: ") (size-of (type overload-info))
-(printstr "size: ") (size-of (type overload-macro))
-(printstr "size: ") (size-of (type overload))
 (assert (eq (size-of (type overload-info)) (cast 24 u64)))
 
 (progn
@@ -38,18 +35,12 @@
   (noop)
   )
 
-(addrof ol-item)
-(addrof prototype)
-(addrof overload-macro-default)
-
-
 (memset (cast (addrof prototype) (ptr void)) 0 (size-of (type overload)))
 (memset (cast (addrof ol-item) (ptr void)) 0 (size-of (type overload-info)))
 (memset (cast (addrof overload-macro-default) (ptr void)) 0 (size-of (type overload-macro)))
 
 (setf (member prototype name) (quote nothing))
 (member prototype name)
-
 
 (defun mk-ol-item (overload-info (a (ptr symbol)))
   (let ((item ol-item) (cnt 0) (fcn-type (var-type a)))
@@ -60,15 +51,15 @@
     (setf (member item arg-cnt) (fcn-arg-cnt fcn-type))
     item))
 
-
-
-(defun find-overload ((ptr symbol) (ol overload) (call-types (ptr (ptr type_def))) (arg-cnt u64) (exprs (ptr expr)))
+(defun find-overload ((ptr symbol) (ol overload) 
+		      (call-types (ptr (ptr type_def))) (arg-cnt u64) (exprs (ptr expr)))
   (let ((i 0) (out (cast null (ptr symbol)))
 	(cnt (member ol member-cnt))
 	(mems (member ol members)))
     (assert (is-sub-expr exprs))
     (while (and (eq out (cast null (ptr symbol)))
 		(not (eq i cnt)))
+      
       (let ((mem (deref (ptr+ mems i))))
 	(let ((types (member mem arg-types))
 	      (types-cnt (member mem arg-cnt)))
@@ -79,8 +70,7 @@
 		(unless (is-type-compatible 
 			 (deref (ptr+ call-types (cast j i64))) 
 			 (deref (ptr+ types (cast j i64)))
-			 (sub-expr.expr exprs j)
-			 )
+			 (sub-expr.expr exprs j))
 		  (setf same false))
 		(setf j (u64+ j 1)))
 	      (when same
@@ -160,12 +150,15 @@
       (if (is-fcn-type? fcn-type)
 	  (expr 
 	   (let ((item (mk-ol-item (quote (unexpr fcn)))))
+
 	     (add-to-list 
 	      (cast (addrof (member (unexpr s) members)) (ptr (ptr void)))
 	      (cast (addrof (member (unexpr s) member-cnt)) (ptr u64))
 	      (cast (addrof item) (ptr void))
 	      (size-of (type overload-info))
-		 )))
+	      )
+	     (noop)
+))
 	  (if (eq fcn-type (type (ptr macro_store)))
 	      (expr 
 	       (let ((macroitem overload-macro-default))
@@ -178,7 +171,8 @@
 		 (add-to-list (cast (addrof (member (unexpr s) macros)) (ptr (ptr void)))
 			      (cast (addrof (member (unexpr s) macro-cnt)) (ptr u64))
 			      (cast (addrof macroitem) (ptr void))
-			      (size-of (type overload-macro)))))
+			      (size-of (type overload-macro)))
+		 (noop)))
 	      (expr (noop)))))))
 
 (defmacro overload-default (name macro)
@@ -195,8 +189,11 @@
   (i64+ a (i64+ b c)))
 
 (overload + symbol-combine)
-(overload + string-concat)
 
+(overload + string-concat)
+(+ "asd" "dsa")
+
+;(exit 0)
 (overload + add3i64)
 
 (overload * i64*)
@@ -223,6 +220,8 @@
 (overload - f32-)
 (overload * f32*)
 (overload / f32/)
+
+(+ 1 2)
 
 (overload print printi64)
 (overload print printi32)
@@ -265,3 +264,6 @@
      (noop))))
 			 
 (set-printer (quote no-print))
+
+(print "Hello world overload
+")

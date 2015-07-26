@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <ctype.h>
 #include <stdint.h>
+#include <stdarg.h>
 #include "lisp_parser.h"
 #include <iron/types.h>
 #include <iron/log.h>

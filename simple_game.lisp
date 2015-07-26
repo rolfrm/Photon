@@ -77,8 +77,8 @@ length
 (gl:bind-attrib-location prog 0 "vertex_position")
 (gl:link-program prog)
 (gl:get-program-info prog gl:link-status (addrof glstatus))
-(write-line "status:")
-glstatus
+(print "Shader status: " glstatus newline)
+
 (gl:use-program prog)
 
 ;;; -- Load Vertex Buffer Object -- ;;;
@@ -108,9 +108,9 @@ glstatus
 (defvar iteration 0)
 (defun mouse-callback (void (win-ptr (ptr void)) (button i32) (action i32) (mods i32))
   (write-line "mouse callback!"))
-(defvar player-pos (vec 0 0))
-(defvar new-pos (vec 0 0))
-(defvar cam-pos (vec 0 0))
+(defvar player-pos (vec 500 500))
+(defvar new-pos (vec 500 500))
+(defvar cam-pos (vec 500 500))
 (defvar cam-size (vec 50 50))
 
 (defun key-callback (void (win-ptr (ptr void)) (key i32)(scancode i32) (action i32) (mods i32))
@@ -162,7 +162,7 @@ glstatus
 (glfw:joystick-present? 1)
 
 ;; Game play
-(defvar tiles-height 100)
+(defvar tiles-height 1000)
 (defvar tiles-width 1000)
 (defvar tiles (cast (alloc0 (cast (* tiles-height tiles-width) u64)) (ptr i8))) 
 
@@ -187,13 +187,13 @@ glstatus
 	(cam-bottom (cast (+ (member cam-pos y) (member cam-size y)) i64)))
     (gl:uniform size-loc 1.0 1.0)
     (gl:uniform color-loc 1 1 1 1)
+    
     (for row (max 0 cam-top) (<= row (min cam-bottom tiles-height)) (i64+ row 1)
 	 (for col (max 0 cam-left) (<= col (min cam-right tiles-width)) (i64+ col 1)
 	      (let ((fx (cast col f32))
 		    (fy (cast row f32)))
 		(let ((tile (deref (get-tile col row))))
 		  (unless (eq 0 tile)
-		    ;(print tile " " (deref (ptr+ color-lut (cast tile i64))) "\n")
 		    (gl:uniform color-loc (deref (ptr+ color-lut (cast tile i64))))
 		    (gl:uniform offset-loc fx fy)
 		    (gl:draw-arrays drawtype 0 pts)))
@@ -237,27 +237,35 @@ glstatus
 	(ccyield)))))
 
 (defvar offsets (cast (alloc (* (size-of (type vec2)) 16)) (ptr vec2)))
-(setf (deref offsets) (vec 0 0))
-(setf (deref (ptr+ offsets 1)) (vec 1 5))
-(setf (deref (ptr+ offsets 2)) (vec 2 4))
-(setf (deref (ptr+ offsets 3)) (vec 3 3))
-(setf (deref (ptr+ offsets 4)) (vec 4 2))
+(setf (deref offsets) (vec 500 500))
 
-(setf (deref (ptr+ offsets 5)) (vec 5 1))
-(setf (deref (ptr+ offsets 6)) (vec 6 0))
+(defun tileupdater-move (void (dx i64) (dy i64) (x (ptr i64)) (y (ptr i64)))
+  (progn
+    (incr (deref x) dx)
+    (incr (deref y) dy)
+    (setf (deref (get-tile (deref x) (deref y))) 2)
+    (ccwait 0.01)
+    ))
 
 (defvar tileupdater 
   (lambda (void (arg (ptr void)))
     (let ((col 0) (row 0)
-	  (offset (deref (ptr+ offsets (cast arg i64)))))
-      (while true
-	(for ri 0 (< ri 25) (+ ri 1)
-	     (for ci 0 (< ci 25) (+ ci 1)
-		  (setf col (+ ci (cast (member offset x) i64)))
-		  (setf row (+ ri (cast (member offset y) i64)))
-		  (update-cell col row)
-		  (ccwait 0.01))))
-	)))
+	  (offset (vec 500 500)))
+      (setf col 500)
+      (setf row 500)
+      (tileupdater-move 0 1 (addrof col) (addrof row))
+      (tileupdater-move 1 0 (addrof col) (addrof row))
+
+      (for d 2 (< d 10) (+ d 1)
+	   (for i 0 (< i d) (+ i 1)
+		(tileupdater-move 0 i (addrof col) (addrof row)))
+	   (for i 0 (< i d) (+ i 1)
+		(tileupdater-move (- 0 i) 0 (addrof col) (addrof row)))
+	   (for i 0 (< i d) (+ i 1)
+		(tileupdater-move 0 (- 0 i) (addrof col) (addrof row)))
+	   (for i 0 (< i d) (+ i 1)
+		(tileupdater-move i 0 (addrof col) (addrof row)))
+	))))
 
 (defun bleep (void (arg (ptr void)))
   (progn
@@ -265,15 +273,7 @@ glstatus
     (ccwait 1)))
 
 (ccthread cc  (deref tileupdater) null)
-(ccthread cc  (deref tileupdater) (cast 1 (ptr void)))
-(ccthread cc  (deref tileupdater) (cast 2 (ptr void)))
-(ccthread cc  (deref tileupdater) (cast 3 (ptr void)))
-(ccthread cc  (deref tileupdater) (cast 4 (ptr void)))
-(ccthread cc  (deref tileupdater) (cast 5 (ptr void)))
-(ccthread cc  (deref tileupdater) (cast 6 (ptr void)))
-
 (while (< iteration 40000)
-
   (gl:uniform cam-size-loc cam-size)
   (gl:uniform cam-loc cam-pos)
   (setf iteration (+ iteration 1))

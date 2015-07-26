@@ -40,7 +40,7 @@ typedef enum {
 
 #define COMPILE_ASSERT(expr) if(!(expr)){loge("at %s : %i:", __FILE__, __LINE__);loge("Compile error '" #expr "' at %s: %l", __FILE__, __LINE__ ); logd("\n");return &error_def;}
 
-#define COMPILE_ERROR(fmt, ...) {loge("at %s : %i: ", __FILE__, __LINE__);loge(fmt,##__VA_ARGS__); logd("\n"); return &error_def;}
+#define COMPILE_ERROR(fmt, ...) {loge("at %s : %i: ", __FILE__, __LINE__);loge(fmt,##__VA_ARGS__);ERROR(""); logd("\n"); return &error_def;}
 
 // Get current compiler.
 compiler_state * get_compiler();
@@ -147,6 +147,8 @@ symbol  get_symbol(char * name);
 
 // Interns the string 'name' as a new symbol.
 symbol * get_symbol2(char * name);
+
+symbol get_symbol_format(char * fmt, ...);
 
 // Returns the interned name of the symbol 's'. The returned char * is guaranteed to be the same pointer if the symbol is the same.
 char * symbol_name(symbol s);

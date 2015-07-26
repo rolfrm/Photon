@@ -41,6 +41,15 @@ symbol * get_symbol2(char * name){
 symbol get_symbol(char * name){
   return *get_symbol2(name);
 }
+#include <stdarg.h>
+symbol get_symbol_format(char * fmt, ...){
+  va_list args;
+va_start(args, fmt);
+  char * buf = vfmtstr(fmt, args);
+  symbol s = get_symbol(buf);
+  dealloc(buf);
+  return s;
+}
 
 char * symbol_name(symbol s){
   symbol_table * sym_item = NULL;

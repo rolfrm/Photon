@@ -177,7 +177,7 @@
   (std:print-f64 "%f" (cast x f64)))
 
 (defun printi64 (void (x i64))
-  (std:print-i64 "%p" x))
+  (std:print-i64 "%lli" x))
 
 (defun printi32 (void (x i32))
   (printi64 (cast x i64)))
