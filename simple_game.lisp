@@ -285,12 +285,13 @@ length
   (let ((x 500) (y 499))
     (while true
       (incr x 1)
+      (incr y 2)
       (incr (deref (get-tile x y)) (cast 1 i8))
       (ccwait 0.001)
       )))
 
-(ccthread cc  (deref tileupdater) null)
-(ccthread cc  bleep null)
+(ccthread cc (deref tileupdater) null)
+(ccthread cc bleep null)
 (while (< iteration 4000)
   (gl:uniform cam-size-loc cam-size)
   (gl:uniform cam-loc cam-pos)
