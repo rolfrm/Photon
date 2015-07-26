@@ -201,6 +201,11 @@
 (overload - i64-)
 (overload + i64+)
 
+(overload * i8*)
+(overload / i8/)
+(overload - i8-)
+(overload + i8+)
+
 (overload + u64+)
 (overload * u64*)
 (overload - u64-)

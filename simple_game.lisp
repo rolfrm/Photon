@@ -216,7 +216,8 @@ length
 	    
 	    (unless (eq (deref tile) 0)
 	      (setf player-pos new-pos)
-	      (setf (deref tile) 0)))))
+	      ;(setf (deref tile) 0)
+	      ))))
       (setf new-pos player-pos))
     (ccyield)))
 
@@ -243,7 +244,7 @@ length
   (progn
     (incr (deref x) dx)
     (incr (deref y) dy)
-    (setf (deref (get-tile (deref x) (deref y))) 2)
+    (incr (deref (get-tile (deref x) (deref y))) (cast 1 i8))
     (ccwait 0.01)
     ))
 
@@ -256,15 +257,18 @@ length
       (tileupdater-move 0 1 (addrof col) (addrof row))
       (tileupdater-move 1 0 (addrof col) (addrof row))
 
-      (for d 2 (< d 10) (+ d 1)
-	   (for i 0 (< i d) (+ i 1)
-		(tileupdater-move 0 i (addrof col) (addrof row)))
-	   (for i 0 (< i d) (+ i 1)
-		(tileupdater-move (- 0 i) 0 (addrof col) (addrof row)))
-	   (for i 0 (< i d) (+ i 1)
-		(tileupdater-move 0 (- 0 i) (addrof col) (addrof row)))
-	   (for i 0 (< i d) (+ i 1)
-		(tileupdater-move i 0 (addrof col) (addrof row)))
+      (for d 2 (< d 100) (+ d 1)
+	   (range i 0 (+ 1 d)
+		  (tileupdater-move 0 1 (addrof col) (addrof row)))
+	   (range i 0 (+ d 1)
+		(tileupdater-move -1 0 (addrof col) (addrof row)))
+	   (setf d (+ 1 d))
+	   (range i 0 d
+		(tileupdater-move 0 -1 (addrof col) (addrof row)))
+	   (range i 0 d
+		(tileupdater-move 1 0 (addrof col) (addrof row)))
+	   (tileupdater-move 0 1 (addrof col) (addrof row))
+	   (tileupdater-move 1 0 (addrof col) (addrof row))
 	))))
 
 (defun bleep (void (arg (ptr void)))

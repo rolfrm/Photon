@@ -336,3 +336,22 @@
 	 (unexpr body))
        (addrof (unexpr s))))))
 
+(defun sign (i64 (x i64))
+  (if (< x 0)
+      -1
+      1))
+
+(defmacro range (it start stop &rest body)
+  (let ((s (gensym))
+	(d (gensym)))
+    (expr
+     (let (((unexpr it) (unexpr start))
+	   ((unexpr s) (unexpr stop)))
+       (let(((unexpr d) (sign (i64- (unexpr s) (unexpr start)))))
+	 (while (not (eq (unexpr it) (unexpr s)))
+	   (unexpr (unfold-body (expr progn) body))
+	   (setf (unexpr it) (i64+ (unexpr it) (unexpr d)))))))))
+	 
+;usage: (range a 0 -10 (printi64 a) (printstr newline)) 	
+     
+

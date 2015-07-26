@@ -69,6 +69,12 @@ i64 i64_sub(i64 a, i64 b){ return a - b; }
 i64 i64_mul(i64 a, i64 b){ return a * b; }
 i64 i64_div(i64 a, i64 b){ return a / b; }
 
+i8 i8_add(i8 a, i8 b){ return a + b; }
+i8 i8_sub(i8 a, i8 b){ return a - b; }
+i8 i8_mul(i8 a, i8 b){ return a * b; }
+i8 i8_div(i8 a, i8 b){ return a / b; }
+
+
 u64 u64_add(u64 a, u64 b){ return a + b; }
 u64 u64_sub(u64 a, u64 b){ return a - b; }
 u64 u64_mul(u64 a, u64 b){ return a * b; }
@@ -86,6 +92,7 @@ f32 f32_div(f32 a, f32 b){ return a / b; }
 
 i32 i32_add(i32 a, i32 b) { return a + b; }
 i64 i64_mod(i64 a, i64 b) { return a % b; }
+i8 i8_mod(i8 a, i8 b) { return a % b; }
 type_def * type_of(expr * ex){
   c_block blk;
   blk.exprs = NULL;
@@ -162,6 +169,13 @@ void load_functions(){
   defun("i64*", i64fcn_def, &i64_mul);
   defun("i64/", i64fcn_def, &i64_div);
   defun("i64%", i64fcn_def, &i64_mod);
+
+  type_def * i8fcn_def = str2type("(fcn i8 (a i8) (b i8))");
+  defun("i8+", i8fcn_def, &i8_add);
+  defun("i8-", i8fcn_def, &i8_sub);
+  defun("i8*", i8fcn_def, &i8_mul);
+  defun("i8/", i8fcn_def, &i8_div);
+  defun("i8%", i8fcn_def, &i8_mod);
 
   type_def * u64fcn_def = str2type("(fcn u64 (a u64) (b u64))");
   defun("u64+", u64fcn_def, &u64_add);
