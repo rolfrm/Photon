@@ -183,6 +183,7 @@
 (defoverloaded -)
 (defoverloaded /)
 (defoverloaded *)
+(defoverloaded %)
 (defoverloaded print)
 
 (defun add3i64 (i64 (a i64) (b i64) (c i64))
@@ -200,6 +201,7 @@
 (overload / i64/)
 (overload - i64-)
 (overload + i64+)
+(overload % i64%)
 
 (overload * i8*)
 (overload / i8/)

@@ -166,8 +166,15 @@ length
 (defvar tiles-width 1000)
 (defvar tiles (cast (alloc0 (cast (* tiles-height tiles-width) u64)) (ptr i8))) 
 
+(defun tile-offset (i64 (x i64) (y i64))
+  (+ (% x tiles-width)
+     (* tiles-width (% y tiles-height))))
+
 (defun get-tile((ptr i8) (x i64) (y i64))
-  (ptr+ tiles (+ x (* tiles-width y))))
+  (ptr+ tiles (+ (% x tiles-width) 
+		 (* tiles-width (% y tiles-height)))))
+
+
 
 ;; (for it2 0 (< it2 100) (i64+ it2 1)
 ;;      (for it 0 (not (eq it 10)) (i64+ it 1)
@@ -179,6 +186,9 @@ length
 (setf (deref (ptr+ color-lut 1)) (vec 1 0 0 1))
 (setf (deref (ptr+ color-lut 2)) (vec 0 1 0 1))
 (setf (deref (ptr+ color-lut 3)) (vec 0 0 1 1))
+(setf (deref (ptr+ color-lut 4)) (vec 1 1 0 1))
+(setf (deref (ptr+ color-lut 5)) (vec 0 1 1 1))
+(setf (deref (ptr+ color-lut 6)) (vec 1 0 1 1))
 
 (defun render-tiles-in-view (void)
   (let ((cam-left (cast (- (member cam-pos x) (member cam-size x)) i64))
@@ -245,7 +255,7 @@ length
     (incr (deref x) dx)
     (incr (deref y) dy)
     (incr (deref (get-tile (deref x) (deref y))) (cast 1 i8))
-    (ccwait 0.01)
+    (ccwait 0.001)
     ))
 
 (defvar tileupdater 
@@ -272,12 +282,16 @@ length
 	))))
 
 (defun bleep (void (arg (ptr void)))
-  (progn
-    (ccwait 1)
-    (ccwait 1)))
+  (let ((x 500) (y 499))
+    (while true
+      (incr x 1)
+      (incr (deref (get-tile x y)) (cast 1 i8))
+      (ccwait 0.001)
+      )))
 
 (ccthread cc  (deref tileupdater) null)
-(while (< iteration 40000)
+(ccthread cc  bleep null)
+(while (< iteration 4000)
   (gl:uniform cam-size-loc cam-size)
   (gl:uniform cam-loc cam-pos)
   (setf iteration (+ iteration 1))
