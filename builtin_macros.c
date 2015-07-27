@@ -169,7 +169,7 @@ type_def * defvar_macro(c_block * block, c_value * val, expr * exprs, size_t cnt
   var_root.var.value = NULL;
   void * codebuf = compile_as_c(&var_root,1);
   UNUSED(codebuf);
-  //c_root_code_delete(var_root);
+  c_root_code_delete(var_root);
   //add_delete_soon(codebuf);
   return t;
 }
