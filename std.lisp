@@ -233,18 +233,17 @@
     ))
 
 (defmacro add-to-list+ (lst cnt item)
-  (var ((size (size-of (type-of item))))
-       (var ((out-expr 
-	      (expr 
-	       (var ((lstptr (addrof (unexpr lst)))
-		     (cntptr (addrof (unexpr cnt)))
-		     (itemaddr (addrof (unexpr item))))
-		    (add-to-list (cast lstptr (ptr (ptr void)))
-				 cntptr
-				 (cast itemaddr (ptr void))
-				 (unexpr (number2expr (cast size i64))))))))
-	    
-	    out-expr)))
+  (var ((size (size-of (type-of item)))
+	(item-sym (gensym)))
+       (expr 
+	(var (((unexpr item-sym) (unexpr item)))
+	(var ((lstptr (addrof (unexpr lst)))
+	      (cntptr (addrof (unexpr cnt)))
+	      (itemaddr (addrof (unexpr item-sym))))
+	     (add-to-list (cast lstptr (ptr (ptr void)))
+			  cntptr
+			  (cast itemaddr (ptr void))
+			  (unexpr (number2expr (cast size i64)))))))))
 
 (defvar asserts (cast null (ptr (ptr expr))))
 (defvar asserts-cnt (cast 0 u64))
