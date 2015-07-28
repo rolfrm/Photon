@@ -186,9 +186,6 @@
 (defoverloaded %)
 (defoverloaded print)
 
-(defun add3i64 (i64 (a i64) (b i64) (c i64))
-  (i64+ a (i64+ b c)))
-
 (overload + symbol-combine)
 
 (overload + string-concat)
@@ -227,6 +224,41 @@
 (overload - f32-)
 (overload * f32*)
 (overload / f32/)
+
+(defvar null-expr (cast null (ptr expr)))
+;; (* 1 2 3 4 5) -> (* (* 1 2) (* 3 (* 4 5)))
+;;               -> (* (* (* (* 1 2) 3 ) 4 ) 5)
+;;               -> (* 1 (* 2 (* 3 (* 4 5))))
+;; 4 multiplications gives 4 mult applications.
+;; (- 1 2 3 4 5) -> (- 1 (+ 2 3 4 5))
+;; (/ 1 2 3 4 5) -> (/ 1 (+ 2 3 4 5))
+;; (+ 1 2 3 4 5) -> (+ 1 2 3 4 5)
+
+(defun expand-multi-arg ((ptr expr) (fcn (ptr expr)) (values (ptr expr)))
+  (let ((start (alloc (* 3 (size-of (ptr expr)))))
+	(rest-cnt (sub-expr.cnt values)))
+    (let ((top start)
+	  (it 0))
+      (while (> rest-cnt 2)
+	(setf (deref (ptr+ top 0)) fcn)
+	(setf (deref (ptr+ top 1)) (sub-expr.expr values it))
+	(setf (deref (ptr+ top 2)) (cast (alloc (* 3 (size-of (ptr expr))))))
+	(setf top (deref (ptr+ top 2)))
+	(incr it 1))
+      (setf (deref (ptr+ top 0)) fcn)
+      (setf (deref (ptr+ top 1)) (sub-expr.expr values it))
+      (setf (deref (ptr+ top 2)) (sub-expr.expr values (+ 1 it)))
+      (setf (deref (ptr+ top 2)) (cast (alloc (* 3 (size-of (ptr expr))))))
+      
+    (setf (deref start) fcn)
+    (setf (deref (ptr+ start 1)) (sub-expr.expr values 0))
+    
+
+(defmacro multiplies (&rest values)
+  (if (< sub-expr.cnt values 3)
+      null-expr
+      (
+      
 
 (+ 1 2)
 

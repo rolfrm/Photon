@@ -64,9 +64,24 @@ length
 
 (defvar points (cast (alloc0 (* 0 (size-of (type vec2)))) (ptr vec2)))
 (defvar points-cnt (cast 0 u64))
-(add-to-list+ points points-cnt (vec 10 10))
-(add-to-list+ points points-cnt (vec 20 20))
-(add-to-list+ points points-cnt (vec 30 30))
+(add-to-list+ points points-cnt (vec 0 10))
+(add-to-list+ points points-cnt (vec 2 20))
+(add-to-list+ points points-cnt (vec -2 30))
 (range it 0 (cast points-cnt i64)
        (print it (deref (ptr+ points it)) newline))
 (print points-cnt newline)
+
+(defvar vbo (cast 0 u32))
+(gl:gen-buffers 1 (addrof vbo))
+(gl:bind-buffer gl:array-buffer vbo)
+
+(defun load-points(void)
+  (let ((buf (cast (alloc (* 2 (size-of (type f32)) points-cnt)) (ptr f32))))
+    (range it 0 points-cnt
+	   (let ((point (deref (ptr+ points it))))
+	     (setf (ptr+ buf (* it 2)) 
+		   (member point x))
+	     (setf (ptr+ buf (+ 1 (* it 2))) 
+		   (member point y))))
+    (gl:buffer-data gl:array-buffer (* points-cnt (size-of (type f32)) 2) 
+		    (cast points (ptr void)) gl:static-draw)))

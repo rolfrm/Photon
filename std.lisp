@@ -237,13 +237,13 @@
 	(item-sym (gensym)))
        (expr 
 	(var (((unexpr item-sym) (unexpr item)))
-	(var ((lstptr (addrof (unexpr lst)))
-	      (cntptr (addrof (unexpr cnt)))
-	      (itemaddr (addrof (unexpr item-sym))))
-	     (add-to-list (cast lstptr (ptr (ptr void)))
-			  cntptr
-			  (cast itemaddr (ptr void))
-			  (unexpr (number2expr (cast size i64)))))))))
+	     (var ((lstptr (addrof (unexpr lst)))
+		   (cntptr (addrof (unexpr cnt)))
+		   (itemaddr (addrof (unexpr item-sym))))
+		  (add-to-list (cast lstptr (ptr (ptr void)))
+			       cntptr
+			       (cast itemaddr (ptr void))
+			       (unexpr (number2expr (cast size i64)))))))))
 
 (defvar asserts (cast null (ptr (ptr expr))))
 (defvar asserts-cnt (cast 0 u64))
@@ -352,5 +352,4 @@
 	   (setf (unexpr it) (i64+ (unexpr it) (unexpr d)))))))))
 	 
 ;usage: (range a 0 -10 (printi64 a) (printstr newline)) 	
-     
 
