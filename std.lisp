@@ -349,7 +349,9 @@
        (let(((unexpr d) (sign (i64- (unexpr s) (unexpr start)))))
 	 (while (not (eq (unexpr it) (unexpr s)))
 	   (unexpr (unfold-body (expr progn) body))
-	   (setf (unexpr it) (i64+ (unexpr it) (unexpr d)))))))))
+	   (setf (unexpr it) (i64+ (unexpr it) (unexpr d)))))
+       (noop)))))
 	 
-;usage: (range a 0 -10 (printi64 a) (printstr newline)) 	
-
+; Usage:
+;;; (range a 0 -10 (printi64 a) (printstr newline))
+;;; (range b 0 10 (printi64 b) (printstr newline))

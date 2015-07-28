@@ -993,6 +993,16 @@ expr * make_sub_expr (expr ** exprs, u64 cnt){
   return e;
 }
 
+expr * sub_expr_skip(expr * e){
+  if(e->type != EXPR || e->sub_expr.cnt == 0)
+    return NULL;
+  expr * e2 = new(expr);
+  e2->sub_expr.exprs = e->sub_expr.exprs + 1;
+  e2->sub_expr.cnt = e->sub_expr.cnt - 1;
+  e2->type = EXPR;
+  return e2;
+}
+
 static int symid = 0;
 
 expr * gensym(){
@@ -1061,7 +1071,11 @@ void builtin_macros_load(){
   defun("is-sub-expr", str2type("(fcn bool (expr (ptr expr)))"), is_sub_expr);
   defun("sub-expr.cnt", str2type("(fcn u64 (expr (ptr expr)))"), get_sub_expr_cnt);
   defun("sub-expr.expr", str2type("(fcn (ptr expr) (expr (ptr expr)) (idx u64))"), get_sub_expr);
+  defun("sub-expr.skip", str2type("(fcn (ptr expr) (expr (ptr expr)) (idx u64))"), sub_expr_skip);
+//expr * sub_expr_skip(expr * e)
   defun("make-sub-expr", str2type("(fcn (ptr expr) (exprs (ptr (ptr expr))) (cnt u64))"), make_sub_expr);
+  
+  
   defun("expand-macro", str2type("(fcn (ptr expr) (ms (ptr macro_store)) (expr2 (ptr expr)))"), &expand_macro_store2);
   defun("print-macro-store", str2type("(fcn void (ms (ptr macro_store)))"), print_macro_store);
   

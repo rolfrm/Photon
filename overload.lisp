@@ -192,7 +192,7 @@
 (+ "asd" "dsa")
 
 ;(exit 0)
-(overload + add3i64)
+;(overload + add3i64)
 
 (overload * i64*)
 (overload / i64/)
@@ -232,35 +232,46 @@
 ;; 4 multiplications gives 4 mult applications.
 ;; (- 1 2 3 4 5) -> (- 1 (+ 2 3 4 5))
 ;; (/ 1 2 3 4 5) -> (/ 1 (+ 2 3 4 5))
-;; (+ 1 2 3 4 5) -> (+ 1 2 3 4 5)
-
+;; (+ 1 2 3 4 5) -> (+ 1 2 3 4 5);;
+;; 1. make (* 4 5)
+;; 2. make (* 3 (* 4 5))
+;; 3. make (* 2 (* 3 (* 4 5)))
 (defun expand-multi-arg ((ptr expr) (fcn (ptr expr)) (values (ptr expr)))
-  (let ((start (alloc (* 3 (size-of (ptr expr)))))
-	(rest-cnt (sub-expr.cnt values)))
-    (let ((top start)
-	  (it 0))
-      (while (> rest-cnt 2)
-	(setf (deref (ptr+ top 0)) fcn)
-	(setf (deref (ptr+ top 1)) (sub-expr.expr values it))
-	(setf (deref (ptr+ top 2)) (cast (alloc (* 3 (size-of (ptr expr))))))
-	(setf top (deref (ptr+ top 2)))
-	(incr it 1))
-      (setf (deref (ptr+ top 0)) fcn)
-      (setf (deref (ptr+ top 1)) (sub-expr.expr values it))
-      (setf (deref (ptr+ top 2)) (sub-expr.expr values (+ 1 it)))
-      (setf (deref (ptr+ top 2)) (cast (alloc (* 3 (size-of (ptr expr))))))
-      
-    (setf (deref start) fcn)
-    (setf (deref (ptr+ start 1)) (sub-expr.expr values 0))
-    
-
-(defmacro multiplies (&rest values)
-  (if (< sub-expr.cnt values 3)
+  (if (< (sub-expr.cnt values) 3)
       null-expr
-      (
-      
+      (let ((top (sub-expr.expr values (- (sub-expr.cnt values) 1))))
+	(range it (cast (- (sub-expr.cnt values) 2) i64) -1
+	       (let ((buffer (cast 
+			      (alloc (* 3 (size-of (type (ptr expr)))))
+			      (ptr (ptr expr)))))
+		 (setf (deref (ptr+ buffer 0)) fcn)
+		 (setf (deref (ptr+ buffer 1)) (sub-expr.expr values (cast it u64)))
+		 (setf (deref (ptr+ buffer 2)) top)
+		 (setf top (make-sub-expr buffer 3))))
+	top)))
 
-(+ 1 2)
+(defmacro +any (&rest args)
+  (expand-multi-arg (expr +) args))
+
+(defmacro *any (&rest args)
+  (expand-multi-arg (expr *) args))
+
+(defmacro -/any (&rest args)
+  (expr
+   (/ (unexpr (sub-expr.expr args 0))
+     (unexpr (unfold-body (expr +) 
+			  (sub-expr.skip args 1))))))
+
+(defmacro -any (&rest args)
+  (expr
+   (- (unexpr (sub-expr.expr args 0))
+      (unexpr (unfold-body (expr +) 
+			   (sub-expr.skip args 1))))))
+
+(overload + +any)
+(overload * *any)
+(overload / -/any)
+(overload - -any)
 
 (overload print printi64)
 (overload print printi32)
