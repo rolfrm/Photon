@@ -42,7 +42,7 @@
 (gl-load gl:disable-vertex-attrib-array glDisableVertexAttribArray
 	 (fcn void (index u32)))							     
 
-;; gl uniformas
+;; GL Uniform
 (gl-load gl:get-uniform-location glGetUniformLocation (fcn i32 (program u32) (name (ptr char))))
 (gl-load gl:uniform-1f glUniform1f (fcn void (location i32) (v1 f32)));
 (gl-load gl:uniform-2f glUniform2f (fcn void (location i32) (v1 f32) (v2 f32)));
