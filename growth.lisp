@@ -98,33 +98,25 @@ length
 (gl:vertex-attrib-pointer 0 2 gl:float gl:false 0 null) 
 
 (defvar player-pos (vec 0 0))
+(defvar player-dir (vec 0 1))
 (defvar new-pos (vec 0 0))
 (defvar cam-pos (vec 0 50))
 (defvar cam-size (vec 500 500))
 (let ((iteration 0) )
   (while (< iteration 4000)
-    (print (glfw:get-key win glfw:key-a) newline)
     (let ((lastpt (deref (ptr+ points (cast (- points-cnt 1) i64)))))
-      (add-to-list+ points points-cnt (vec (+ (randf) 
-					      (if (or 
-						   (glfw:get-key win
-								 glfw:key-a)
-						   (glfw:get-key win glfw:key-left))
-						  -2.0
-						  0.0)
-					      (if (or
-						   (glfw:get-key win
-								 glfw:key-d)
-						   (glfw:get-key win
-								 glfw:key-right))
-						  2.0
-						  0.0)
-					      (member lastpt x)) 
-					   (+
-					    (member
-					     lastpt
-					     y)
-					    5)))
+      (add-to-list+ points points-cnt 
+		    (vec (+ (randf) 
+			    (if (or (glfw:get-key win glfw:key-a)
+				    (glfw:get-key win glfw:key-left))
+				-2.0
+				0.0)
+			    (if (or (glfw:get-key win glfw:key-d)
+				    (glfw:get-key win glfw:key-right))
+				2.0
+				0.0)
+			    (member lastpt x)) 
+			 (+ (member lastpt y) 5)))
       (setf cam-pos (deref (ptr+ points (cast (- points-cnt 1) i64))))
       (load-points))
     (gl:uniform cam-size-loc cam-size)

@@ -12,8 +12,6 @@
   (struct _vec4 (x f64) (y f64) (z f64) (w f64))
   vec4))
 
-
-
 ;numbers:three ;; 3
 (defvar vec2-default :type vec2)
 (memset (cast (addrof vec2-default) (ptr void)) 0 (size-of (type vec2)))
@@ -21,6 +19,7 @@
 (memset (cast (addrof vec3-default) (ptr void)) 0 (size-of (type vec3)))
 (defvar vec4-default :type vec4)
 (memset (cast (addrof vec4-default) (ptr void)) 0 (size-of (type vec4)))
+
 
 (defoverloaded aref)
 (defun vec2-aref ((ptr f64) (a vec2) (idx i64))
@@ -62,8 +61,6 @@
 (overload vec makevec3)
 (overload vec makevec4)
 
-
-
 (defmacro vec2op (operator)
   (let ((name (symbol2expr (symbol-combine (quote vec2) (expr2symbol operator)))))
     (let ((r (expr
@@ -81,6 +78,14 @@
       r)))
 (vec2op *)
 (vec2op +) (vec2op /) (vec2op -)
+
+(defun vec2turn (vec2 (a vec2) (radians f64))
+  (let ((sinr (sin radians))
+	(cosr (cos radians))
+	(x (member a x))
+	(y (member a y)))   
+    (vec (+ (* x cosr) (* y sinr))
+	 (- (* y cosr) (* x sinr)))))
 
 (defun vec2scale (vec2 (a vec2) (b f64))
   (progn
