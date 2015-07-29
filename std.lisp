@@ -39,9 +39,7 @@
 (load-libc chdir (fcn i32 (path (ptr char))))
 (load-libc getcwd (fcn (ptr char) (buf (ptr char)) (buflen u64)))
 (load-symbol+ libc std:rand rand (fcn i32))
-(defun rand(i64)
-  (bit-or (cast (std:rand) i64) 
-	  (<< (cast (std:rand) i64) 32)))
+
 (defun alloc0 ((ptr void) (size u64))
   (var ((buffer (alloc size)))
        (progn
