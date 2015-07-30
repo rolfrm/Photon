@@ -84,8 +84,8 @@
 	(cosr (cos radians))
 	(x (member a x))
 	(y (member a y)))   
-    (vec (+ (* x cosr) (* y sinr))
-	 (- (* y cosr) (* x sinr)))))
+    (vec (- (* x cosr) (* y sinr))
+	 (+ (* y cosr) (* x sinr)))))
 
 (defun vec2scale (vec2 (a vec2) (b f64))
   (progn
