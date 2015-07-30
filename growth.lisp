@@ -69,11 +69,7 @@ length
 
 (defvar points (cast (alloc0 (* 0 (size-of (type vec2)))) (ptr vec2)))
 (defvar points-cnt (cast 0 u64))
-(add-to-list+ points points-cnt (vec 0 10))
-(add-to-list+ points points-cnt (vec 2 20))
-(add-to-list+ points points-cnt (vec -2 30))
-(add-to-list+ points points-cnt (vec -10 40))
-	  (add-to-list+ points points-cnt (vec 0 50))
+(add-to-list+ points points-cnt (vec 0 0))
 (range it 0 (cast points-cnt i64)
        (print it (deref (ptr+ points it)) newline))
 (print points-cnt newline)
@@ -91,8 +87,22 @@ length
 	     (setf (deref (ptr+ buf (+ 1 (* it 2))))
 		   (cast (member point y) f32))))
     (gl:buffer-data gl:array-buffer (cast (* points-cnt (size-of (type f32)) 2) u32)
-		    (cast buf (ptr void)) gl:static-draw)))
+		    (cast buf (ptr void)) gl:stream-draw)
+    (dealloc (cast buf (ptr void)))
+    ))
 (load-points)
+	  
+(defvar vbo-circle (cast 0 u32))
+(gl:gen-buffers 1 (addrof vbo-circle))
+(let ((buf (cast (alloc (* 2 (size-of (type f32)) 16)) (ptr f32))))
+  (gl:bind-buffer gl:array-buffer vbo-circle)
+  (range it 0 8
+     (setf (deref (ptr+ buf (+ (* it 2) 0))) (sin32 (cast it f32)))
+     (setf (deref (ptr+ buf (+ (* it 2) 1))) (cos32 (cast it f32))))
+  (gl:buffer-data gl:array-buffer (* (size-of (type f32)) 16) 
+		  (cast buf (ptr void)) gl:static-draw)
+  (dealloc buf))
+
 (gl:enable-vertex-attrib-array 0)
 (gl:bind-buffer gl:array-buffer vbo)
 (gl:vertex-attrib-pointer 0 2 gl:float gl:false 0 null) 
@@ -102,13 +112,14 @@ length
 (defvar new-pos (vec 0 0))
 (defvar cam-pos (vec 0 50))
 (defvar cam-size (vec 100 100))
+(defvar circle (vec 50 30 10))
 (let ((iteration 0)
       (speed 1.0))
   (while (< iteration 4000)
     (let ((ts (timestamp)))
       (let ((lastpt (deref (ptr+ points (cast (- points-cnt 1) i64)))))
 	(add-to-list+ points points-cnt 
-		      (+ lastpt player-dir))
+		      (+ lastpt (* player-dir speed)))
 	(let ((turn (if (or (glfw:get-key win glfw:key-a)
 			    (glfw:get-key win glfw:key-left))
 			1.0
@@ -116,7 +127,7 @@ length
 				(glfw:get-key win glfw:key-right))
 			    -1.0
 			    0.0))))
-	  (setf player-dir (vec2turn player-dir (* turn speed)))) 
+	  (setf player-dir (vec2turn player-dir (* turn 0.1)))) 
 	(setf cam-pos (deref (ptr+ points (cast (- points-cnt 1) i64))))
 	(load-points))
       (setf speed (* 0.99 speed))
@@ -129,6 +140,11 @@ length
       (gl:uniform size-loc (vec 1 1))
       (gl:uniform color-loc 0.5 0.6 0.7 1)
       (gl:draw-arrays gl:line-strip 0 (cast points-cnt u32))
+      (gl:bind-buffer gl:array-buffer vbo-circle)
+      (gl:uniform offset-loc (vec (member circle x) (member circle
+							    y)))
+      (gl:uniform size-loc (vec (member circle z) (member circle z)))
+      (gl:draw-arrays gl:line-strip 0 8)
       (glfw:swap-buffers win)
       (print (- (timestamp) ts) " µs cnt:" points-cnt newline))
 
