@@ -20,6 +20,10 @@
 (defvar vec4-default :type vec4)
 (memset (cast (addrof vec4-default) (ptr void)) 0 (size-of (type vec4)))
 
+(defun vec2-length (f64 (a vec2))
+  (let ((x (member a x))
+	(y (member a y)))
+    (sqrt (+ (* x x) (* y y)))))
 
 (defoverloaded aref)
 (defun vec2-aref ((ptr f64) (a vec2) (idx i64))

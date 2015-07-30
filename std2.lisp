@@ -20,6 +20,8 @@
 (load-symbol+ libm cos32 cosf (fcn f32 (x f32)))
 (load-symbol+ libm sin sin (fcn f64 (x f64)))
 (load-symbol+ libm sin32 sinf (fcn f32 (x f32)))
+(load-symbol+ libm sqrt sqrt (fcn f64 (x f64)))
+(load-symbol+ libm sqrt32 sqrtf (fcn f32 (x f32)))
 
 (defvar pi 3.141592653)
 (load "vec2.lisp")
