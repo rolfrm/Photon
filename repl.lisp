@@ -72,12 +72,10 @@ t
 
 ((addrof plus1) 3)
 
-
 (defun cctest(void (userdata (ptr void)))
   (while true
-    (print "hello cc: " userdata "\n")
+    (print "hello cc: " userdata newline)
     (ccyield)))
-
 
 (defvar cc (ccstart))
 (ccthread cc cctest (cast 0 (ptr void)))
