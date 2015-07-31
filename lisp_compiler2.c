@@ -172,7 +172,7 @@ bool is_type_compatible(type_def * call_type, type_def * arg_type, expr callexpr
   bool is_integral = is_number && !is_float;
   if(is_float_type(arg_type)&& is_number){
     return true;
-  }else if(is_integral && is_integral_type(arg_type)){
+  }else if(is_integral && is_integer_type(arg_type)){
     return true;
   }
   return false;	   

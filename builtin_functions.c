@@ -217,6 +217,9 @@ void load_functions(){
   defun("get-var", str2type("(fcn (ptr void) (sym (ptr symbol)))"), get_var);
   defun("is-fcn-type?", str2type("(fcn bool (type (ptr type_def)))"), is_fcn_type);
   defun("is-ptr-type?", str2type("(fcn bool (type (ptr type_def)))"), is_ptr_type);
+  defun("is-integer-type?", str2type("(fcn bool (type (ptr type_def)))"), is_integer_type);
+  defun("is-float-type?", str2type("(fcn bool (type (ptr type_def)))"), is_float_type);
+
   defun("fcn-arg-types", str2type("(fcn (ptr (ptr type_def)) (t (ptr type_def)))"), fcn_arg_types);
   defun("fcn-arg-cnt", str2type("(fcn u64 (t (ptr type_def)))"), fcn_arg_cnt);
   defun("set-printer", str2type("(fcn void (ptr (ptr symbol)))"), set_printer);

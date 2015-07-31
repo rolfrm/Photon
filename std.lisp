@@ -47,16 +47,19 @@
 	 buffer)))
 
 (defun *ptr+ ((ptr expr) (ptr (ptr expr)) (offset (ptr expr)))
-  (var ((size_expr (number2expr (cast (size-of (ptr-inner (type-of ptr))) i64))))
-       (if (and (is-ptr-type? (type-of ptr))
-		(eq (type-of offset) (type i64)))
+  (var ((size_expr (number2expr (cast (size-of (ptr-inner (type-of ptr))) i64)))
+	(ptr-type (type-of ptr)))
+       (if (and (is-ptr-type? ptr-type)
+		(is-integer-type? (type-of offset)))
 	   (expr
 	    (cast 
 	     (i64+ 
 	      (cast (unexpr ptr) i64)
-	      (i64* (unexpr offset) (unexpr size_expr)))
-	     (unexpr (type2expr (type-of ptr)))))
+	      (i64* (cast (unexpr offset) i64) 
+		    (unexpr size_expr)))
+	     (unexpr (type2expr ptr-type))))
 	     null-expr)))
+
 (declare-macro ptr+ *ptr+)
 
 (defun string-concat ((ptr char) (a (ptr char)) (b (ptr char)))

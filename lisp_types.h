@@ -111,3 +111,6 @@ void print_cdecl(decl cdecl);
 void print_decl(type_def * t, symbol name);
 
 type_def * get_inner_function(type_def * td, int * out_ptrs);
+
+bool is_integer_type(type_def * td);
+bool is_float_type(type_def * td);

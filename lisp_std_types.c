@@ -302,7 +302,7 @@ void load_defs(){
   }
 }
 
-bool is_integral_type(type_def * td){
+bool is_integer_type(type_def * td){
   if(td == &i64_def ||
      td == &i32_def ||
      td == &i16_def ||
