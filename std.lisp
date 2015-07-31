@@ -9,7 +9,7 @@
 
 (defun not (bool (x bool)) (eq false x))
 (defvar null (cast 0 (ptr void)))
-
+(defvar null-expr (cast null (ptr expr)))
 (defvar libc (load-lib "/lib/x86_64-linux-gnu/libc.so.6"))
 
 ;; Loading a library
@@ -48,13 +48,15 @@
 
 (defun *ptr+ ((ptr expr) (ptr (ptr expr)) (offset (ptr expr)))
   (var ((size_expr (number2expr (cast (size-of (ptr-inner (type-of ptr))) i64))))
-       (progn
-	 (expr
-	  (cast 
-	   (i64+ 
-	    (cast (unexpr ptr) i64)
-	    (i64* (unexpr offset) (unexpr size_expr)))
-	   (unexpr (type2expr (type-of ptr))))))))
+       (if (and (is-ptr-type? (type-of ptr))
+		(eq (type-of offset) (type i64)))
+	   (expr
+	    (cast 
+	     (i64+ 
+	      (cast (unexpr ptr) i64)
+	      (i64* (unexpr offset) (unexpr size_expr)))
+	     (unexpr (type2expr (type-of ptr)))))
+	     null-expr)))
 (declare-macro ptr+ *ptr+)
 
 (defun string-concat ((ptr char) (a (ptr char)) (b (ptr char)))

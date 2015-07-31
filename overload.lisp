@@ -225,7 +225,8 @@
 (overload * f32*)
 (overload / f32/)
 
-(defvar null-expr (cast null (ptr expr)))
+(overload + ptr+)
+
 ;; (* 1 2 3 4 5) -> (* (* 1 2) (* 3 (* 4 5)))
 ;;               -> (* (* (* (* 1 2) 3 ) 4 ) 5)
 ;;               -> (* 1 (* 2 (* 3 (* 4 5))))
@@ -244,9 +245,9 @@
 	       (let ((buffer (cast 
 			      (alloc (* 3 (size-of (type (ptr expr)))))
 			      (ptr (ptr expr)))))
-		 (setf (deref (ptr+ buffer 0)) fcn)
-		 (setf (deref (ptr+ buffer 1)) (sub-expr.expr values (cast it u64)))
-		 (setf (deref (ptr+ buffer 2)) top)
+		 (setf (deref (+ buffer 0)) fcn)
+		 (setf (deref (+ buffer 1)) (sub-expr.expr values (cast it u64)))
+		 (setf (deref (+ buffer 2)) top)
 		 (setf top (make-sub-expr buffer 3))))
 	top)))
 
