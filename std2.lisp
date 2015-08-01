@@ -27,7 +27,7 @@
 (load "vec2.lisp")
 
 (type (alias (ptr i32) thread-handle))
-
+(type (alias i32 pthread-attr-t))
 (defun new-thread-handle (thread-handle) 
   (let ((nthread (cast (alloc (size-of (type i32))) (ptr i32))))
     (setf (deref nthread) 0)
@@ -107,3 +107,18 @@
 (defun rand(i64)
   (bit-or (cast (std:rand) i64) 
 	  (<< (cast (std:rand) i64) 32)))
+
+
+
+(defmacro defstruct (name &rest fields)
+  (let ((inner-name (symbol2expr (symbol-combine (quote ___) (expr2symbol name)))))
+    (let ((structdef
+    	   (unfold-body2 
+    	    (expr (struct (unexpr inner-name)))
+    	    fields)))
+      (let ((e (expr 
+    		(type 
+    		 (alias 
+		  (unexpr structdef)
+		  (unexpr name))))))
+    	e))))

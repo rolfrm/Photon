@@ -109,12 +109,14 @@ length
     (gl:buffer-data gl:array-buffer (cast s u32) (cast buf2 (ptr void)) gl:static-draw)
     (dealloc (cast buf2 (ptr void)))))
 
-(gl:enable-vertex-attrib-array 0)
+;; (defstruct rect
+;;   (upper-left vec2)
+;;   (size vec2))
 
-(gl:bind-buffer gl:array-buffer vbo)
+(defvar vbo-boxes (cast 0 u32))
+(gl:gen-buffers 1 (addrof vbo-boxes))
 
-(gl:bind-buffer gl:array-buffer vbo-circle)
-(gl:vertex-attrib-pointer 0 2 gl:float gl:false 0 null) 
+(gl:enable-vertex-attrib-array 0) 
 (gl:clear-color 0.0  0.0 0.0  1.0 )
 (defvar player-pos (vec 0 0))
 (defvar player-dir (vec 0 1))
@@ -127,6 +129,11 @@ length
 
 (defun pt-dist(f64 (a vec2) (b vec2))
   (vec2-length (- a b)))
+
+(defun scroll-cb (void (win (ptr void)) (scroll-x f64) (scroll-y f64))
+  (let ((amount (+ (* 0.1 scroll-y) 1.0)))
+    (setf cam-size (* cam-size amount))))
+(glfw:set-scroll-callback win scroll-cb)
 
 (let ((iteration 0)
       (speed 1.0))
@@ -174,8 +181,8 @@ length
 
       
       (glfw:swap-buffers win)
-      (print (- (timestamp) ts) " µs cnt:" points-cnt newline))
-
+      ;(print (- (timestamp) ts) " µs cnt:" points-cnt newline))
+      )
     (glfw:poll-events)    
 
     (usleep 10000)

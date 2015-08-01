@@ -117,58 +117,9 @@
 
 (declare-macro while *while :rest)
 
-(defun *defmacro ((ptr expr) (name (ptr expr)) (args (ptr expr)) (body (ptr expr)))
-  (let ((defun-name (symbol2expr (symbol-combine (quote **) (expr2symbol name))))
-	(arg-cnt (sub-expr.cnt args))
-	(exprtype (expr (ptr expr)))
-	(use-rest false))
-    
-    (let ((convargs (cast (alloc (u64* (size-of (type (ptr expr))) (u64+ 1 arg-cnt))) (ptr (ptr expr))))
-	  (it 0)
-	  (item 0))
-      (setf (deref convargs) exprtype)
-      (while (not (eq it (cast arg-cnt i64)))
-	(let ((arg (sub-expr.expr args (cast it u64))))
-	  (if (and 
-	       (not (is-sub-expr arg))
-	       (eq (expr2symbol (sub-expr.expr args (cast it u64))) (quote &rest)))
-	      (progn
-		(setf use-rest true)
-	        (setf item (i64- item 1))
-		(noop))
-	      (setf (deref (ptr+ convargs (i64+ 1 item)))
-		    (let ((sub-args (cast (alloc (u64* (size-of (type (ptr expr))) 2)) (ptr (ptr expr)))))
-		      (setf (deref sub-args) arg)
-		      (setf (deref (ptr+ sub-args 1)) exprtype)
-		      (make-sub-expr sub-args 2))))
-	  )
-	(setf it (i64+ 1 it))
-	(setf item (i64+ 1 item))
-	)
-      (let ((r
-	     (expr
-	      (progn
-		(defun (unexpr defun-name) 
-		    (unexpr (make-sub-expr convargs (u64+ (cast (if use-rest 0 1) u64) arg-cnt ))) (unexpr body))
-		(unexpr
-		 (if use-rest
-		     (expr (declare-macro (unexpr name) (unexpr defun-name) :rest))
-		     (expr (declare-macro (unexpr name) (unexpr defun-name)))))))))
-	r))))
-
-(declare-macro defmacro *defmacro)
-
-;; defmacro test
-(defmacro test1 (a b)
-  a)
-(test1 1 2)(test1 1 2)(test1 1 2)(test1 1 2)
 
 
-(defvar libm (load-lib "libm.so"))
-(load-symbol libm (quote cos) (quote cos) (type (fcn f64 (x f64))))
-(load-symbol libm (quote cosf) (quote cosf) (type (fcn f32 (x f32))))
 
-(type (alias i32 pthread-attr-t))
 
 (load-symbol+ libc std:print-f64 printf (fcn (ptr void) (fmt (ptr char)) (x f64)))
 (load-symbol+ libc std:print-i64 printf (fcn (ptr void) (fmt (ptr char)) (x i64)))
@@ -221,6 +172,57 @@
 (defun write-line (void (str (ptr char)))
   (progn (printstr str)
 	 (print-newline)))
+
+(defun *defmacro ((ptr expr) (name (ptr expr)) (args (ptr expr)) (body (ptr expr)))
+  (let ((defun-name (symbol2expr (symbol-combine (quote **) (expr2symbol name))))
+	(arg-cnt (sub-expr.cnt args))
+	(exprtype (expr (ptr expr)))
+	(use-rest false))
+    (printstr "Defining macro '")
+    (print-expr name)
+    (printstr "'.")
+    (printstr newline)
+    (let ((convargs (cast (alloc (u64* (size-of (type (ptr expr))) (u64+ 1 arg-cnt))) (ptr (ptr expr))))
+	  (it 0)
+	  (item 0))
+      (setf (deref convargs) exprtype)
+      (while (not (eq it (cast arg-cnt i64)))
+	(let ((arg (sub-expr.expr args (cast it u64))))
+	  (if (and 
+	       (not (is-sub-expr arg))
+	       (eq (expr2symbol (sub-expr.expr args (cast it u64))) (quote &rest)))
+	      (progn
+		(setf use-rest true)
+	        (setf item (i64- item 1))
+		(noop))
+	      (setf (deref (ptr+ convargs (i64+ 1 item)))
+		    (let ((sub-args (cast (alloc (u64* (size-of (type (ptr expr))) 2)) (ptr (ptr expr)))))
+		      (setf (deref sub-args) arg)
+		      (setf (deref (ptr+ sub-args 1)) exprtype)
+		      (make-sub-expr sub-args 2))))
+	  )
+	(setf it (i64+ 1 it))
+	(setf item (i64+ 1 item))
+	)
+      (let ((r
+	     (expr
+	      (progn
+		(defun (unexpr defun-name) 
+		    (unexpr (make-sub-expr convargs (u64+ (cast (if use-rest 0 1) u64) arg-cnt ))) (unexpr body))
+		(unexpr
+		 (if use-rest
+		     (expr (declare-macro (unexpr name) (unexpr defun-name) :rest))
+		     (expr (declare-macro (unexpr name) (unexpr defun-name)))))))))
+	r))))
+
+(declare-macro defmacro *defmacro)
+
+;; defmacro test
+(defmacro test1 (a b)
+  a)
+(test1 1 2)(test1 1 2)(test1 1 2)(test1 1 2)
+
+
 
 (defun add-to-list (void (list (ptr (ptr void)))
 		    (cnt (ptr u64)) (data (ptr void)) (elem-size u64))
@@ -343,6 +345,7 @@
       -1
       1))
 
+; range: from start to stop, excluding stop.
 (defmacro range (it start stop &rest body)
   (let ((s (gensym))
 	(d (gensym)))
@@ -354,7 +357,21 @@
 	   (unexpr (unfold-body (expr progn) body))
 	   (setf (unexpr it) (i64+ (unexpr it) (unexpr d)))))
        (noop)))))
-	 
 ; Usage:
 ;;; (range a 0 -10 (printi64 a) (printstr newline))
 ;;; (range b 0 10 (printi64 b) (printstr newline))
+
+(defun unfold-body2 ((ptr expr) (header (ptr expr)) (args (ptr expr)))
+    (let ((sexprs (cast
+		   (alloc (u64* (cast (size-of (type (ptr expr))) u64)
+				(u64+ (sub-expr.cnt header) 
+				      (sub-expr.cnt args)))) 
+		   (ptr (ptr expr)))))
+      (range i 0 (cast (sub-expr.cnt header) i64)
+	     (setf (deref (ptr+ sexprs i)) (sub-expr.expr header (cast i u64))))
+      (let ((offset (cast (sub-expr.cnt header) i64)))
+	(range i 0 (cast (sub-expr.cnt args) i64)
+	       (setf (deref (ptr+ sexprs (i64+ offset i))) (sub-expr.expr args (cast i u64)))))
+      (make-sub-expr sexprs (u64+ (sub-expr.cnt header) (sub-expr.cnt args)))))
+	 
+
