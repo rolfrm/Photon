@@ -15,7 +15,13 @@ void print_type(type_def * def){
 }
 
 type_def * ptr_inner(type_def * ptr_def){
-  ASSERT(ptr_def->type == POINTER);
+  if(ptr_def->type != POINTER){
+    loge("Can only get inner pointer of a pointer type;\ngot:");
+    print_decl(ptr_def, get_symbol("tmp"));
+    logd("\n");
+    ERROR("Unable to get inner pointer");
+    return NULL;
+  }
   return ptr_def->ptr.inner;
 }
 

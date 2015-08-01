@@ -108,17 +108,14 @@
   (bit-or (cast (std:rand) i64) 
 	  (<< (cast (std:rand) i64) 32)))
 
-
-
 (defmacro defstruct (name &rest fields)
   (let ((inner-name (symbol2expr (symbol-combine (quote ___) (expr2symbol name)))))
     (let ((structdef
     	   (unfold-body2 
     	    (expr (struct (unexpr inner-name)))
     	    fields)))
-      (let ((e (expr 
-    		(type 
-    		 (alias 
-		  (unexpr structdef)
-		  (unexpr name))))))
-    	e))))
+      (expr 
+       (type 
+	(alias 
+	 (unexpr structdef)
+	 (unexpr name)))))))
