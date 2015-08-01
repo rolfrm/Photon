@@ -25,6 +25,8 @@
 	(y (member a y)))
     (sqrt (+ (* x x) (* y y)))))
 
+
+
 (defoverloaded aref)
 (defun vec2-aref ((ptr f64) (a vec2) (idx i64))
   (ptr+ (cast (addrof a) (ptr f64)) idx))
@@ -263,3 +265,9 @@
     (printstr " ")
     (print (member mat m33))))
 (overload print mat4-print)
+
+(defun vec2-normalize (vec2 (a vec2))
+  (let ((len (vec2-length a)))
+    (if (eq len 0.0)
+	a
+	(* a (/ 1.0 len)))))

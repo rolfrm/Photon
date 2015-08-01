@@ -1,9 +1,10 @@
 (defvar libgl (load-lib "libGL.so"))
 (defmacro gl-load (name cname type)
   (expr (load-symbol+ libgl (unexpr name) (unexpr cname) (unexpr type))))
-
+;; misc
 (gl-load gl:clear glClear  (fcn void (mask i32)))
 (gl-load gl:clear-color  glClearColor (fcn void (r f32) (g f32) (b f32) (a f32)))
+(gl-load gl:line-width glLineWidth (fcn void (width f32)))
 (write-line "create-shader")
 (defvar gl:fragment-shader (cast 0x8b30 u32))
 (defvar gl:vertex-shader (cast 0x8b31 u32))
@@ -145,4 +146,4 @@
 (glvar gl:triangle-fan 6)
 (glvar gl:quads 7)
 (glvar gl:quad-strip 8)
-(glvar gl:polygin 9)
+(glvar gl:polygon 9)

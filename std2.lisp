@@ -22,6 +22,8 @@
 (load-symbol+ libm sin32 sinf (fcn f32 (x f32)))
 (load-symbol+ libm sqrt sqrt (fcn f64 (x f64)))
 (load-symbol+ libm sqrt32 sqrtf (fcn f32 (x f32)))
+(load-symbol+ libm fabs fabs (fcn f64 (x f64)))
+
 
 (defvar pi 3.141592653)
 (load "vec2.lisp")
