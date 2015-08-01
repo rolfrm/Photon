@@ -28,9 +28,7 @@ type_def * no_op(c_block * block, c_value * val){
 type_def * type_macro(c_block * block, c_value * value, expr e){
   static int typevarid = 0;
   type_def * t = expr2type(e);
-  char buf[30];
-  sprintf(buf, "type_%i",typevarid++);
-  symbol varname = get_symbol(buf);
+  symbol varname = get_symbol_fmt("type_%i",typevarid++);
   define_variable(varname, &type_def_ptr_def, t, false);
   type_def * rt = compile_expr(block, value, symbol_expr2(varname));
   ASSERT(rt == type_pool_get(&type_def_ptr_def));
@@ -96,7 +94,7 @@ type_def * var_macro(c_block * block, c_value * val, expr vars, expr body){
   if(!is_void){
     static i64 tmpid = 0;
     tmpvar.type = C_VAR;
-    tmpvar.var.var.name = get_symbol_format("_tmpvar_%i", tmpid++);
+    tmpvar.var.var.name = get_symbol_fmt("_tmpvar_%i", tmpid++);
     tmpvar.var.value = NULL;
     lisp_vars[sexpr.cnt].type = rettype;
     lisp_vars[sexpr.cnt].name = tmpvar.var.var.name;
@@ -139,7 +137,7 @@ type_def * defvar_macro(c_block * block, c_value * val, expr * exprs, size_t cnt
   expr name = exprs[0];
   COMPILE_ASSERT(is_symbol(name));
   symbol sym = expr_symbol(name);
-  logd("defining variable '%s'\n", symbol_name(sym));
+  logd("Defining variable '%s'.\n", symbol_name(sym));
   type_def * t;
 
   if(is_keyword(exprs[1]) && expr_symbol(exprs[1]).id == get_symbol("type").id && cnt == 3){
@@ -396,12 +394,10 @@ expr * expand_expr(expr * exprs, ...){
 }
 
 symbol get_recurse_sym(int id, int cnt){
-  char name_buffer[30];
-  sprintf(name_buffer, "_tmp_%i__%i_", id, cnt);
-  return get_symbol(name_buffer);
+  return get_symbol_fmt("_tmp_%i__%i_", id, cnt);
 }
 
-bool recurse_expr(expr * ex, c_block * block, int id, int * cnt){
+bool recurse_expr(expr * ex, c_block * block, int id, int * cnt, var_def ** vars){
   if(ex->type == VALUE)
     return true;
   sub_expr exp = ex->sub_expr;
@@ -409,13 +405,21 @@ bool recurse_expr(expr * ex, c_block * block, int id, int * cnt){
      && expr_symbol(exp.exprs[0]).id == get_symbol("unexpr").id){
     ASSERT(exp.cnt == 2);
     c_value cval;
-    type_def * t =compile_expr(block, &cval, exp.exprs[1]);
+    type_def * t = compile_expr(block, &cval, exp.exprs[1]);
     if(t == &error_def){
       return false;
     }
     
+    var_def vard;
+    vard.type = t;
+    vard.name = get_recurse_sym(id,(*cnt)++);
+    vard.data = NULL;
+    
+    size_t scnt = *cnt - 1;
+    list_add((void **) vars, &scnt, &vard, sizeof(vard));
+    
     c_var var;
-    var.var.name = get_recurse_sym(id,(*cnt)++);
+    var.var.name = vard.name;
     var.var.type = t;
     var.value = clone(&cval, sizeof(cval));
     c_expr exp;
@@ -429,7 +433,7 @@ bool recurse_expr(expr * ex, c_block * block, int id, int * cnt){
   }else{
     bool ok = true;
     for(size_t i = 0; i < exp.cnt; i++)
-      ok &= recurse_expr(exp.exprs + i, block, id, cnt);
+      ok &= recurse_expr(exp.exprs + i, block, id, cnt, vars);
     return ok;	
   }
 }
@@ -440,13 +444,12 @@ type_def * expr_macro(c_block * block, c_value * val, expr body){
   int id = _id; 
   type_def * exprtd = opaque_expr();	  
 
-  char buf[30];
-  sprintf(buf,"_tmp_symbol_%i",id);
-  symbol tmp = get_symbol(buf);
+  symbol tmp = get_symbol_fmt("_tmp_symbol_%i", id);
   expr * ex = clone_expr(&body);
   int cnt = 0;
-  bool ok = recurse_expr(ex, block, id, &cnt);
-  if(!ok) COMPILE_ERROR("Error during compiling unexpr");
+  var_def * vars = NULL;
+  bool ok = recurse_expr(ex, block, id, &cnt, &vars);
+  if(!ok) COMPILE_ERROR("Error while storing expression tree.");
   
   define_variable(tmp, exprtd, ex, false);
   
@@ -456,28 +459,30 @@ type_def * expr_macro(c_block * block, c_value * val, expr body){
     args[i] = exprtd;
   ftype.fcn.args = args;
   ftype.fcn.cnt = cnt + 1;
-  c_value cargs[cnt + 1];
-  for(int i = 1; i < cnt + 1; i++){
-    cargs[i].type = C_SYMBOL;
-    cargs[i].symbol = get_recurse_sym(id, i - 1);
-  }
-  cargs[0].type = C_SYMBOL;
-  cargs[0].symbol = tmp;
+
   type_def * ftype2 = type_pool_get(&ftype);
   char _expandname[20];
-  sprintf(_expandname, "___expand%i",cnt);
+  sprintf(_expandname, "___expand%i", cnt);
   symbol expandname = get_symbol(_expandname);
   if(get_global(expandname) == NULL)
     defun(_expandname, ftype2, expand_expr);
-  ASSERT(expandname.id != 0);
 
-  val->type = C_FUNCTION_CALL;
-  val->call.name = expandname;
-  val->call.args = clone(cargs,sizeof(c_value) * (cnt + 1));
-  val->call.arg_cnt = cnt + 1;
-  val->call.type = ftype2;
+  expr callexprs[cnt + 2];
+  callexprs[0] = symbol_expr2(expandname);
+  callexprs[1] = symbol_expr2(tmp);
+  for(int i = 0; i < cnt; i++)
+    callexprs[i + 2] = symbol_expr2(get_recurse_sym(id, i));
+  expr sexp;
+  sexp.type = EXPR;
+  sexp.sub_expr.exprs = callexprs;
+  sexp.sub_expr.cnt = cnt + 2;
+  size_t vars_cnt = cnt;
+  push_symbols(&vars, &vars_cnt);
+  type_def * td = compile_expr(block, val,  sexp);
+  pop_symbols();
+  list_clean((void **) &vars, &vars_cnt);
+  return td;
 
-  return exprtd;
 }
 
 // Really just a sanity check
@@ -551,7 +556,7 @@ type_def * defun_macro(c_block * block, c_value * value, expr name, expr args, e
   COMPILE_ASSERT(args.type == EXPR && args.sub_expr.cnt > 0);
 
   symbol fcnname = expr_symbol(name);
-  logd("defining function: '%s'\n", symbol_name(fcnname));
+  logd("Defining function: '%s'.\n", symbol_name(fcnname));
   c_root_code newfcn_root;
   newfcn_root.type = C_FUNCTION_DEF;
   c_fcndef * f = &newfcn_root.fcndef;
@@ -669,11 +674,9 @@ type_def * beq_macro(c_block * block, c_value * val, expr item1, expr item2){
 
 symbol get_tmp_sym(){
   static int tmpid = 0;
-  char tmpname[30];
   symbol tmpsym;
   do{
-    sprintf(tmpname,"_tmp%i", tmpid);
-    tmpsym = get_symbol(tmpname);
+    tmpsym = get_symbol_fmt("_tmp%i", tmpid);
     tmpid++;
   }while(get_any_variable(tmpsym) != NULL);
   return tmpsym;

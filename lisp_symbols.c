@@ -9,7 +9,7 @@
 #include <ctype.h>
 
 #include "uthash.h"
-
+#include <stdarg.h>
 typedef struct{
   char * key;
   u64 value;
@@ -38,17 +38,23 @@ symbol * get_symbol2(char * name){
   return (symbol *) &sym_item->value;
 }
 
-symbol get_symbol(char * name){
-  return *get_symbol2(name);
+symbol get_symbol(char * fmt){
+  return *get_symbol2(fmt);
 }
-#include <stdarg.h>
-symbol get_symbol_format(char * fmt, ...){
+
+symbol get_symbol_fmt(char * fmt, ...){
+  if(fmt == NULL)
+    return symbol_empty;
   va_list args;
-va_start(args, fmt);
-  char * buf = vfmtstr(fmt, args);
-  symbol s = get_symbol(buf);
-  dealloc(buf);
-  return s;
+  va_start(args, fmt);
+  va_list args2;
+  va_copy(args2, args);
+  size_t size = vsnprintf (NULL, 0, fmt, args2) + 1;
+  va_end(args2);
+  char buf[size];
+  vsprintf (buf, fmt, args);
+  va_end(args);
+  return *get_symbol2(buf);
 }
 
 char * symbol_name(symbol s){
