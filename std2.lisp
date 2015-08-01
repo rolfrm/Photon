@@ -121,3 +121,20 @@
 	(alias 
 	 (unexpr structdef)
 	 (unexpr name)))))))
+
+
+(defun clear-list (void (list (ptr (ptr void)))
+		   (cnt (ptr i64)))
+  (progn
+    (dealloc (deref list))
+    (setf (deref list) null)
+    (setf (deref cnt) 0)
+    ))
+
+(defmacro clear-list+ (lst cnt)
+  (let ((lst-type (type-of lst)))
+    (assert (is-ptr-type? lst-type))
+    (expr 
+     (clear-list (cast (addrof (unexpr lst)) (ptr (ptr void)))
+		 (addrof (unexpr cnt))))))
+    

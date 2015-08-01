@@ -4,7 +4,7 @@
 (load "gl-ext.lisp")
 
 (glfw:init)
-(defvar win (glfw:create-window 1920 1200 "Flowery!" null null))
+(defvar win (glfw:create-window 400 400 "Flowery!" null null))
 (glfw:make-current win)
 (defvar prog (gl:create-program))
 (defvar frag (gl:create-shader gl:fragment-shader))
@@ -67,32 +67,27 @@ length
 (defvar cam-loc (gl:get-uniform-location prog "cam"))
 (defvar cam-size-loc (gl:get-uniform-location prog "cam_size"))
 
-(defvar points (cast (alloc0 (* 0 (size-of (type vec2)))) (ptr vec2)))
-(defvar points-cnt (cast 0 u64))
-(add-to-list+ points points-cnt (vec 0 0))
-(add-to-list+ points points-cnt (vec 0 10.0))
-(range it 0 (cast points-cnt i64)
-       (print it (deref (+ points it)) newline))
-(print points-cnt newline)
+(defvar points (cast null (ptr vec2)))
+(defvar points-cnt  0)
 
 (defvar vbo (cast 0 u32))
 (gl:gen-buffers 1 (addrof vbo))
 (gl:bind-buffer gl:array-buffer vbo)
 
 (defun load-points(void)
-  (let ((buf (cast (alloc (* 2 (size-of (type f32)) points-cnt)) (ptr f32))))
+  (let ((buf (cast (alloc (* 2 (size-of (type f32)) (cast points-cnt u64))) (ptr f32))))
     (gl:bind-buffer gl:array-buffer vbo)
-    (range it 0 (cast points-cnt i64)
+    (range it 0 points-cnt
 	   (let ((point (deref (+ points it))))
 	     (setf (deref (+ buf (* it 2)) )
 		   (cast (member point x) f32))
 	     (setf (deref (+ buf (+ 1 (* it 2))))
 		   (cast (member point y) f32))))
-    (gl:buffer-data gl:array-buffer (cast (* points-cnt (size-of (type f32)) 2) u32)
+    (gl:buffer-data gl:array-buffer (cast (* (cast points-cnt u64) (size-of (type f32)) 2) u32)
 		    (cast buf (ptr void)) gl:static-draw)
     (dealloc (cast buf (ptr void)))
     ))
-(load-points)
+
 	  
 (defvar vbo-circle (cast 0 u32))
 (gl:gen-buffers 1 (addrof vbo-circle))
@@ -129,8 +124,6 @@ length
     (setf (member r size) size)
     r))
 
-(add-to-list+ grass-rects grass-rect-cnt (make-rect (vec -500 -500) (vec 1000 500)))
-(add-to-list+ grass-rects grass-rect-cnt (make-rect (vec 50 30) (vec 10 10)))
 
 (defun load-boxes(void)
   (let ((size (cast (* grass-rect-cnt (cast (size-of (type f32)) i64) 4 2) u64)))
@@ -160,24 +153,16 @@ length
 
 
 (gl:enable-vertex-attrib-array 0) 
-(gl:clear-color 0.8 0.8 1.0  1.0 )
 (defvar player-pos (vec 0 0))
 (defvar player-dir (vec 0 1))
 (defvar new-pos (vec 0 0))
 (defvar cam-pos (vec 0 50))
 (defvar cam-size (vec 50 50))
 (defvar circles (cast null (ptr vec3)))
-(defvar circle-cnt (cast 0 u64))
-
-(add-to-list+ circles circle-cnt (vec 10 60 20))
-(add-to-list+ circles circle-cnt (vec -10 30 10))
-(add-to-list+ circles circle-cnt (vec 20 30 10))
-(add-to-list+ circles circle-cnt (vec -10 40 8.5))
+(defvar circle-cnt 0)
 
 (defun pt-dist(f64 (a vec2) (b vec2))
   (vec2-length (- a b)))
-
-
 
 (defun within-unit (bool (a f64))
   (and (> a 0)
@@ -200,6 +185,37 @@ length
       amount
       0.0))
 
+(defun load-game(void)
+  (progn
+    (print "Reload!" newline)
+    (setf player-pos (vec 0 0))
+    (setf player-dir (vec 0 1))
+    (setf new-pos (vec 0 0))
+    (setf cam-pos (vec 0 50))
+    (setf cam-size (vec 50 50))
+    (setf circles (cast null (ptr vec3)))
+    (setf circle-cnt 0)
+
+    (clear-list+ grass-rects grass-rect-cnt)
+    (add-to-list+ grass-rects grass-rect-cnt (make-rect (vec -500 -500) (vec 1000 500)))
+    (add-to-list+ grass-rects grass-rect-cnt (make-rect (vec 50 30) (vec 10 10)))
+    
+    (clear-list+ circles circle-cnt)
+    (add-to-list+ circles circle-cnt (vec 10 60 20))
+    (add-to-list+ circles circle-cnt (vec -10 30 10))
+    (add-to-list+ circles circle-cnt (vec 20 30 10))
+    (add-to-list+ circles circle-cnt (vec -10 40 8.5))
+    (load-boxes)
+    (gl:clear-color 0.8 0.8 1.0  1.0 )
+    (clear-list+ points points-cnt)
+    (add-to-list+ points points-cnt (vec 0 0))
+    (add-to-list+ points points-cnt (vec 0 10.0))
+
+    (load-points)
+    ))
+
+(load-game)
+
 (let ((iteration 0)
       (speed 0.10)
       (height (cast 0.0 f64))
@@ -207,8 +223,11 @@ length
   (while (< iteration 40000)
     (let ((ts (timestamp)))
       (let ((cam-len (member cam-size x)))
-	(print cam-len newline)
 	(gl:line-width (cast (/ 100 cam-len) f32)))
+      (unless alive
+	(load-game)
+	(setf alive true)
+	)
       (when alive
 	(let ((lastpt (deref (+ points (cast (- points-cnt 1) i64)))))
 	  (add-to-list+ points points-cnt 
@@ -226,9 +245,8 @@ length
 		     (eq turn 0.0))
 		(let ((axes-count 0))
 		  (let ((axes (glfw:get-joystick-axes 0 (cast (addrof axes-count) (ptr i32)))))
-		    (range it 0 axes-count
-			   (print (deref (ptr+ axes it)) " "))
-		    (print newline)
+		    ;(range it 0 axes-count (print (deref (ptr+ axes it)) " "))
+		    ;(print newline)
 		    (setf turn 
 			  (unjitter-axis (cast (deref axes) f64)))
 		    (scroll-cb win 0.0 (unjitter-axis (cast (deref (+ axes 4)) f64)))
@@ -250,7 +268,7 @@ length
 	  (print "height: " height newline)
 	  ))
 
-      ;(setf speed (* 0.99 speed))
+      (setf speed (* 0.9995 speed))
       (gl:clear gl:color-buffer-bit)
       (gl:uniform cam-size-loc cam-size)
       (gl:uniform cam-loc cam-pos)
@@ -269,7 +287,7 @@ length
 
       (let ((r (deref grass-rects)))
 	(setf (member r upper-left)
-	    (+ (member r upper-left) (vec 0 0.05)))
+	    (+ (member r upper-left) (vec 0 0.095)))
 	(setf (deref grass-rects) r))
       (when alive
 	(range it 0 grass-rect-cnt
@@ -279,11 +297,8 @@ length
 		   (setf alive false)
 		   (print "dead." newline)
 		   ))))
-      (load-boxes)
 
 
-      
-      
       (gl:bind-buffer gl:array-buffer vbo)
       (gl:vertex-attrib-pointer 0 2 gl:float gl:false 0 null) 
       (gl:uniform offset-loc (vec 0.0 0.0))
@@ -297,8 +312,6 @@ length
       (gl:uniform size-loc (vec 1 1))
       (gl:uniform color-loc 0.2 0.4 0.2 1)
       (gl:draw-arrays gl:quads 0 (cast (* 4 grass-rect-cnt) u32))
-
-
 
       (gl:bind-buffer gl:array-buffer vbo-circle)
       (gl:vertex-attrib-pointer 0 2 gl:float gl:false 0 null) 
@@ -317,9 +330,7 @@ length
       
       (gl:uniform offset-loc (vec 0.0 0.0))      
       (setf iteration (+ iteration 1))
-      
 
-      
       (glfw:swap-buffers win)
       ;(print (- (timestamp) ts) " µs cnt:" points-cnt newline))
       )
