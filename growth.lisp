@@ -160,6 +160,7 @@ length
 (defvar cam-size (vec 50 50))
 (defvar circles (cast null (ptr vec3)))
 (defvar circle-cnt 0)
+(defvar speed 1.0)
 
 (defun pt-dist(f64 (a vec2) (b vec2))
   (vec2-length (- a b)))
@@ -181,9 +182,14 @@ length
 (gl:line-width 2.0)
 
 (defun unjitter-axis(f64 (amount f64))
-  (if (> (fabs amount) 0.1)
-      amount
-      0.0))
+  (let ((dead-zone 0.15))
+    (if (> amount dead-zone)
+	(- amount dead-zone)
+	(if (< amount (- 0 dead-zone))
+	    (+ amount dead-zone)
+	    0.0))))
+  
+      
 
 (defun load-game(void)
   (progn
@@ -192,16 +198,19 @@ length
     (setf player-dir (vec 0 1))
     (setf new-pos (vec 0 0))
     (setf cam-pos (vec 0 50))
-    (setf cam-size (vec 50 50))
+    ;(setf cam-size (vec 50 50))
     (setf circles (cast null (ptr vec3)))
     (setf circle-cnt 0)
+    (setf speed 0.12)
 
     (clear-list+ grass-rects grass-rect-cnt)
     (add-to-list+ grass-rects grass-rect-cnt (make-rect (vec -500 -500) (vec 1000 500)))
-    (add-to-list+ grass-rects grass-rect-cnt (make-rect (vec 50 30) (vec 10 10)))
+
     
     (clear-list+ circles circle-cnt)
-    (add-to-list+ circles circle-cnt (vec 10 60 20))
+    (add-to-list+ circles circle-cnt (vec 8 60 18))
+    (add-to-list+ circles circle-cnt (vec -10 95 18))
+    (add-to-list+ circles circle-cnt (vec -32 60 20))
     (add-to-list+ circles circle-cnt (vec -10 30 10))
     (add-to-list+ circles circle-cnt (vec 20 30 10))
     (add-to-list+ circles circle-cnt (vec -10 40 8.5))
@@ -217,16 +226,20 @@ length
 (load-game)
 
 (let ((iteration 0)
-      (speed 0.10)
+
       (height (cast 0.0 f64))
-      (alive true))
+      (alive true)
+      (dead-timer 0))
   (while (< iteration 40000)
     (let ((ts (timestamp)))
       (let ((cam-len (member cam-size x)))
 	(gl:line-width (cast (/ 100 cam-len) f32)))
       (unless alive
-	(load-game)
-	(setf alive true)
+	(when (> dead-timer 100)
+	  (load-game)
+	  (setf alive true)
+	  (setf dead-timer 0))
+	(incr dead-timer 1)
 	)
       (when alive
 	(let ((lastpt (deref (+ points (cast (- points-cnt 1) i64)))))
@@ -245,25 +258,14 @@ length
 		     (eq turn 0.0))
 		(let ((axes-count 0))
 		  (let ((axes (glfw:get-joystick-axes 0 (cast (addrof axes-count) (ptr i32)))))
-		    ;(range it 0 axes-count (print (deref (ptr+ axes it)) " "))
-		    ;(print newline)
-		    (setf turn 
-			  (unjitter-axis (cast (deref axes) f64)))
+		    (setf turn (unjitter-axis (- 0.0 (cast (deref axes) f64))))
 		    (scroll-cb win 0.0 (unjitter-axis (cast (deref (+ axes 4)) f64)))
-			
-		    ;(setf player-dir 
-			  ;(vec2-normalize
-		;	   (vec (cast (deref axes) f64)
-		;		(cast (* -1.0 (deref (+ axes 1))) f64))
-			   ;)
-		;	   )
 		    )))
 	    (setf player-dir (vec2turn player-dir (* turn 0.1))))
 	  (setf cam-pos (deref (+ points (cast (- points-cnt 1) i64))))
 	  (load-points))
 	
 	(let ((cheight (deref (+ points (cast (- points-cnt 1) i64)))))
-	  
 	  (setf height (max height (member cheight y)))
 	  (print "height: " height newline)
 	  ))
@@ -280,7 +282,7 @@ length
 	     (let ((circle (deref (+ circles it))))
 	       (let ((dist (pt-dist cam-pos (vec (member circle x) (member circle y)))))
 		 (when (< dist (member circle z))
-		   (setf speed (* 0.998 speed))))
+		   (setf speed (* 0.997 speed))))
 	       (gl:uniform offset-loc (vec (member circle x) (member circle y)))
 	       (gl:uniform size-loc (vec (member circle z) (member circle z)))
 	       (gl:draw-arrays gl:polygon 0 (cast circ-pts u32))))
@@ -306,6 +308,7 @@ length
       (gl:uniform color-loc 0.5 0.8 0.3 1)
       (gl:draw-arrays gl:line-strip 0 (cast points-cnt u32))
 
+      (load-boxes)
       (gl:bind-buffer gl:array-buffer vbo-grass-boxes)
       (gl:vertex-attrib-pointer 0 2 gl:float gl:false 0 null) 
       (gl:uniform offset-loc (vec 0 0))

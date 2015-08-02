@@ -53,13 +53,16 @@ expr * type2expr(type_def * ptr_def){
 }
 
 void * load_lib(char * path){
-  return dlopen(path, RTLD_LAZY);
+  void * handle =  dlopen(path, RTLD_LAZY);
+  if(handle == NULL)
+    loge("Unable to load library '%s'\n", path);
+  return handle;
 }
 
 void * load_symbol(void * lib, symbol * sym, symbol * name, type_def * t){
   void * ptr = dlsym(lib, get_c_name(*name));
   if(ptr == NULL) {
-    loge("Error no such symbol '%s'", symbol_name(*name));}
+    loge("Error no such symbol '%s'\n", symbol_name(*name));}
   else {
     define_variable(*sym, t, ptr, true);
   }
