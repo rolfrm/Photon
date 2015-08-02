@@ -155,10 +155,16 @@
 (overload print print-seek)
 
 (load-libc fseek (fcn i32 (file (ptr void)) (offset u64) (mode seek-mode)))
-
+(load-libc ftell (fcn u64 (file (ptr void))))
 (defun read-all-data ((ptr char) (path (ptr char)) (size (ptr u64)))
   (let ((file (fopen path "r")))
+    (fseek file 0 seek-end)
+    (let ((size (ftell file)))
+      (print size newline))
     (fclose file)
     "hello?"))
+;(let ((s (cast 0 u64)))
+;  (read-all-data "libtcc_test.so" (addrof s)))
+;(exit 0)
     
   
