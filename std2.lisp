@@ -131,10 +131,34 @@
     (setf (deref cnt) 0)
     ))
 
+
 (defmacro clear-list+ (lst cnt)
   (let ((lst-type (type-of lst)))
     (assert (is-ptr-type? lst-type))
     (expr 
      (clear-list (cast (addrof (unexpr lst)) (ptr (ptr void)))
 		 (addrof (unexpr cnt))))))
+
+(load-libc fopen (fcn (ptr void) (filename (ptr char)) (mode (ptr char))))
+(load-libc fclose (fcn i32 (file (ptr void))))
+(type (alias i32 seek-mode))
+(defvar seek-set (cast 0 seek-mode)) ; Seek from beginning of file.
+(defvar seek-cur (cast 1 seek-mode)) ; Seek from current position.
+(defvar seek-end (cast 2 seek-mode)) ; Seek from end of file.
+
+(defun print-seek (void (mode seek-mode))
+  (if (eq mode seek-set)
+      (printstr "seek beginning")
+      (if (eq mode seek-cur)
+	  (printstr "seek current")
+	  (printstr "seek end"))))
+(overload print print-seek)
+
+(load-libc fseek (fcn i32 (file (ptr void)) (offset u64) (mode seek-mode)))
+
+(defun read-all-data ((ptr char) (path (ptr char)) (size (ptr u64)))
+  (let ((file (fopen path "r")))
+    (fclose file)
+    "hello?"))
     
+  

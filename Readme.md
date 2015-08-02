@@ -16,7 +16,7 @@ To test the compiler.
 4. git clone git@github.com:rolfrm/iron.git
 5. cd Photon
 6. make
-7. ./foton test.lisp
+7. ./foton growth.lisp
 8. ./foton 
 
 V1 Release Checklist (Aiming at August 21 release)

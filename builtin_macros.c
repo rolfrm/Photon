@@ -639,6 +639,10 @@ type_def * comparison_macro(char * operator, c_block * block, c_value * val, exp
   type_def * t2 = compile_expr(block, val2, item2);
   COMPILE_ASSERT(t1 != &error_def && t1 != &void_def);
   if(!(is_type_compatible(t1,t2,item1) || is_type_compatible(t2,t1,item2))){
+    loge("Cannot compare types:\n");
+    print_decl(t1, get_symbol("a")); logd("\n");
+    print_decl(t2, get_symbol("b")); logd("\n");
+    
     COMPILE_ERROR("Types cannot be compared by '%s'", operator);
   }
   val->type = C_CAST;

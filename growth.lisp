@@ -2,7 +2,8 @@
 (load "glfw.lisp")
 (load "gl.lisp")
 (load "gl-ext.lisp")
-
+(load "truetype.lisp")
+;(exit 0)
 (glfw:init)
 (defvar win (glfw:create-window 400 400 "Flowery!" null null))
 (glfw:make-current win)
@@ -209,7 +210,7 @@ length
     
     (clear-list+ circles circle-cnt)
     (add-to-list+ circles circle-cnt (vec 8 60 18))
-    (add-to-list+ circles circle-cnt (vec -10 95 18))
+    (add-to-list+ circles circle-cnt (vec -10 95 10))
     (add-to-list+ circles circle-cnt (vec -32 60 20))
     (add-to-list+ circles circle-cnt (vec -10 30 10))
     (add-to-list+ circles circle-cnt (vec 20 30 10))
@@ -266,8 +267,9 @@ length
 	  (load-points))
 	
 	(let ((cheight (deref (+ points (cast (- points-cnt 1) i64)))))
-	  (setf height (max height (member cheight y)))
-	  (print "height: " height newline)
+	  (when (> (member cheight y) height)
+	    (setf height (member cheight y))
+	    (print "height: " height newline))
 	  ))
 
       (setf speed (* 0.9995 speed))
