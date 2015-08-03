@@ -53,9 +53,32 @@
 ;stbtt_MakeCodepointBitmapSubpixel
 ;stbtt_GetCodepointKernAdvance
 
+(defun read-utf8-codepoint ((ptr char) (string (ptr char)) (out-pt (ptr i32)))
+  (let ((ustr (cast string (ptr u8))))
+    (let ((first (deref ustr)))
+      (if (< first 128)
+	  (progn
+	    (setf (deref out-pt) (cast first i32))
+	    (+ string 1))
+
+	  (if (< (cast first i64) (+ 128 64))
+	      (progn 
+	  	(setf (deref out-pt) 
+	  	      (cast
+		       (bit-or (bit-and (cast first i64) 63)
+			       (<< (bit-and (cast (deref (ptr+ ustr 1)) i64) 127) 4))
+		       i32))
+		(+ string 2))
+	      (+ string 3))))))
+	      
+
+	  ;; 	(ptr+ string 2))
+	  ;;     string)))))
+
+
 (defun test(void)
   (let ((baked (cast (alloc0 100) (ptr tt:fontinfo)))
-	(fontpath "/usr/share/fonts/truetype/droid/DroidSans.ttf")
+	(fontpath "/usr/share/fonts/truetype/freefont/FreeMono.ttf")
 	(s (cast 0 u64)))
     
     (let ((data (read-all-data fontpath (addrof s))))
@@ -65,21 +88,25 @@
 	  (let ((xpos (cast 0.0 i32)) (ypos (cast 0.0 i32))
 		(width (cast 0 i32)) (height (cast 0 i32)))
 	    (tt:init-font baked data (tt:get-font-offset-for-index data 0))
-	    (let ((h (tt:scale-for-pixel-height baked 15)))
-	      (print newline h newline))
-	    (let ((bitmap (tt:get-codepoint-bitmap baked 0 0.015 (cast (deref "A") i32) (addrof width) (addrof height) (addrof xpos) (addrof ypos))))
-	      (range y 0 (cast height i64)
-		     (range x 0 (cast width i64)
-			    (let ((v (cast (deref (ptr+ bitmap (+ x (* y (cast width i64)))))
-					   i64)))
+	    (let ((h (tt:scale-for-pixel-height baked 15))
+		  (codept (cast (deref (cast "aa" (ptr u16))) i32)))
+	      (print newline "codepoint:" codept newline)
+	      (let ((bitmap (tt:get-codepoint-bitmap baked 0 0.03 codept  (addrof width) (addrof height) (addrof xpos) (addrof ypos))))
+		(range y 0 (cast height i64)
+		       (range x 0 (cast width i64)
+			      (let ((v (cast (deref (ptr+ bitmap (+ x (* y (cast width i64)))))
+					     i64)))
 			      (if (eq v -1)
 				(print " ")
 				(print "#"))))
 		     (print newline))
 	      
-	    (print newline width " " height " " "inited.." newline)))))
+	    (print newline width " " height " " "inited.." newline))))))
 	
 
     (print "Testing ttf" newline)))
 (test)
-(exit 0)
+(let ((cpt (cast 0 i32)))
+  (read-utf8-codepoint "a" (addrof cpt))
+  (print cpt newline))
+;(exit 0)
