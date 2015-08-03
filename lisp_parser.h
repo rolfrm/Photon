@@ -22,11 +22,18 @@ typedef struct{
   
 }number_expr;
 
+typedef enum _number_kind_enum{
+  LISP_INTEGER,
+  LISP_FLOAT,
+  LISP_HEX,
+  LISP_BINARY
+}number_kind_enum;
+
 typedef struct{
   value_type type;
   char * value;
   size_t strln;
-  bool is_hex;
+  number_kind_enum number_kind;
 }value_expr;
 
 typedef struct _expr expr;

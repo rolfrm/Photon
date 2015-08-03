@@ -130,7 +130,7 @@ int is_digit(char chr){
 char * parse_number(char * code, value_expr * string){
   int decimal_reached = 0;
   char * it = code;
-  bool _is_hex = false;
+  number_kind_enum kind = LISP_INTEGER;
   bool is_negative = false;
   if(*it == '-') {
     is_negative = true;
@@ -140,11 +140,17 @@ char * parse_number(char * code, value_expr * string){
   int (* val_chr)(char chr) = is_digit;
 
   if(*it == '0' && (it[1] == 'x' || it[1] == 'X')) {
-    _is_hex = true;
+    kind = LISP_HEX;
+    decimal_reached = 1;
+    it += 2;
+    val_chr = is_hex;
+  }else if(*it == '0' && ( it[1] == 'b' || it[1] == 'B')){
+    kind = LISP_BINARY;
     decimal_reached = 1;
     it += 2;
     val_chr = is_hex;
   }
+
   for(; false == is_endexpr(*it); it++){
     if(*it == '.'){
       if(decimal_reached)
@@ -161,7 +167,7 @@ char * parse_number(char * code, value_expr * string){
   string->value = code;
   string->type = NUMBER;
   string->strln = l;
-  string->is_hex = _is_hex;
+  string->number_kind = kind;
   return it;
 }
 
