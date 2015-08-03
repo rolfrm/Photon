@@ -28,9 +28,58 @@
 (type (alias (opaque-struct tt:_fontinfo) tt:fontinfo))
 
 (load-symbol+ libtt tt:init-font stbtt_InitFont (fcn i32 (info (ptr tt:fontinfo)) (data (ptr char)) (offset i32))) 
+(load-symbol+ libtt tt:get-font-offset-for-index stbtt_GetFontOffsetForIndex (fcn i32 (data (ptr char)) (offset i32)))
+(load-symbol+ libtt tt:get-codepoint-bitmap stbtt_GetCodepointBitmap (fcn (ptr char) (info (ptr tt:fontinfo)) (scale-x f32) (scale-y f32) (codepoint i32) (width (ptr i32)) (height (ptr i32)) (xoff (ptr i32)) (yoff (ptr i32)))) 
+
+;float stbtt_ScaleForPixelHeight(const stbtt_fontinfo *info, float pixels);
+(load-symbol+ libtt tt:scale-for-pixel-height stbtt_ScaleForPixelHeight 
+	      (fcn f32 (info (ptr tt:fontinfo)) (pixels f32)))
+;void stbtt_GetFontVMetrics(const stbtt_fontinfo *info, int *ascent, int *descent, int *lineGap);
+(load-symbol+ libtt tt:get-font-v-metrics stbtt_GetFontVMetrics
+	      (fcn void (info (ptr tt:fontinfo)) (ascent (ptr i32)) (descend (ptr i32)) (line-gap (ptr i32))))
+;void stbtt_GetCodepointHMetrics(const stbtt_fontinfo *info, int codepoint, int *advanceWidth, int *leftSideBearing);
+(load-symbol+ libtt tt:get-codepoint-h-metrics stbtt_GetCodepointHMetrics 
+	      (fcn void (info (ptr tt:fontinfo)) (codepoint i32)
+		   (advance-width (ptr i32)) (left-side-bearing (ptr i32))))
+
+;stbtt_GetCodepointBitmapBoxSubpixel
+;void stbtt_GetCodepointBitmapBoxSubpixel(const stbtt_fontinfo *font, int codepoint, float scale_x, float scale_y, float shift_x, float shift_y, int *ix0, int *iy0, int *ix1, int *iy1)
+(load-symbol+ libtt tt:get-codepoint-bitmap-box-sub-pixel stbtt_GetCodepointBitmapBoxSubpixel
+	      (fcn void (info (ptr tt:fontinfo)) (codepoint i32) (scale-x f32) (scale-y f32)
+		   (shift-x f32) (shift-y f32) (ix0 (ptr i32)) (iy0 (ptr i32)) 
+		   (ix1 (ptr i32)) (iy1 (ptr i32))))
+
+
+;stbtt_MakeCodepointBitmapSubpixel
+;stbtt_GetCodepointKernAdvance
 
 (defun test(void)
-  (let ((baked (cast (alloc0 100) (ptr tt:fontinfo))))
+  (let ((baked (cast (alloc0 100) (ptr tt:fontinfo)))
+	(fontpath "/usr/share/fonts/truetype/droid/DroidSans.ttf")
+	(s (cast 0 u64)))
+    
+    (let ((data (read-all-data fontpath (addrof s))))
+      (print "read font:" (cast data i64))
+      (if (ptr-null? data)
+	  (print "Error!" newline)
+	  (let ((xpos (cast 0.0 i32)) (ypos (cast 0.0 i32))
+		(width (cast 0 i32)) (height (cast 0 i32)))
+	    (tt:init-font baked data (tt:get-font-offset-for-index data 0))
+	    (let ((h (tt:scale-for-pixel-height baked 15)))
+	      (print newline h newline))
+	    (let ((bitmap (tt:get-codepoint-bitmap baked 0 0.015 (cast (deref "A") i32) (addrof width) (addrof height) (addrof xpos) (addrof ypos))))
+	      (range y 0 (cast height i64)
+		     (range x 0 (cast width i64)
+			    (let ((v (cast (deref (ptr+ bitmap (+ x (* y (cast width i64)))))
+					   i64)))
+			      (if (eq v -1)
+				(print " ")
+				(print "#"))))
+		     (print newline))
+	      
+	    (print newline width " " height " " "inited.." newline)))))
+	
+
     (print "Testing ttf" newline)))
 (test)
-    
+(exit 0)
