@@ -334,7 +334,11 @@ type_def * compile_expr(c_block * block, c_value * val,  expr e ){
   type_def * td;
   switch(e.type){
   case EXPR:
-    return _compile_expr(block, val, &e.sub_expr);
+    td = _compile_expr(block, val, &e.sub_expr);
+    if(td == &error_def){
+      loge("Error while compiling:\n");
+      print_expr(&e);
+    }
     break;
   case VALUE:
     td = compile_value(val,e.value);

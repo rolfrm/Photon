@@ -194,6 +194,18 @@
 ;(exit 0)
 ;(overload + add3i64)
 
+(defun u8+ (u8 (a u8) (b u8))
+  (.+ a b))
+
+(defun u8- (u8 (a u8) (b u8))
+  (.- a b))
+
+(defun u8* (u8 (a u8) (b u8))
+  (.* a b))
+
+(defun u8/ (u8 (a u8) (b u8))
+  (./ a b))
+
 (overload * i64*)
 (overload / i64/)
 (overload - i64-)
@@ -204,6 +216,11 @@
 (overload / i8/)
 (overload - i8-)
 (overload + i8+)
+
+(overload * u8*)
+(overload / u8/)
+(overload - u8-)
+(overload + u8+)
 
 (overload + u64+)
 (overload * u64*)
@@ -225,7 +242,26 @@
 (overload * f32*)
 (overload / f32/)
 
+;; (defmacro .-2 (arg1 arg2)
+;;   (expr (.- (unexpr arg1) (unexpr arg2))))
+
+;; (defmacro +2 (arg1 arg2)
+;;   (expr (.+ (unexpr arg1) (unexpr arg2))))
+
+;; (defmacro *2  (arg1 arg2)
+;;   (expr (.* (unexpr arg1) (unexpr arg2))))
+ 
+;; (defmacro /2 (arg1 arg2)
+;;   (expr (.* (unexpr arg1) (unexpr arg2))))
 (overload + ptr+)
+
+;; (overload - .-2)
+;; (overload + +2)
+;; (overload * *2)
+;; (overload / /2)
+
+
+
 
 ;; (* 1 2 3 4 5) -> (* (* 1 2) (* 3 (* 4 5)))
 ;;               -> (* (* (* (* 1 2) 3 ) 4 ) 5)
@@ -243,7 +279,7 @@
       (let ((top (sub-expr.expr values (- (sub-expr.cnt values) 1))))
 	(range it (cast (- (sub-expr.cnt values) 2) i64) -1
 	       (let ((buffer (cast 
-			      (alloc (* 3 (size-of (type (ptr expr)))))
+			      (alloc (*  (size-of (type (ptr expr))) 3))
 			      (ptr (ptr expr)))))
 		 (setf (deref (+ buffer 0)) fcn)
 		 (setf (deref (+ buffer 1)) (sub-expr.expr values (cast it u64)))
@@ -252,22 +288,27 @@
 	top)))
 
 (defmacro +any (&rest args)
+
   (expand-multi-arg (expr +) args))
 
 (defmacro *any (&rest args)
   (expand-multi-arg (expr *) args))
 
 (defmacro -/any (&rest args)
-  (expr
-   (/ (unexpr (sub-expr.expr args 0))
-     (unexpr (unfold-body (expr +) 
-			  (sub-expr.skip args 1))))))
+  (if (< (sub-expr.cnt args) 3)
+      null-expr
+      (expr
+       (/ (unexpr (sub-expr.expr args 0))
+	  (unexpr (unfold-body (expr +) 
+			       (sub-expr.skip args 1)))))))
 
 (defmacro -any (&rest args)
-  (expr
-   (- (unexpr (sub-expr.expr args 0))
-      (unexpr (unfold-body (expr +) 
-			   (sub-expr.skip args 1))))))
+  (if (< (sub-expr.cnt args) 3)
+      null-expr
+      (expr
+       (- (unexpr (sub-expr.expr args 0))
+	  (unexpr (unfold-body (expr +) 
+			       (sub-expr.skip args 1)))))))
 
 (overload + +any)
 (overload * *any)

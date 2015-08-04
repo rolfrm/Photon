@@ -631,6 +631,47 @@ type_def * defun_macro(c_block * block, c_value * value, expr name, expr args, e
   return compile_value(value, string_expr(symbol_name(fcnname)).value);
 }
 
+type_def * math_operator(char * operator, c_block * block, c_value * val, expr item1, expr item2){
+  c_value * val1 = alloc0(sizeof(c_value));
+  c_value * val2 = alloc0(sizeof(c_value));
+  c_value * comp = alloc0(sizeof(c_value));
+  type_def * t1 = compile_expr(block, val1, item1);
+  type_def * t2 = compile_expr(block, val2, item2);
+  COMPILE_ASSERT(t1 != &error_def && t1 != &void_def);
+  if(!(is_type_compatible(t1,t2,item1) || is_type_compatible(t2,t1,item2))){
+    loge("Cannot '%s' types:\n", operator);
+    print_decl(t1, get_symbol("a")); logd("\n");
+    print_decl(t2, get_symbol("b")); logd("\n");
+    
+    COMPILE_ERROR("Types cannot be compared by '%s'", operator);
+  }
+  val->type = C_CAST;
+  val->cast.value = comp;
+  val->cast.type = is_number_literal(item1) ? t2 : t1;
+  comp->type = C_OPERATOR;
+  comp->operator.operator = operator;
+  comp->operator.left = val1;
+  comp->operator.right = val2;
+  
+  return val->cast.type;
+}
+
+type_def * plus_macro(c_block * block, c_value * val, expr item1, expr item2){
+  return math_operator("+", block, val, item1, item2);
+}
+
+type_def * minus_macro(c_block * block, c_value * val, expr item1, expr item2){
+  return math_operator("-", block, val, item1, item2);
+}
+
+type_def * multiply_macro(c_block * block, c_value * val, expr item1, expr item2){
+  return math_operator("*", block, val, item1, item2);
+}
+
+type_def * divide_macro(c_block * block, c_value * val, expr item1, expr item2){
+  return math_operator("/", block, val, item1, item2);
+}
+
 type_def * comparison_macro(char * operator, c_block * block, c_value * val, expr item1, expr item2){
   c_value * val1 = alloc0(sizeof(c_value));
   c_value * val2 = alloc0(sizeof(c_value));
@@ -1069,6 +1110,13 @@ void builtin_macros_load(){
   define_macro("or",2,or_macro);
   define_macro("member", 2, member_macro);
   define_macro("unexpr", 1, unexpr_macro);
+  define_macro(".+", 2, plus_macro);
+  define_macro(".-", 2, minus_macro);
+  define_macro(".*", 2, multiply_macro);  
+  define_macro("./", 2, divide_macro);
+
+
+
   opaque_expr();
   defun("number2expr",str2type("(fcn (ptr expr) (a i64))"), number2expr);
   defun("expr2number",str2type("(fcn i64 (a (ptr expr)))"), expr2number);
@@ -1081,8 +1129,7 @@ void builtin_macros_load(){
   defun("sub-expr.skip", str2type("(fcn (ptr expr) (expr (ptr expr)) (idx u64))"), sub_expr_skip);
 //expr * sub_expr_skip(expr * e)
   defun("make-sub-expr", str2type("(fcn (ptr expr) (exprs (ptr (ptr expr))) (cnt u64))"), make_sub_expr);
-  
-  
+    
   defun("expand-macro", str2type("(fcn (ptr expr) (ms (ptr macro_store)) (expr2 (ptr expr)))"), &expand_macro_store2);
   defun("print-macro-store", str2type("(fcn void (ms (ptr macro_store)))"), print_macro_store);
   

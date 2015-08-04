@@ -165,7 +165,7 @@ void pop_symbols();
 
 // generates a unique symbol.
 expr * gensym();
-
+bool is_number_literal(expr ex);
 void add_delete_soon(void * buffer);
 void print_current_mem();
 // Testing
