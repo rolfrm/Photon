@@ -189,6 +189,12 @@ type_def * setf_macro(c_block * block, c_value * val, expr name, expr body){
     loge("' got '");
     print_min_type(t);
     loge("'.\n");
+    
+    logd("at:\n");
+    print_expr(&name);
+    logd("\nexpr:\n");
+    print_expr(&body);
+    logd("\n");
     ERROR("cannot implicitly convert type");
   }
   val->type = C_OPERATOR;

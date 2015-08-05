@@ -55,90 +55,103 @@
 
 
 
-;; (defun read-utf8-codepoint ((ptr char) (string (ptr char)) (out-pt (ptr i32)))
-;; ;; eeh lets see..
-;; ;; UTF8 char str to codepoint conversion.
-;; ;; 0xxxxxxx 6                               0-127
-;; ;; 110xxxxx 10xxxxxx 11                     (127 + 64) - (127 + 64 + 16)
-;; ;; 1110xxxx 10xxxxxx 10xxxxxx 16
-;; ;; 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx 21
-;; ;; 111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 26
-;; ;; 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 31
-;; ;; 11111110 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 36 ;;this probably does not exist.
-;;   (let ((ustr (cast string (ptr u8))))
-;;     (let ((first (deref ustr)) (nchars 0))
-;;       (if (< first 0b10000000)
-;; 	  (setf nchars 0)
-;; 	  (if (< first 0b11000000)
-;; 	      1 ; error: read started in middle of codepoint
-;; 	      (if (< first 0b11100000)
-;; 		  (progn
-;; 		    (setf nchars 1)
-;; 		    (setf first (- first (cast 0b11000000 u8))))
-;; 		  (if (< first 0b11110000)
-;; 		      (progn
-;; 			(setf nchars 2)
-;; 			(setf first (- first 0b11100000)))
-;; 		      (if (< first 0b11111000)
-;; 			  (progn
-;; 			    (setf nchars 3)
-;; 			    (setf first (- first 0b11110000)))
-;; 			  (if (< first 0b11111100)
-;; 			      (progn
-;; 				(setf nchars 4)
-;; 				(setf first (- first 0b11111000)))
-;; 			      (progn
-;; 				(setf nchars 5)
-;; 				(setf first (- first 0b11111100)))
-;; 			      ))))))
-	
-;;       (if (eq nchars 0)
-;; 	  (setf (deref out-pt) (cast first i32))
-;; 	  (let ((out (cast first i32)))
-;; 	    (setf out (<< out (* nchars 6)))
-;; 	    (range it 1 nchars
-;; 		   (let ((chr (cast (deref (+ ustr it)) i64)))
-;; 		     (setf out
-;; 			   (+ out 
-;; 			      (cast 
-;; 			       (<< (bit-and chr 0b00111111) (* (- nchars it 1) 6))
-;; 			       i32)))))
-;; 	    (setf (deref out-pt) out)))
-;;       (+ string (+ nchars 1)))))
+(defun read-utf8-codepoint ((ptr char) (string (ptr char)) (out-pt (ptr i32)))
+;; eeh lets see..
+;; UTF8 char str to codepoint conversion.
+;; 0xxxxxxx 6                               0-127
+;; 110xxxxx 10xxxxxx 11                     (127 + 64) - (127 + 64 + 16)
+;; 1110xxxx 10xxxxxx 10xxxxxx 16
+;; 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx 21
+;; 111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 26
+;; 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 31
+;; 11111110 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 36 ;;this probably does not exist.
+  (let ((ustr (cast string (ptr u8))))
+    (let ((first (deref ustr)) 
+	  (nchars 0))
+      (if (< first 0b10000000)
+	  (progn
+	    (setf nchars 0)
+	    (noop))
+	  (if (< first 0b11000000)
+	      (noop) ; error: read started in middle of codepoint
+	      (if (< first 0b11100000)
+		  (progn
+		    (setf nchars 1)
+		    (setf first (.- first (cast 0b11000000 u8))))
+		  (if (< first 0b11110000)
+		      (progn
+			(setf nchars 2)
+			(setf first (.- first 0b11100000)))
+		      (if (< first 0b11111000)
+			  (progn
+			    (setf nchars 3)
+			    (setf first (.- first 0b11110000)))
+			  (if (< first 0b11111100)
+			      (progn
+				(setf nchars 4)
+				(setf first (.- first 0b11111000)))
+			      (progn
+				(setf nchars 5)
+				(setf first (.- first 0b11111100)))
+			      ))))))
+
+      (print "nchars: " nchars newline)
+       (if (eq nchars 0)
+	   (progn
+	     (setf (deref out-pt) (cast first i32))
+	     (noop))
+	   (let ((out (cast first i32)))
+	     (setf out (cast (<< (cast out i64) (cast (* nchars 6) i64))
+			     i32))
+	     (print "out:" out newline)
+	     (range it 1 (.+ nchars 1)
+       		    (let ((chr (cast (deref (ptr+ ustr it)) i64)))
+		      (setf out
+			    (.+ out 
+				(cast 
+				 (<< (cast (bit-and chr 0b00111111)  i64)
+				     (cast (.* (- nchars it 1) 6) i64))
+				 i32)
+				)))
+		    (print "out:" out newline)
+		    )
+	     
+      	    (setf (deref out-pt) out)))1
+      (+ string (+ nchars 1)))))
 
 
-;; (defun test(void)
-;;   (let ((baked (cast (alloc0 100) (ptr tt:fontinfo)))
-;; 	(fontpath "/usr/share/fonts/truetype/freefont/FreeMono.ttf")
-;; 	(s (cast 0 u64)))
+(defun test(void)
+  (let ((baked (cast (alloc0 100) (ptr tt:fontinfo)))
+	(fontpath "/usr/share/fonts/truetype/freefont/FreeMono.ttf")
+	(s (cast 0 u64)))
     
-;;     (let ((data (read-all-data fontpath (addrof s))))
-;;       (print "read font:" (cast data i64))
-;;       (if (ptr-null? data)
-;; 	  (print "Error!" newline)
-;; 	  (let ((xpos (cast 0.0 i32)) (ypos (cast 0.0 i32))
-;; 		(width (cast 0 i32)) (height (cast 0 i32)))
-;; 	    (tt:init-font baked data (tt:get-font-offset-for-index data 0))
-;; 	    (let ((h (tt:scale-for-pixel-height baked 15))
-;; 		  (codept (cast 0xb5 i32)))
-;; 	      (print newline "codepoint:" codept newline)
-;; 	      (let ((bitmap (tt:get-codepoint-bitmap baked 0 0.05 codept  (addrof width) (addrof height) (addrof xpos) (addrof ypos))))
-;; 		(range y 0 (cast height i64)
-;; 		       (range x 0 (cast width i64)
-;; 			      (let ((v (cast (deref (ptr+ bitmap (+ x (* y (cast width i64)))))
-;; 					     i64)))
-;; 			      (if (eq v -1)
-;; 				(print " ")
-;; 				(print "#"))))
-;; 		     (print newline))
+    (let ((data (read-all-data fontpath (addrof s))))
+      (print "read font:" (cast data i64))
+      (if (ptr-null? data)
+	  (print "Error!" newline)
+	  (let ((xpos (cast 0.0 i32)) (ypos (cast 0.0 i32))
+		(width (cast 0 i32)) (height (cast 0 i32)))
+	    (tt:init-font baked data (tt:get-font-offset-for-index data 0))
+	    (let ((h (tt:scale-for-pixel-height baked 15))
+		  (codept (cast 0xb5 i32)))
+	      (print newline "codepoint:" codept newline)
+	      (let ((bitmap (tt:get-codepoint-bitmap baked 0 0.05 codept  (addrof width) (addrof height) (addrof xpos) (addrof ypos))))
+		(range y 0 (cast height i64)
+		       (range x 0 (cast width i64)
+			      (let ((v (cast (deref (ptr+ bitmap (+ x (* y (cast width i64)))))
+					     i64)))
+			      (if (eq v -1)
+				(print " ")
+				(print "#"))))
+		     (print newline))
 	      
-;; 	    (print newline width " " height " " "inited.." newline))))))
+	    (print newline width " " height " " "inited.." newline))))))
 	
 
-;;     (print "Testing ttf" newline)))
-;; (test)
-;; (let ((cpt (cast 0 i32)))
-;;   (read-utf8-codepoint "µ" (addrof cpt))
-;;   (print-hex (cast cpt i64))
-;;   (print newline))
-;; (exit 0)
+    (print "Testing ttf" newline)))
+;(test)
+;(let ((cpt (cast 0 i32)))
+;  (read-utf8-codepoint "µ" (addrof cpt))
+;  (print-hex (cast cpt i64))
+;  (print newline))
+;(exit 0)
