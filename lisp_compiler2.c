@@ -17,13 +17,16 @@ var_def * get_any_variable(symbol s){
     stackvar = get_global(s);
   return stackvar;
 }
-	  
-type_def * compile_value(c_value * val, value_expr e){
+
+
+
+type_def * compile_value(type_def * expected_type, c_value * val, value_expr e){
   val->type = C_INLINE_VALUE;
   var_def * vdef = NULL;
   switch(e.type){
   case STRING:
     {
+      CHECK_TYPE(expected_type, &char_ptr_def);
       char * chr = fmtstr("%.*s",e.strln,e.value);
       symbol s = get_symbol(chr);
       dealloc(chr);
@@ -178,12 +181,12 @@ bool is_type_compatible(type_def * call_type, type_def * arg_type, expr callexpr
   return false;	   
 }
 
-type_def * _compile_expr(c_block * block, c_value * value, sub_expr * se){
+type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * value, sub_expr * se){
   COMPILE_ASSERT(se->cnt > 0);
   expr name_expr = se->exprs[0];
   if(name_expr.type != VALUE){
     c_value * tmpvar = alloc0(sizeof(c_value));
-    type_def * td = compile_expr(block, tmpvar, name_expr); 
+    type_def * td = compile_expr(expected_type, block, tmpvar, name_expr); 
 
     if(td->type == FUNCTION || (td->type == POINTER && td->ptr.inner->type == FUNCTION)){
       // So the name expression returns a function pointer or function.
@@ -218,7 +221,7 @@ type_def * _compile_expr(c_block * block, c_value * value, sub_expr * se){
       e.sub_expr = se2;
       size_t cnt = 1;
       push_symbols(&vardef, &cnt);
-      type_def * td2 = compile_expr(block,value,e);
+      type_def * td2 = compile_expr(expected_type, block,value,e);
       pop_symbols();
       return td2;
     }else{
@@ -254,26 +257,26 @@ type_def * _compile_expr(c_block * block, c_value * value, sub_expr * se){
 
     if(macro->arg_cnt != argcnt && macro->arg_cnt != -1)
       COMPILE_ERROR("Unsupported number of arguments %i for %s",argcnt, macro->name);
-    type_def * ( *macro_fcn)(c_block * block, c_value * val, ...) = macro->fcn;
+    type_def * ( *macro_fcn)(type_def * ex_type, c_block * block, c_value * val, ...) = macro->fcn;
 
     switch(macro->arg_cnt){
     case 0:
-      return macro_fcn(block, value);
+      return macro_fcn(expected_type, block, value);
     case 1:
-      return macro_fcn(block, value, args[0]);
+      return macro_fcn(expected_type, block, value, args[0]);
     case 2:
-      return macro_fcn(block, value, args[0], args[1]);
+      return macro_fcn(expected_type, block, value, args[0], args[1]);
     case 3:
-      return macro_fcn(block, value, args[0], args[1], args[2]);
+      return macro_fcn(expected_type, block, value, args[0], args[1], args[2]);
     case 4:
-      return macro_fcn(block, value, args[0], args[1], args[2], args[3]);
+      return macro_fcn(expected_type, block, value, args[0], args[1], args[2], args[3]);
     case 5:
-      return macro_fcn(block, value, args[0], args[1], args[2], args[3], args[4]);
+      return macro_fcn(expected_type, block, value, args[0], args[1], args[2], args[3], args[4]);
     case 6:
-      return macro_fcn(block, value, args[0], args[1], args[2], args[3], args[4], args[5]);
+      return macro_fcn(expected_type, block, value, args[0], args[1], args[2], args[3], args[4], args[5]);
     case -1:
-      return ((type_def *(*)(c_block * block, c_value * value, expr *,size_t))macro->fcn)
-	(block,value,args, argcnt);
+      return ((type_def *(*)(type_def * exp, c_block * block, c_value * value, expr *,size_t))macro->fcn)
+	(expected_type, block,value,args, argcnt);
     default:
       ERROR("Number of macro arguments not supported: %i", argcnt);
     }
@@ -289,7 +292,7 @@ type_def * _compile_expr(c_block * block, c_value * value, sub_expr * se){
     type_def * farg_types[argcnt];
     int err_arg = -1;
     for(i64 i = 0; i < argcnt; i++){
-      farg_types[i] = compile_expr(block, fargs + i, args[i]);
+      farg_types[i] = compile_expr(td->fcn.args[i], block, fargs + i, args[i]);
       if(!is_type_compatible(farg_types[i],td->fcn.args[i], args[i])){
 	char buf[10];
 	sprintf(buf, "arg%i", i);
@@ -318,7 +321,7 @@ type_def * _compile_expr(c_block * block, c_value * value, sub_expr * se){
     value->call = call;   
     return td->fcn.ret;
   }else if(var_type == macro_store_type()){
-    type_def * _t = expand_macro(block, value, se->exprs, se->cnt);
+    type_def * _t = expand_macro(expected_type, block, value, se->exprs, se->cnt);
     if(_t == &error_def){
       COMPILE_ERROR("Caught error while expanding macro '%s'\n", symbol_name(name));
     }
@@ -329,19 +332,19 @@ type_def * _compile_expr(c_block * block, c_value * value, sub_expr * se){
   }
   return &error_def;
 }
-	  
-type_def * compile_expr(c_block * block, c_value * val,  expr e ){
+
+type_def * compile_expr(type_def * expected_type, c_block * block, c_value * val,  expr e ){
   type_def * td;
   switch(e.type){
   case EXPR:
-    td = _compile_expr(block, val, &e.sub_expr);
+    td = _compile_expr(expected_type, block, val, &e.sub_expr);
     if(td == &error_def){
       loge("Error while compiling:\n");
       print_expr(&e);
     }
     break;
   case VALUE:
-    td = compile_value(val,e.value);
+    td = compile_value(expected_type, val,e.value);
     break;
   case ERROR:
     return &error_def;
@@ -360,7 +363,7 @@ c_root_code compile_lisp_to_eval(expr exp){
   f->block.exprs = NULL; 
   c_value val;
   val.type = 0;
-  type_def * t = compile_expr(&f->block, &val, exp);
+  type_def * t = compile_expr(NULL, &f->block, &val, exp);
   type_def td;
   td.type = FUNCTION;
   td.fcn.ret = t;

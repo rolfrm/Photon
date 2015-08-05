@@ -42,6 +42,9 @@ typedef enum {
 
 #define COMPILE_ERROR(fmt, ...) {loge("at %s : %i: ", __FILE__, __LINE__);loge(fmt,##__VA_ARGS__);logd("\n"); return &error_def;}
 
+#define CHECK_TYPE(expected, required) if(expected != NULL && required != expected) (COMPILE_ERROR("Unsupported type"));
+
+
 // Get current compiler.
 compiler_state * get_compiler();
 
@@ -122,13 +125,15 @@ type_def * type_of(expr * ex);
 type_def * str2type(char * str);
 
 // Compiles an expression and returns the type.
-type_def * compile_expr(c_block * block, c_value * val,  expr e );
+// expected type can be NULL if unknown or dont care.
+type_def * compile_expr(type_def * expected_type, c_block * block, c_value * val,  expr e );
 
 // Compiles the 'codes'. The newly available functions variables will be available in the compiler variables. returns the buffer for the code. This buffer can be removed unless any of the symbols defined are needed.
 void * compile_as_c(c_root_code * codes, size_t code_cnt);
 
 // Compiles a value expression. Returns the type.
-type_def * compile_value(c_value * val, value_expr e);
+// expected type can be NULL if unknown or dont care.
+type_def * compile_value(type_def * expected_type, c_value * val, value_expr e);
 
 // Defines a new function named 'sym', t and fcnptr should match. see example in builtin_functions.
 void defun(char * sym, type_def * t, void * fcnptr);
@@ -137,7 +142,7 @@ void defun(char * sym, type_def * t, void * fcnptr);
 type_def * macro_store_type();
 
 // Expand he macro as defined in exprs.
-type_def * expand_macro(c_block * block, c_value * val, expr * exprs, size_t cnt);
+type_def * expand_macro(type_def * expected_type, c_block * block, c_value * val, expr * exprs, size_t cnt);
 
 // Empty/null symbol
 extern const symbol symbol_empty;
