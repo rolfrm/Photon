@@ -28,7 +28,7 @@
 (defvar a 10)
 (setf a (test-macro-2 3))
 
-(exit 0)
+
 ;; Loading a library
 (defun +load-symbol+ ((ptr expr) (_lib (ptr expr)) (name (ptr expr)) (cname (ptr expr)) (_type (ptr expr)))
   (expr (load-symbol (unexpr _lib) 
@@ -66,17 +66,21 @@
 
 (defun *ptr+ ((ptr expr) (ptr (ptr expr)) (offset (ptr expr)))
   (var ((size_expr (number2expr (cast (size-of (ptr-inner (type-of ptr))) i64)))
-	(ptr-type (type-of ptr)))
-       (if (and (is-ptr-type? ptr-type)
-		(is-integer-type? (type-of offset)))
-	   (expr
-	    (cast 
-	     (i64+ 
-	      (cast (unexpr ptr) i64)
-	      (i64* (cast (unexpr offset) i64) 
-		    (unexpr size_expr)))
-	     (unexpr (type2expr ptr-type))))
-	     null-expr)))
+	(ptr-type (type-of ptr))
+	(out-expr (cast null (ptr expr))))
+       (progn
+	 (if! (and (is-ptr-type? ptr-type)
+		  (is-integer-type? (type-of offset)))
+	     (setf out-expr 
+		   (expr
+		    (cast 
+		     (i64+ 
+		      (cast (unexpr ptr) i64)
+		      (i64* (cast (unexpr offset) i64) 
+			    (unexpr size_expr)))
+		     (unexpr (type2expr ptr-type)))))
+	     (noop))
+	 out-expr)))
 
 (declare-macro ptr+ *ptr+)
 
@@ -206,7 +210,7 @@
       (setf (deref convargs) exprtype)
       (while (not (eq it (cast arg-cnt i64)))
 	(let ((arg (sub-expr.expr args (cast it u64))))
-	  (if (and 
+	  (if! (and 
 	       (not (is-sub-expr arg))
 	       (eq (expr2symbol (sub-expr.expr args (cast it u64))) (quote &rest)))
 	      (progn
@@ -222,25 +226,69 @@
 	(setf it (i64+ 1 it))
 	(setf item (i64+ 1 item))
 	)
-      (let ((r
-	     (expr
-	      (progn
-		(defun (unexpr defun-name) 
-		    (unexpr (make-sub-expr convargs (u64+ (cast (if use-rest 0 1) u64) arg-cnt ))) (unexpr body))
-		(unexpr
-		 (if use-rest
-		     (expr (declare-macro (unexpr name) (unexpr defun-name) :rest))
-		     (expr (declare-macro (unexpr name) (unexpr defun-name)))))))))
-	r))))
+      (expr
+       (progn
+	 (defun (unexpr defun-name) 
+	     (unexpr (make-sub-expr convargs (u64+ (cast (not use-rest) u64) arg-cnt ))) (unexpr body))
+	 (unexpr
+	  (let ((out-expr (cast null (ptr expr))))
+	    (if! use-rest
+		(setf out-expr (expr (declare-macro (unexpr name) (unexpr defun-name) :rest)))
+		(setf out-expr (expr (declare-macro (unexpr name) (unexpr defun-name)))))
+	    out-expr))))
+      )))
 
 (declare-macro defmacro *defmacro)
 
 ;; defmacro test
 (defmacro test1 (a b)
   a)
-(test1 1 2)(test1 1 2)(test1 1 2)(test1 1 2)
 
-
+(defun if+ ((ptr expr) (expected-type (ptr type_def)) (exprs (ptr expr)))
+  (let ((cnd (sub-expr.expr exprs 0))
+	(_then (sub-expr.expr exprs 1))
+	(_else (sub-expr.expr exprs 2)))
+    (let ((out-expr (cast null (ptr expr)))
+	  (then-type (type-of2 expected-type _then))
+	  (else-type (type-of2 expected-type _else)))
+      (if! (and (and (eq then-type else-type) 
+		     (eq expected-type (cast null (ptr type_def))))
+		(not (eq then-type (type void))))
+	   (setf expected-type then-type)
+	   (noop))
+      
+      (if! (or
+	    (eq null (cast expected-type (ptr void)))
+	    (eq (type void) expected-type))
+	   ;;in this case regular if statement
+	   (setf out-expr 
+		 (expr
+		  (if! (unexpr cnd) (unexpr _then) (unexpr _else))))
+	   ;; else we need to create a temporary variable an
+	   ;; set the return value of the body
+	   ;; and the types needs to be the same.
+	   (let ((tmp-sym (gensym)))
+	     (print-type then-type)
+	     (builtin-print-str " tt
+")
+	     (if! (and (eq then-type else-type) (eq expected-type then-type))
+		  (setf out-expr
+			(expr (var (((unexpr tmp-sym) :type (unexpr (type2expr expected-type))))
+				   (progn
+				     (if! (unexpr cnd)
+					  (setf (unexpr tmp-sym) (unexpr _then))
+					  (setf (unexpr tmp-sym) (unexpr _else)))
+				     (unexpr tmp-sym)))))
+		  (progn
+		    (builtin-print-str " errrr..")
+		    (exit 0))
+		  )))
+  
+      out-expr)))
+				 
+(declare-macro if if+)
+(if false "asd" 3)
+  
 
 (defun add-to-list (void (list (ptr (ptr void)))
 		    (cnt (ptr u64)) (data (ptr void)) (elem-size u64))

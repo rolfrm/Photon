@@ -60,20 +60,36 @@ bool check_decl(symbol name, type_def * type){
 }
 
 type_def * var_macro(type_def * expected_type, c_block * block, c_value * val, expr vars, expr body){
-  UNUSED(expected_type);
+
   COMPILE_ASSERT(vars.type == EXPR);
   sub_expr sexpr = vars.sub_expr;
   c_expr cvars[sexpr.cnt];
 
   var_def * lisp_vars = alloc(sizeof(var_def) * (sexpr.cnt + 1));
   for(size_t i = 0; i < sexpr.cnt; i++){
-    c_value * cval = alloc0(sizeof(c_value));
+    c_value * cval = NULL;
     COMPILE_ASSERT(sexpr.exprs[i].type == EXPR);
     sub_expr var_expr = sexpr.exprs[i].sub_expr;
-    COMPILE_ASSERT(var_expr.cnt == 2 && var_expr.exprs[0].type == VALUE && var_expr.exprs[0].value.type == SYMBOL);
+    
+    
     c_var var;
+    if(var_expr.cnt == 2){
+      COMPILE_ASSERT(var_expr.exprs[0].type == VALUE 
+		     && var_expr.exprs[0].value.type == SYMBOL);
+      cval = alloc0(sizeof(c_value));
+      var.var.type = compile_expr(NULL, block, cval, var_expr.exprs[1]);
+      
+    }else if(var_expr.cnt == 3){
+      COMPILE_ASSERT(var_expr.exprs[0].type == VALUE 
+		     && var_expr.exprs[1].type == VALUE 
+		     && var_expr.exprs[0].value.type == SYMBOL);
+      var.var.type = expr2type(var_expr.exprs[2]);
+    }else{
+      COMPILE_ERROR("Invalid var form");
+    }
+    
     var.var.name = expr_symbol(var_expr.exprs[0]);
-    var.var.type = compile_expr(NULL, block, cval, var_expr.exprs[1]);
+    
     if(!check_decl(var.var.name, var.var.type))
       return &error_def;
     var.value = cval;
@@ -136,7 +152,6 @@ type_def * var_macro(type_def * expected_type, c_block * block, c_value * val, e
 
 type_def * defvar_macro(type_def * expected_type, c_block * block, c_value * val, expr * exprs, size_t cnt){
   UNUSED(expected_type);
-  logd("Count: %i\n", cnt);
   COMPILE_ASSERT(cnt == 2 || cnt == 3);
   expr name = exprs[0];
   COMPILE_ASSERT(is_symbol(name));
@@ -349,14 +364,14 @@ type_def * expand_macro(type_def * expected_type, c_block * block, c_value * val
   COMPILE_ASSERT(fcn_var != NULL);
   COMPILE_ASSERT(fcn_var->type == exprtd);
   expr * outexpr = expand_macro_store(expected_type, fcn_var->data, exprs + 1, cnt - 1);
-  // note: nothing going in or out from expand_macro_store can be deleted. 
+  // Note: nothing going in or out from expand_macro_store can be deleted. 
   // Anything going in is already deleted later, stuff going out might be. 
   // The rest could be deleted, but user has to mark for deletion.
   // furthermore there is a potential bug connected to last_sub_expr (see expand_macro_store)/
   if(outexpr == NULL)
     return &error_def;
   
-  return compile_expr(opaque_expr(), block, val, *outexpr);
+  return compile_expr(expected_type, block, val, *outexpr);
 }
 
 int recurse_count(expr ex){
@@ -763,7 +778,14 @@ symbol get_tmp_sym(){
 }
 
 type_def * if_atom_macro(type_def * expected_type, c_block * block, c_value * val, expr cnd, expr then, expr _else){
-  COMPILE_ASSERT(expected_type == NULL);
+  if(expected_type != NULL && expected_type != &void_def){
+    print_decl(expected_type, get_symbol("tmp"));
+    print_expr(&cnd);
+    logd("\n");
+    ERROR("!!");
+  }
+  //COMPILE_ASSERT(expected_type == NULL);
+  expected_type = NULL;
   
   c_expr cmpexpr;
   cmpexpr.value = c_value_empty;

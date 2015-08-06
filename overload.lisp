@@ -329,10 +329,12 @@
 (overload print print-symbol)
 (overload print print-type)
 
+
 (defun print-bool (void (x bool))
   (if x
       (printstr "true")
       (printstr "false")))
+
 (overload print print-bool)
 
 (defmacro print-default (body)

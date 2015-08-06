@@ -223,6 +223,8 @@ void load_functions(){
   type_def * loadsymbol = str2type("(fcn (ptr void) (_lib lib) (sym (ptr symbol)) (name (ptr symbol)) (t (ptr type_def)))");
   defun("load-symbol", loadsymbol, load_symbol);
   defun("type-of",str2type("(fcn (ptr type_def) (expr (ptr expr)))"), type_of);
+  defun("type-of2",str2type("(fcn (ptr type_def) (expected_type (ptr type_def)) (expr (ptr expr)))"), 
+	type_of2);
   defun("print-expr", str2type("(fcn void (theexpr (ptr expr)))"), print_expr);
   defun("ptr-inner", str2type("(fcn (ptr type_def) (ptr (ptr type_def)))"),  ptr_inner);
   defun("type2expr", str2type("(fcn (ptr expr) (t (ptr type_def)))"), type2expr);
