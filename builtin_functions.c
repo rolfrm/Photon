@@ -102,15 +102,20 @@ f32 f32_div(f32 a, f32 b){ return a / b; }
 i32 i32_add(i32 a, i32 b) { return a + b; }
 i64 i64_mod(i64 a, i64 b) { return a % b; }
 i8 i8_mod(i8 a, i8 b) { return a % b; }
-type_def * type_of(expr * ex){
+
+type_def * type_of2(type_def * expected_type, expr * ex){
   c_block blk;
   blk.exprs = NULL;
   blk.expr_cnt = 0;
   c_value val;
-  type_def * td = compile_expr(NULL, &blk, &val, *ex);
+  type_def * td = compile_expr(expected_type, &blk, &val, *ex);
   c_block_delete(blk);
   c_value_delete(val);
   return td;
+}
+
+type_def * type_of(expr * ex){
+  return type_of2(NULL, ex);
 }
 
 char * symbol_name2(symbol * sym){

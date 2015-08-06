@@ -18,8 +18,6 @@ var_def * get_any_variable(symbol s){
   return stackvar;
 }
 
-
-
 type_def * compile_value(type_def * expected_type, c_value * val, value_expr e){
   val->type = C_INLINE_VALUE;
   var_def * vdef = NULL;

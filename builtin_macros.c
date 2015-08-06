@@ -177,10 +177,9 @@ type_def * defvar_macro(type_def * expected_type, c_block * block, c_value * val
 }
 
 type_def * setf_macro(type_def * expected_type, c_block * block, c_value * val, expr name, expr body){
-  UNUSED(expected_type);
   c_value * vr = alloc0(sizeof(c_value));
   c_value * vl = alloc0(sizeof(c_value));
-  type_def * t1 = compile_expr(NULL, block, vl, name);
+  type_def * t1 = compile_expr(expected_type, block, vl, name);
   type_def * t = compile_expr(t1, block, vr, body);
   if(t == &error_def){
     loge("Compile error for body of setf at ");
@@ -258,13 +257,26 @@ expr * expand_macro_store(type_def * expected_type, macro_store * ms, expr * exp
   type_def * t = v->type;
   ASSERT(t->type == FUNCTION);
   ASSERT(t->fcn.ret == opaque_expr());
+
+  if(v->type->fcn.args[0] == type_pool_get(&type_def_ptr_def)){
+
+    ASSERT(v->type->fcn.cnt == 2);
+    expr * (* d)(type_def * ex, expr * expr) = v->data;
+    expr last_sub_expr;
+    last_sub_expr.type = EXPR;
+    last_sub_expr.sub_expr.exprs = exprs ;
+    last_sub_expr.sub_expr.cnt = cnt;
+    return d(expected_type, &last_sub_expr);
+  }
+ 
+
   if(t->fcn.cnt == (i32)cnt || (ms->rest && t->fcn.cnt <= (i32)cnt)){
     //ok..
   }else{
     logd("Rest: %i %i\n", ms->rest, t->fcn.cnt);
     ERROR("Unvalid number of arguments for macro function '%s'", symbol_name(ms->fcn));
   }
-  expr * (* d)(expr * e, ...) = v->data;
+ expr * (* d)(expr * e, ...) = v->data;
   expr * (* d0)() = v->data;
   if(ms->rest == false){
     switch(cnt){
@@ -336,7 +348,7 @@ type_def * expand_macro(type_def * expected_type, c_block * block, c_value * val
   var_def * fcn_var = get_any_variable(name);
   COMPILE_ASSERT(fcn_var != NULL);
   COMPILE_ASSERT(fcn_var->type == exprtd);
-  expr * outexpr = expand_macro_store(NULL, fcn_var->data, exprs + 1, cnt - 1);
+  expr * outexpr = expand_macro_store(expected_type, fcn_var->data, exprs + 1, cnt - 1);
   // note: nothing going in or out from expand_macro_store can be deleted. 
   // Anything going in is already deleted later, stuff going out might be. 
   // The rest could be deleted, but user has to mark for deletion.
@@ -749,32 +761,80 @@ symbol get_tmp_sym(){
   }while(get_any_variable(tmpsym) != NULL);
   return tmpsym;
 }
+
+type_def * if_atom_macro(type_def * expected_type, c_block * block, c_value * val, expr cnd, expr then, expr _else){
+  COMPILE_ASSERT(expected_type == NULL);
+  
+  c_expr cmpexpr;
+  cmpexpr.value = c_value_empty;
+  cmpexpr.type = C_VALUE_UNENDED;
+  type_def * cmp = compile_expr(&bool_def, block, &cmpexpr.value, cnd);
+
+  if(cmp != &bool_def)
+    COMPILE_ERROR("'if' comparison expression must return a boolean value.");
+  cmpexpr.value = c_value_sub_expr(clone(&cmpexpr.value, sizeof(c_value)));  
+  c_expr then_blk_expr = c_expr_block;
+  c_expr then_expr = c_expr_value;
 	  
-type_def * if_macro(type_def * expected_type, c_block * block, c_value * val, expr cnd, expr then, expr _else){
-  UNUSED(expected_type);
+  c_expr else_blk_expr = c_expr_block;
+  c_expr else_expr = c_expr_value;
+  then_expr.type = C_VALUE;
+  
+  type_def * td1 = compile_expr(expected_type, &then_blk_expr.block, &then_expr.value, then);
+  
+  COMPILE_ASSERT(td1 != &error_def);
+  type_def * td2 = compile_expr(expected_type, &else_blk_expr.block, &else_expr.value, _else);
+  COMPILE_ASSERT(td2 != &error_def);
+  block_add(&else_blk_expr.block, else_expr);
+  block_add(&then_blk_expr.block, then_expr);
+  c_expr elsexpr;
+  elsexpr.type = C_KEYWORD;
+  elsexpr.keyword = get_symbol("else");
+  
+  c_expr ifexpr;
+  ifexpr.type = C_KEYWORD;
+  ifexpr.keyword = get_symbol("if");
+	  
+  block_add(block, ifexpr);
+  block_add(block, cmpexpr);
+  block_add(block, then_blk_expr);
+  block_add(block, elsexpr);
+  block_add(block, else_blk_expr);
+  no_op(NULL, block, val);
+  return &void_def;
+}
+	  
+/*type_def * if_macro(type_def * expected_type, c_block * block, c_value * val, expr cnd, expr then, expr _else){
+	  
   c_expr ifexpr;
   ifexpr.type = C_KEYWORD;
   ifexpr.keyword = get_symbol("if");
   
   c_expr cmpexpr;
   cmpexpr.value = c_value_empty;
-  c_value * cmp_value = &cmpexpr.value;
-  cmp_value->type = C_SUB_EXPR;
-  c_value * inner_value = alloc0(sizeof(c_value));
-  cmp_value->value = inner_value;
   cmpexpr.type = C_VALUE_UNENDED;
-  type_def * cmp = compile_expr(&bool_def, block, inner_value, cnd);
-  COMPILE_ASSERT(cmp == &bool_def);
-  
-  c_expr then_expr;
+  type_def * cmp = compile_expr(&bool_def, block, &cmpexpr.value, cnd);
+  if(cmp != &bool_def)
+    COMPILE_ERROR("'if' comparison expression must return a boolean value.");
+
+  c_expr then_blk_expr = c_expr_block;
+  c_expr then_expr = c_expr_value;
+	  
+  c_expr else_blk_expr = c_expr_block;
+  c_expr else_expr = c_expr_value;
   then_expr.type = C_VALUE;
-  c_block blk = c_block_empty;
-  type_def * then_t = compile_expr(expected_type, &blk,&then_expr.value,then);
-  if(then_t == &void_def){
+  
+  type_def * then_t = compile_expr(expected_type, &then_blk_expr.block, &then_expr.value, then);
+  type_def * else_t = compile_expr(expected_type, &else_blk_expr.block, &else_expr.value, _else);
+  
+  if(then_t != else_t || then_t == &void_def){
+    COMPILE_ASSERT(expected_type == NULL);
     // things get simpler
     c_expr then_blk_expr;
     then_blk_expr.type = C_BLOCK;
     then_blk_expr.block = blk;
+    c_expr then_expr;
+    compile_expr(NULL, then_blk_expr.block, then_expr.value, then_expr);
     block_add(&then_blk_expr.block, then_expr);
 
     c_expr elsexpr;
@@ -797,6 +857,8 @@ type_def * if_macro(type_def * expected_type, c_block * block, c_value * val, ex
     val->type = C_NOTHING;
     return then_t;
   }
+  COMPILE_ASSERT(then_t == expected_type);
+  COMPILE_ASSERT(else_t == expected_type);
   symbol tmpsym = get_tmp_sym();
   var_def tmpvar;
   tmpvar.name = tmpsym;
@@ -809,7 +871,6 @@ type_def * if_macro(type_def * expected_type, c_block * block, c_value * val, ex
   then_blk_expr.type = C_BLOCK;
   then_blk_expr.block = blk;
   
-  //then_t = setf_macro(&then_blk_expr.block, &then_expr.value, symbol_expr("_tmp"), then);
   c_value * val2 = clone(&then_expr.value, sizeof(c_value));
   c_value * to_set = alloc0(sizeof(c_value));
   to_set->type = C_SYMBOL;
@@ -851,7 +912,7 @@ type_def * if_macro(type_def * expected_type, c_block * block, c_value * val, ex
   val->symbol = tmpsym;
   pop_symbols();
   return else_t;
-}
+  }*/
 	  
 type_def * while_macro(type_def * expected_type, c_block * block, c_value * val, expr cnd, expr body){
   UNUSED(expected_type);
@@ -1126,7 +1187,8 @@ void builtin_macros_load(){
   define_macro(">", 2, bigger_than_macro);
   define_macro("<=", 2, leq_macro);
   define_macro(">=", 2, beq_macro);
-  define_macro("if", 3, if_macro);
+  //define_macro("if", 3, if_macro);
+  define_macro("if!", 3, if_atom_macro);
 
   define_macro("bit-or", 2, bitor_operator);
   define_macro("bit-and", 2, bitand_operator);

@@ -3,7 +3,6 @@
 ;; here.
 
 
-
 (defvar false (cast 0 bool))
 (defvar true (cast 1 bool))
 
@@ -12,6 +11,24 @@
 (defvar null-expr (cast null (ptr expr)))
 (defvar libc (load-lib "/lib/x86_64-linux-gnu/libc.so.6"))
 
+(defun test-macro-2+((ptr expr) (expected-type (ptr type_def)) (exprs (ptr expr)))
+  (progn
+    (if! (not (eq (cast expected-type i64) 0))
+	(progn
+	  (print-type expected-type)
+	  1)
+	(noop))
+    (builtin-print-str "
+")
+    (sub-expr.expr exprs 0)))
+
+(declare-macro test-macro-2 test-macro-2+)
+
+(test-macro-2 1)
+(defvar a 10)
+(setf a (test-macro-2 3))
+
+(exit 0)
 ;; Loading a library
 (defun +load-symbol+ ((ptr expr) (_lib (ptr expr)) (name (ptr expr)) (cname (ptr expr)) (_type (ptr expr)))
   (expr (load-symbol (unexpr _lib) 
@@ -28,6 +45,7 @@
 (declare-macro load-libc -load-libc)
 
 (load-libc printf (fcn void (fmt (ptr char)) (x i64)))
+
 (load-libc usleep (fcn void (time i32)))
 (load-symbol+ libc alloc malloc (fcn (ptr void) (bytes u64)))
 (load-symbol+ libc dealloc free (fcn void (ptr (ptr void))))

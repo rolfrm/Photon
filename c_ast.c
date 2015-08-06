@@ -16,6 +16,8 @@
 #include "lisp_compiler.h"
 const c_block c_block_empty = {0,0};
 const c_value c_value_empty = {0};
+const c_expr c_expr_block = {.type = C_BLOCK};
+const c_expr c_expr_value = {.type = C_VALUE};
 void add_var_dep(symbol * vdeps, symbol newdep){
   ASSERT(symbol_name(newdep) != NULL);
   for(;!symbol_cmp(*vdeps, symbol_empty); vdeps++){
@@ -394,4 +396,9 @@ void c_root_code_delete(c_root_code code){
   case C_DECL: break;
   case C_TYPE_DEF:break;
   }
+}
+
+c_value c_value_sub_expr(c_value * val){
+  c_value _val = {.type = C_SUB_EXPR, .value = val};
+  return _val;
 }

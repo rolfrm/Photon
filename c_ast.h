@@ -142,6 +142,9 @@ void c_value_delete(c_value val);
 void c_expr_delete(c_expr expr);
 extern const c_block c_block_empty;
 extern const c_value c_value_empty;
+extern const c_expr c_expr_block;
+extern const c_expr c_expr_value;
+c_value c_value_sub_expr(c_value * val);
 // format out the c-code
 void print_c_code(c_root_code code);
 
