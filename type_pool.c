@@ -51,6 +51,7 @@ static bool compare_function(type_def * a, type_def * b){
 }
 
 type_def * _type_pool_get(type_def * lookup, bool is_static){
+  if(lookup == NULL) return NULL;
   type_def *** kind_array = known_types + lookup->type;
   size_t * cnt = known_types_cnt + lookup->type;
   bool (*cmp)(type_def *, type_def *) = NULL;

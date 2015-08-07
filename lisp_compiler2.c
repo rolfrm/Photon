@@ -198,7 +198,7 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
   if(name_expr.type != VALUE){
     c_value * tmpvar = alloc0(sizeof(c_value));
     type_def * td = compile_expr(expected_type, block, tmpvar, name_expr); 
-
+    
     if(td->type == FUNCTION || (td->type == POINTER && td->ptr.inner->type == FUNCTION)){
       // So the name expression returns a function pointer or function.
       // This can be called, by setting it to a temp variable and calling that in C.
@@ -233,6 +233,7 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
       size_t cnt = 1;
       push_symbols(&vardef, &cnt);
       type_def * td2 = compile_expr(expected_type, block,value,e);
+      ASSERT(td2 != NULL);
       pop_symbols();
       return td2;
     }else{
@@ -333,6 +334,7 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
     return td->fcn.ret;
   }else if(var_type == macro_store_type()){
     type_def * _t = expand_macro(expected_type, block, value, se->exprs, se->cnt);
+    ASSERT(_t != NULL)
     if(_t == &error_def){
       COMPILE_ERROR("Caught error while expanding macro '%s'\n", symbol_name(name));
     }
@@ -349,9 +351,10 @@ type_def * compile_expr(type_def * expected_type, c_block * block, c_value * val
   switch(e.type){
   case EXPR:
     td = _compile_expr(expected_type, block, val, &e.sub_expr);
-    if(td == &error_def){
+    if(td == &error_def || td == NULL){
       loge("Error while compiling:\n");
       print_expr(&e);
+      return &error_def;
     }
     break;
   case VALUE:
@@ -380,7 +383,6 @@ c_root_code compile_lisp_to_eval(expr exp){
   td.fcn.ret = t;
   td.fcn.args = NULL;
   td.fcn.cnt = 0;
-
   f->name = get_symbol("eval");
   f->type = type_pool_get(&td);
 
@@ -679,7 +681,6 @@ compile_status lisp_run_expr(expr ex){
   }else if(ret == &error_def){
     ERROR("Error\n");
   }else if(ret == SIMPLE || ret_size  <= 8){
-    
     void * (* fcn)() = evaldef->data;
     void * v = fcn();
     logd("try %p\n", v);

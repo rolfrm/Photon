@@ -690,7 +690,7 @@ type_def * math_operator(char * operator, type_def * expected_type, c_block * bl
   comp->operator.left = val1;
   comp->operator.right = val2;
   
-  return expected_type;
+  return t1;
 }
 
 type_def * plus_macro(type_def * expected_type, c_block * block, c_value * val, expr item1, expr item2){
