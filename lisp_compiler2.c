@@ -370,28 +370,19 @@ type_def * compile_expr(type_def * expected_type, c_block * block, c_value * val
 c_root_code compile_lisp_to_eval(expr exp){
 
   c_root_code r;
-  c_fcndef * f = &r.fcndef;
   r.type = C_FUNCTION_DEF;
-
-  f->block.expr_cnt = 0;
-  f->block.exprs = NULL; 
-  c_value val;
-  val.type = 0;
-  type_def * t = compile_expr(NULL, &f->block, &val, exp);
-  type_def td;
-  td.type = FUNCTION;
-  td.fcn.ret = t;
-  td.fcn.args = NULL;
-  td.fcn.cnt = 0;
-  f->name = get_symbol("eval");
-  f->type = type_pool_get(&td);
-
+  r.fcndef.block = c_block_empty;
+  r.fcndef.name = get_symbol("eval");
+  
   c_expr expr;
   expr.type = C_VALUE;
-  if(t != type_pool_get(&void_def)) expr.type = C_RETURN;
-  expr.value = val;
-  block_add(&f->block, expr);
+  type_def * t = compile_expr(NULL, &r.fcndef.block, &expr.value, exp);
   
+  type_def td = {.type = FUNCTION, .fcn = {.ret = t, .args = NULL, .cnt = 0}};
+  r.fcndef.type = type_pool_get(&td);
+
+  if(t != type_pool_get(&void_def)) expr.type = C_RETURN;
+  block_add(&r.fcndef.block, expr);
   return r;
 }
 
