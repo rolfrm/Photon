@@ -11,24 +11,6 @@
 (defvar null-expr (cast null (ptr expr)))
 (defvar libc (load-lib "/lib/x86_64-linux-gnu/libc.so.6"))
 
-(defun test-macro-2+((ptr expr) (expected-type (ptr type_def)) (exprs (ptr expr)))
-  (progn
-    (if! (not (eq (cast expected-type i64) 0))
-	(progn
-	  (print-type expected-type)
-	  1)
-	(noop))
-    (builtin-print-str "
-")
-    (sub-expr.expr exprs 0)))
-
-(declare-macro test-macro-2 test-macro-2+)
-
-(test-macro-2 1)
-(defvar a 10)
-(setf a (test-macro-2 3))
-
-
 ;; Loading a library
 (defun +load-symbol+ ((ptr expr) (_lib (ptr expr)) (name (ptr expr)) (cname (ptr expr)) (_type (ptr expr)))
   (expr (load-symbol (unexpr _lib) 
@@ -139,10 +121,6 @@
 
 (declare-macro while *while :rest)
 
-
-
-
-
 (load-symbol+ libc std:print-f64 printf (fcn (ptr void) (fmt (ptr char)) (x f64)))
 (load-symbol+ libc std:print-i64 printf (fcn (ptr void) (fmt (ptr char)) (x i64)))
 
@@ -240,10 +218,6 @@
 
 (declare-macro defmacro *defmacro)
 
-;; defmacro test
-(defmacro test1 (a b)
-  a)
-
 (defun if+ ((ptr expr) (expected-type (ptr type_def)) (exprs (ptr expr)))
   (let ((cnd (sub-expr.expr exprs 0))
 	(_then (sub-expr.expr exprs 1))
@@ -268,9 +242,6 @@
 	   ;; set the return value of the body
 	   ;; and the types needs to be the same.
 	   (let ((tmp-sym (gensym)))
-	     (print-type then-type)
-	     (builtin-print-str " tt
-")
 	     (if! (and (eq then-type else-type) (eq expected-type then-type))
 		  (setf out-expr
 			(expr (var (((unexpr tmp-sym) :type (unexpr (type2expr expected-type))))
@@ -280,8 +251,7 @@
 					  (setf (unexpr tmp-sym) (unexpr _else)))
 				     (unexpr tmp-sym)))))
 		  (progn
-		    (builtin-print-str " errrr..")
-		    (exit 0))
+		    (builtin-print-str " Error expanding if macro "))
 		  )))
   
       out-expr)))
@@ -289,6 +259,8 @@
 (declare-macro if if+)
 (if false "asd" 3)
   
+(defvar a :type f64)
+(setf a (if true 1 2))
 
 (defun add-to-list (void (list (ptr (ptr void)))
 		    (cnt (ptr u64)) (data (ptr void)) (elem-size u64))
@@ -318,59 +290,11 @@
 				   (cast itemaddr (ptr void))
 				   (unexpr (number2expr (cast size i64))))))))))
 
-(defvar asserts (cast null (ptr (ptr expr))))
-(defvar asserts-cnt (cast 0 u64))
-(defvar last-assert :type (ptr expr))
-
-(defmacro assert (_expr)
-  (var ((n (number2expr (cast asserts-cnt i64))))
-       (progn
-	 (add-to-list+ asserts asserts-cnt _expr)
-	 (expr
-	  (if (not (unexpr _expr))
-	      (progn
-		(printstr "\n**** ERROR *****\n")
-		(print-expr (deref (ptr+ asserts (unexpr n))))	
-		(printstr "\n")
-		(write-line "****  *****\n")	
-		(exit 1)
-		(noop)
-		)
-	      (noop)		
-	      )))))
-
-
-
-(string-concat "hello" "world")
-
-(symbol-combine (quote a) (quote b))
-(defun +vararg2 ((ptr expr) (a (ptr expr)) (b (ptr expr)) (c (ptr expr)))
-  (progn
-    (sub-expr.expr c 1)))
-(declare-macro vararg2 +vararg2 :rest)
-(vararg2 1 2 3 4 5)
-
-(defmacro vararg-test (a b &rest c)
-  (progn
-    (sub-expr.expr c 1)))
-
-
-;(vararg-test 1 2 3 4 5)
-;(exit 0)
-(assert (eq 4 (vararg-test 1 2 3 4 5)))
-
-(for it 0 (not (eq it 10)) (i64+ it 1)
-     (setf it (i64+ it 1))
-     (printi64 it)
-     print-newline)
-
 (defmacro when (test &rest body)
   (expr
-   (if (unexpr test)
-       (progn
-	 (unexpr (unfold-body (expr progn)
-			      body))
-	 (noop))
+   (if! (unexpr test)
+	(unexpr (unfold-body (expr progn)
+			     body))
        (noop))))
 
 (defmacro unless (test &rest body)
@@ -381,6 +305,41 @@
 	 (unexpr (unfold-body (expr progn)
 			      body))
 	 ))))
+
+(defvar asserts (cast null (ptr (ptr expr))))
+(defvar asserts-cnt (cast 0 u64))
+(defvar last-assert :type (ptr expr))
+
+(defmacro assert (_expr)
+  (var ((n (number2expr (cast asserts-cnt i64))))
+       (progn
+	 ;(add-to-list+ asserts asserts-cnt _expr)
+	 (expr
+	  (unless (unexpr _expr)
+	    (printstr "\n**** ERROR *****\n")
+	    (print-expr (deref (ptr+ asserts (unexpr n))))	
+	    (printstr "\n")
+	    (write-line "****  *****\n")	
+	    (exit 1)
+	    )))))
+
+(defun +vararg2 ((ptr expr) (a (ptr expr)) (b (ptr expr)) (c (ptr expr)))
+  (progn
+    (sub-expr.expr c 1)))
+
+(declare-macro vararg2 +vararg2 :rest)
+
+(vararg2 1 2 3 4 5)
+
+(defmacro vararg-test (a b &rest c)
+  (progn
+    (sub-expr.expr c 1)))
+
+(assert (eq 4 (vararg-test 1 2 3 4 5)))
+(for it 0 (not (eq it 10)) (i64+ it 1)
+     (setf it (i64+ it 1))
+     (printi64 it)
+     print-newline)
 
 (unless false
   (write-line "hej!"))
@@ -441,5 +400,3 @@
 	(range i 0 (cast (sub-expr.cnt args) i64)
 	       (setf (deref (ptr+ sexprs (i64+ offset i))) (sub-expr.expr args (cast i u64)))))
       (make-sub-expr sexprs (u64+ (sub-expr.cnt header) (sub-expr.cnt args)))))
-	 
-

@@ -32,7 +32,7 @@ type_def * compile_value(type_def * expected_type, c_value * val, value_expr e){
       char buf[100];
       sprintf(buf, "__istr_%i", s.id);
       symbol bufsym = get_symbol(buf);
-      define_variable(bufsym, type_pool_get(&char_ptr_def), chr, false);// clone(&chr, sizeof(chr)));
+      define_variable(bufsym, type_pool_get(&char_ptr_def), chr, false);
       val->type = C_SYMBOL;
       val->symbol = bufsym;
       return type_pool_get(&char_ptr_def);
@@ -55,9 +55,22 @@ type_def * compile_value(type_def * expected_type, c_value * val, value_expr e){
 	break;
       }
     }
-    type_def *t  = isfloat ? &f64_def: &i64_def;
-    val->raw.type = t;
-    return t;
+    
+    if(expected_type != NULL){
+      if( !isfloat && is_integer_type(expected_type)){
+	val->raw.type = expected_type;
+      }else if(is_float_type(expected_type)){
+	val->raw.type = expected_type;
+      }else{
+	loge("Unable to convert %s literal to", isfloat? "float" : "integer");
+	print_decl(expected_type, get_symbol("b"));
+	COMPILE_ERROR("");
+      }
+    }else{
+      val->raw.type = isfloat ? &f64_def: &i64_def;
+    }
+
+    return val->raw.type;
     break;
   case COMMENT:
     break;

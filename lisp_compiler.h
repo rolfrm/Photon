@@ -42,7 +42,7 @@ typedef enum {
 
 #define COMPILE_ERROR(fmt, ...) {loge("at %s : %i: ", __FILE__, __LINE__);loge(fmt,##__VA_ARGS__);logd("\n"); return &error_def;}
 
-#define CHECK_TYPE(expected, required) if(expected != NULL && required != expected) (COMPILE_ERROR("Unsupported type"));
+#define CHECK_TYPE(expected, required) if(expected != NULL && expected != &void_def && required != expected) (COMPILE_ERROR("Unsupported type"));
 
 
 // Get current compiler.
