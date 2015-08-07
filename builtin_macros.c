@@ -104,7 +104,6 @@ type_def * var_macro(type_def * expected_type, c_block * block, c_value * val, e
   bool is_void = rettype == &void_def;
   pop_symbols();
   
-
   c_expr sblk_expr;
   sblk_expr.type = C_BLOCK;
   sblk_expr.block = c_block_empty;
@@ -142,7 +141,7 @@ type_def * var_macro(type_def * expected_type, c_block * block, c_value * val, e
     type_def * ret = compile_value(expected_type, val, symbol_expr2(tmpvar.var.var.name).value);
     ASSERT(ret == ret_type);
   }else{
-    no_op(NULL,block, val);
+    val->type = C_NOTHING;
   }
   pop_symbols();
 
@@ -251,7 +250,7 @@ type_def * progn_macro(type_def * expected_type, c_block * block, c_value * val,
     block_add(block, expr);
   }
   if(expr_cnt == 0)
-    return no_op(expected_type, block, val);
+    val->type = C_NOTHING;
   return &void_def;
 }
 	  
@@ -796,124 +795,34 @@ type_def * if_atom_macro(type_def * expected_type, c_block * block, c_value * va
   block_add(block, then_blk_expr);
   block_add(block, c_expr_keyword("else"));
   block_add(block, else_blk_expr);
-  no_op(NULL, block, val);
+  val->type = C_NOTHING;
   return &void_def;
 }
 
 type_def * while_atom_macro(type_def * expected_type, c_block * block, c_value * val, expr cnd, expr body){
+  CHECK_TYPE(expected_type, &void_def);
+  
   c_expr whilexpr = c_expr_keyword("while");
- 
   c_expr cmpexpr;
   cmpexpr.value = c_value_empty;
-  c_value * cmp_value = &cmpexpr.value;
-  cmp_value->type = C_SUB_EXPR;
   cmpexpr.type = C_VALUE_UNENDED;
-  c_value * inner_value = alloc0(sizeof(c_value));
-  cmp_value->value = inner_value;
-  type_def * cmp = compile_expr(&bool_def, block, inner_value, cnd);
+  type_def * cmp = compile_expr(&bool_def, block, &cmpexpr.value, cnd);
   COMPILE_ASSERT(cmp == &bool_def);
-  c_value tmp = c_value_empty;
-  c_block blk = c_block_empty;
-  type_def * body_t = compile_expr(expected_type, &blk, &tmp, body);
-  COMPILE_ASSERT(body_t != &error_def);
+  cmpexpr.value = c_value_sub_expr(clone(&cmpexpr.value, sizeof(c_value)));  
+  
   c_expr bodyexpr;
   bodyexpr.type = C_BLOCK;
   bodyexpr.block = c_block_empty;
   c_expr valuexpr;
   valuexpr.type = C_VALUE;
-  if( body_t != &void_def){
-    var_def tmpsym;
-    tmpsym.name = get_symbol("_tmp");
-    tmpsym.type = body_t;
-    size_t cnt = 1;
-    var_def * tmpsymptr = &tmpsym;
-    push_symbols(&tmpsymptr, &cnt);
-    
-    setf_macro(NULL, &bodyexpr.block, &valuexpr.value, symbol_expr("_tmp"), body);
-  }else{
-    type_def * t = compile_expr(NULL, &bodyexpr.block, &valuexpr.value, body);
-    COMPILE_ASSERT(t != &error_def);
-  }
+  type_def * t = compile_expr(NULL, &bodyexpr.block, &valuexpr.value, body);
+  COMPILE_ASSERT(t != &error_def);
   block_add(&bodyexpr.block, valuexpr);
-  if(body_t != &void_def){
-    c_expr tmp_expr;
-    tmp_expr.type = C_VAR;
-    tmp_expr.var.var.name = get_symbol("_tmp");
-    tmp_expr.var.var.type = body_t;
-    tmp_expr.var.value = NULL;
-    block_add(block, tmp_expr);
-  }
   block_add(block, whilexpr);
   block_add(block, cmpexpr);
   block_add(block, bodyexpr);
-  
-  if(body_t != &void_def){
-    val->type = C_SYMBOL;
-    val->symbol = get_symbol("_tmp");
-    pop_symbols();
-  }else{
-    val->type = C_NOTHING;
-  }
-  return body_t;
-
-
-}
-
-type_def * while_macro(type_def * expected_type, c_block * block, c_value * val, expr cnd, expr body){
-  c_expr whilexpr = c_expr_keyword("while");
- 
-  c_expr cmpexpr;
-  cmpexpr.value = c_value_empty;
-  c_value * cmp_value = &cmpexpr.value;
-  cmp_value->type = C_SUB_EXPR;
-  cmpexpr.type = C_VALUE_UNENDED;
-  c_value * inner_value = alloc0(sizeof(c_value));
-  cmp_value->value = inner_value;
-  type_def * cmp = compile_expr(&bool_def, block, inner_value, cnd);
-  COMPILE_ASSERT(cmp == &bool_def);
-  c_value tmp = c_value_empty;
-  c_block blk = c_block_empty;
-  type_def * body_t = compile_expr(expected_type, &blk, &tmp, body);
-  COMPILE_ASSERT(body_t != &error_def);
-  c_expr bodyexpr;
-  bodyexpr.type = C_BLOCK;
-  bodyexpr.block = c_block_empty;
-  c_expr valuexpr;
-  valuexpr.type = C_VALUE;
-  if( body_t != &void_def){
-    var_def tmpsym;
-    tmpsym.name = get_symbol("_tmp");
-    tmpsym.type = body_t;
-    size_t cnt = 1;
-    var_def * tmpsymptr = &tmpsym;
-    push_symbols(&tmpsymptr, &cnt);
-    
-    setf_macro(NULL, &bodyexpr.block, &valuexpr.value, symbol_expr("_tmp"), body);
-  }else{
-    type_def * t = compile_expr(NULL, &bodyexpr.block, &valuexpr.value, body);
-    COMPILE_ASSERT(t != &error_def);
-  }
-  block_add(&bodyexpr.block, valuexpr);
-  if(body_t != &void_def){
-    c_expr tmp_expr;
-    tmp_expr.type = C_VAR;
-    tmp_expr.var.var.name = get_symbol("_tmp");
-    tmp_expr.var.var.type = body_t;
-    tmp_expr.var.value = NULL;
-    block_add(block, tmp_expr);
-  }
-  block_add(block, whilexpr);
-  block_add(block, cmpexpr);
-  block_add(block, bodyexpr);
-  
-  if(body_t != &void_def){
-    val->type = C_SYMBOL;
-    val->symbol = get_symbol("_tmp");
-    pop_symbols();
-  }else{
-    val->type = C_NOTHING;
-  }
-  return body_t;
+  val->type = C_NOTHING;
+  return &void_def;
 }
 
 type_def * deref_macro(type_def * expected_type, c_block * block, c_value * val, expr ptr){
@@ -1140,6 +1049,7 @@ void builtin_macros_load(){
   define_macro(">>", 2, bit_rightshift_operator);
 
   define_macro("loop-while", 2, while_macro);
+  define_macro("while!", 2, while_atom_macro);
   define_macro("deref", 1, deref_macro);
   define_macro("addrof", 1, addrof_macro);
   define_macro("noop",0,no_op);

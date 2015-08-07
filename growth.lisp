@@ -225,7 +225,7 @@ length
     ))
 
 (load-game)
-
+(exit 0)
 (let ((iteration 0)
 
       (height (cast 0.0 f64))

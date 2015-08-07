@@ -115,9 +115,9 @@
 
 (defun *while ((ptr expr) (_expr (ptr expr)) (_body (ptr expr)))
   (expr
-   (loop-while (unexpr _expr)
-      (unexpr (unfold-body (expr progn)
-			   _body)))))
+   (while! (unexpr _expr)
+	   (unexpr (unfold-body (expr progn)
+				_body)))))
 
 (declare-macro while *while :rest)
 
