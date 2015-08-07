@@ -92,7 +92,7 @@ type_def * function_type(type_def * ret,size_t cnt, type_def ** ts);
 type_def make_simple(char * name, size_t s);
 
 // Creates a pointer type from def. If the same type signature already exists it returns that.
-type_def make_ptr(type_def * def);
+type_def * make_ptr(type_def * def);
 
 // Function to calculate type dependencies.
 // writes the dependencies of a type in defs

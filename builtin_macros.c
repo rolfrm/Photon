@@ -470,7 +470,7 @@ bool recurse_expr(expr * ex, c_block * block, int id, int * cnt, var_def ** vars
   }else{
     bool ok = true;
     for(size_t i = 0; i < exp.cnt; i++)
-      ok &= recurse_expr(exp.exprs + i, block, id, cnt, vars);
+      ok = ok && recurse_expr(exp.exprs + i, block, id, cnt, vars);
     return ok;	
   }
 }
@@ -532,7 +532,7 @@ type_def * unexpr_macro(type_def * expected_type, c_block * block, c_value * val
 
 type_def * declare_macro_macro(type_def * expected_type, c_block * block, c_value * val, 
 			       expr * exprs, size_t cnt){
-  CHECK_TYPE(expected_type, &char_ptr_def);
+  CHECK_TYPE(expected_type, char_ptr_def);
   UNUSED(block);
   ASSERT(cnt == 2 || cnt == 3);
   expr macro_name = exprs[0];
@@ -550,7 +550,7 @@ type_def * declare_macro_macro(type_def * expected_type, c_block * block, c_valu
 type_def * cast_macro(type_def * expected_type, c_block * block, c_value * value, 
 		      expr body, expr type){
   c_value * v = alloc0(sizeof(c_value));
-  type_def * td = compile_expr(NULL, block,v, body);
+  type_def * td = compile_expr(NULL, block, v, body);
   if(td == &error_def){
     loge("Error while compiling body\n");
     return td;
@@ -827,10 +827,8 @@ type_def * while_atom_macro(type_def * expected_type, c_block * block, c_value *
 
 type_def * deref_macro(type_def * expected_type, c_block * block, c_value * val, expr ptr){
   c_value * _val = new(c_value);
-  if(expected_type != NULL){
-    type_def td2 = make_ptr(expected_type);
-    expected_type = type_pool_get(&td2);
-  }
+  if(expected_type != NULL)
+    expected_type = make_ptr(expected_type);
   type_def * td = compile_expr(expected_type, block, _val, ptr);
   COMPILE_ASSERT(td->type == POINTER);
   val->type = C_DEREF;
@@ -840,16 +838,15 @@ type_def * deref_macro(type_def * expected_type, c_block * block, c_value * val,
 }
 
 type_def * addrof_macro(type_def * expected_type, c_block * block, c_value * val, expr value){
-  UNUSED(expected_type);
+  if(expected_type != NULL){
+    COMPILE_ASSERT(expected_type->type == POINTER);
+    expected_type = expected_type->ptr.inner;
+  }
   c_value * _val = new(c_value);
-  type_def * td = compile_expr(NULL, block, _val, value);
+  type_def * td = compile_expr(expected_type, block, _val, value);
   val->type = C_ADDRESS_OF;
   val->value = _val;
-  type_def newtype;
-  newtype.type = POINTER;
-  newtype.ptr.inner = td;
-  //CHECK_TYPE(expected_type, td);
-  return type_pool_get(&newtype);
+  return type_pool_get(make_ptr(td));
 }
 
 expr * number2expr(i64 num){
@@ -1048,7 +1045,6 @@ void builtin_macros_load(){
   define_macro("<<", 2, bit_leftshift_operator);
   define_macro(">>", 2, bit_rightshift_operator);
 
-  define_macro("loop-while", 2, while_macro);
   define_macro("while!", 2, while_atom_macro);
   define_macro("deref", 1, deref_macro);
   define_macro("addrof", 1, addrof_macro);
@@ -1061,8 +1057,6 @@ void builtin_macros_load(){
   define_macro(".-", 2, minus_macro);
   define_macro(".*", 2, multiply_macro);  
   define_macro("./", 2, divide_macro);
-
-
 
   opaque_expr();
   defun("number2expr",str2type("(fcn (ptr expr) (a i64))"), number2expr);

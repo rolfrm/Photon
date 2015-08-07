@@ -18,10 +18,10 @@ type_def f32_def;
 type_def f64_def;
 type_def bool_def;
 // Pointers
-type_def void_ptr_def;
-type_def char_ptr_def;
-type_def char_ptr_ptr_def;
-type_def i64_ptr_def;
+type_def * void_ptr_def;
+type_def * char_ptr_def;
+type_def * char_ptr_ptr_def;
+type_def * i64_ptr_def;
 
 // Aggregate types
 type_def type_def_def;

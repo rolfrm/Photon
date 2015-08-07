@@ -86,11 +86,11 @@ type_def make_simple(char * name, size_t s){
   return def;
 }
 
-type_def make_ptr(type_def * def){
+type_def * make_ptr(type_def * def){
   type_def out;
   out.type = POINTER;
   out.ptr.inner = def;
-  return out;
+  return type_pool_get(&out);
 }
 
 void print_min_type(type_def * type){
@@ -459,7 +459,7 @@ bool test_print_c_code(){
     c_value cv1a1;
     cv1a1.type = C_INLINE_VALUE;
     cv1a1.raw.value = "\"hello world!\"";
-    cv1a1.raw.type = &char_ptr_def;
+    cv1a1.raw.type = char_ptr_def;
 
     c_value a_sym;
     a_sym.type = C_SYMBOL;
@@ -480,12 +480,12 @@ bool test_print_c_code(){
     type_def ftype;
     ftype.type = FUNCTION;
     ftype.fcn.cnt = 0;
-    ftype.fcn.ret = &char_ptr_def;
+    ftype.fcn.ret = char_ptr_def;
     
     c_expr var;
     decl v;
     v.name = get_symbol("a");
-    v.type = &char_ptr_def;
+    v.type = char_ptr_def;
     var.type = C_VAR;
     var.var.var = v;
     var.var.value = &cv1a1;

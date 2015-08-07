@@ -27,7 +27,6 @@ void load_defs(){
   void_def = make_simple("void", sizeof(void));
   r(&void_def);
   void_ptr_def = make_ptr(&void_def);
-  r2(&void_ptr_def);
   error_def = make_simple("error",sizeof(u64));
   r2(&error_def);
   char_def = make_simple("char",sizeof(char));
@@ -56,15 +55,9 @@ void load_defs(){
   bool_def = make_simple("bool", sizeof(bool));
   r2(&bool_def);
   // pointers to simple types //
-  char_ptr_def.type = POINTER;
-  char_ptr_def.ptr.inner = &char_def;
-  r2(&char_ptr_def);
-  char_ptr_ptr_def.type = POINTER;
-  char_ptr_ptr_def.ptr.inner = &char_ptr_def;
-  r2(&char_ptr_ptr_def);
-  i64_ptr_def.type = POINTER;
-  i64_ptr_def.ptr.inner = &i64_def;  
-  r2(&i64_ptr_def);
+  char_ptr_def = make_ptr(&char_def);
+  char_ptr_ptr_def = make_ptr(char_ptr_def);
+  i64_ptr_def = make_ptr(&i64_def);  
 
   { // struct symbol
     symbol_def.type = TYPEDEF;
@@ -137,13 +130,13 @@ void load_defs(){
 	  static type_def cenum_def;
 	  static decl cenum_members[4];
 	  cenum_members[0].name = get_symbol("names");
-	  cenum_members[0].type = &char_ptr_ptr_def;
+	  cenum_members[0].type = char_ptr_ptr_def;
 	  cenum_members[1].name = get_symbol("values");
-	  cenum_members[1].type = &i64_ptr_def;
+	  cenum_members[1].type = i64_ptr_def;
 	  cenum_members[2].name = get_symbol("cnt");
 	  cenum_members[2].type = &i64_def;
 	  cenum_members[3].name = get_symbol("name");
-	  cenum_members[3].type = &char_ptr_def;
+	  cenum_members[3].type = char_ptr_def;
 	  
 	  cenum_def.type = STRUCT;
 	  cenum_def.cstruct.members = cenum_members;
@@ -241,7 +234,7 @@ void load_defs(){
     static decl members[2];
     static type_def dclinner;
     members[0].name = get_symbol("name");
-    members[0].type = &char_ptr_def;
+    members[0].type = char_ptr_def;
     members[1].name = get_symbol("type");
     members[1].type = &type_def_def;
      
@@ -272,13 +265,13 @@ void load_defs(){
     inner.cstruct.name = get_symbol("_fcn_def");
   
     members[0].name = get_symbol("name");
-    members[0].type = &char_ptr_def;
+    members[0].type = char_ptr_def;
     members[1].name = get_symbol("type");
     members[1].type = &type_def_def;
     members[2].name = get_symbol("is_extern");
     members[2].type = &u8_def;
     members[3].name = get_symbol("ptr");
-    members[3].type = &void_ptr_def;
+    members[3].type = void_ptr_def;
     r2(&fcn_def_def);
   }
   
@@ -293,11 +286,11 @@ void load_defs(){
     inner.cstruct.cnt = array_count(members);
     inner.cstruct.name = get_symbol("_cmacro_def");
     members[0].name = get_symbol("name");
-    members[0].type = &char_ptr_def;
+    members[0].type = char_ptr_def;
     members[1].name = get_symbol("arg_cnt");
     members[1].type = &i64_def;
     members[2].name = get_symbol("fcn");
-    members[2].type = &void_ptr_def;
+    members[2].type = void_ptr_def;
     r2(&cmacro_def_def);
   }
 }

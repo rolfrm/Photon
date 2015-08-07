@@ -24,7 +24,7 @@ type_def * compile_value(type_def * expected_type, c_value * val, value_expr e){
   switch(e.type){
   case STRING:
     {
-      CHECK_TYPE(expected_type, &char_ptr_def);
+      CHECK_TYPE(expected_type, char_ptr_def);
       char * chr = fmtstr("%.*s",e.strln,e.value);
       symbol s = get_symbol(chr);
       dealloc(chr);
@@ -32,10 +32,10 @@ type_def * compile_value(type_def * expected_type, c_value * val, value_expr e){
       char buf[100];
       sprintf(buf, "__istr_%i", s.id);
       symbol bufsym = get_symbol(buf);
-      define_variable(bufsym, type_pool_get(&char_ptr_def), chr, false);
+      define_variable(bufsym, type_pool_get(char_ptr_def), chr, false);
       val->type = C_SYMBOL;
       val->symbol = bufsym;
-      return type_pool_get(&char_ptr_def);
+      return type_pool_get(char_ptr_def);
     }
   case KEYWORD:
   case SYMBOL:
@@ -649,7 +649,7 @@ compile_status lisp_run_expr(expr ex){
     type_def * (* fcn)() = evaldef->data;
     fcn();
     logd("type\n");
-  }else if(ret == &char_ptr_def){
+  }else if(ret == char_ptr_def){
     char * (* fcn)() = evaldef->data;
     char * str = fcn();
     logd("\"%s\"\n",str);
