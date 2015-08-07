@@ -672,7 +672,7 @@ type_def * defun_macro(type_def * expected_type, c_block * block, c_value * valu
   compile_as_c(&newfcn_root,1);
   c_root_code_delete(newfcn_root);
   // ** Just return the function name ** //
-  return compile_value(NULL, value, string_expr(symbol_name(fcnname)).value);
+  return compile_value(char_ptr_def, value, string_expr(symbol_name(fcnname)).value);
 }
 
 type_def * math_operator(char * operator, type_def * expected_type, c_block * block, c_value * val, expr item1, expr item2){
@@ -839,6 +839,7 @@ type_def * deref_macro(type_def * expected_type, c_block * block, c_value * val,
 
 type_def * addrof_macro(type_def * expected_type, c_block * block, c_value * val, expr value){
   if(expected_type != NULL){
+    print_decl(expected_type, get_symbol("ptr")); logd("\n----\n");
     COMPILE_ASSERT(expected_type->type == POINTER);
     expected_type = expected_type->ptr.inner;
   }
@@ -959,6 +960,10 @@ expr * symbol2expr(symbol * s){
   return out;
 }
 
+bool is_expr_symbol(expr * e){
+  return e->type == VALUE && e->value.type == SYMBOL;
+}
+	  
 bool is_sub_expr(expr * e){
   return e->type == EXPR;
 }
@@ -1070,6 +1075,7 @@ void builtin_macros_load(){
   defun("sub-expr.skip", str2type("(fcn (ptr expr) (expr (ptr expr)) (idx u64))"), sub_expr_skip);
 //expr * sub_expr_skip(expr * e)
   defun("make-sub-expr", str2type("(fcn (ptr expr) (exprs (ptr (ptr expr))) (cnt u64))"), make_sub_expr);
+  defun("expr-symbol?", str2type("(fcn bool (expr (ptr expr)))"), is_expr_symbol);
     
   defun("expand-macro", str2type("(fcn (ptr expr) (ms (ptr macro_store)) (expr2 (ptr expr)))"), &expand_macro_store2);
   defun("print-macro-store", str2type("(fcn void (ms (ptr macro_store)))"), print_macro_store);

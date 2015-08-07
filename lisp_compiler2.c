@@ -196,8 +196,9 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
   COMPILE_ASSERT(se->cnt > 0);
   expr name_expr = se->exprs[0];
   if(name_expr.type != VALUE){
+    // if the first expr is not the name of something
     c_value * tmpvar = alloc0(sizeof(c_value));
-    type_def * td = compile_expr(expected_type, block, tmpvar, name_expr); 
+    type_def * td = compile_expr(NULL, block, tmpvar, name_expr); 
     
     if(td->type == FUNCTION || (td->type == POINTER && td->ptr.inner->type == FUNCTION)){
       // So the name expression returns a function pointer or function.
@@ -374,8 +375,7 @@ c_root_code compile_lisp_to_eval(expr exp){
   r.fcndef.block = c_block_empty;
   r.fcndef.name = get_symbol("eval");
   
-  c_expr expr;
-  expr.type = C_VALUE;
+  c_expr expr = {.type = C_VALUE};
   type_def * t = compile_expr(NULL, &r.fcndef.block, &expr.value, exp);
   
   type_def td = {.type = FUNCTION, .fcn = {.ret = t, .args = NULL, .cnt = 0}};

@@ -140,6 +140,11 @@ u64 fcn_arg_cnt(type_def * td){
   return td->fcn.cnt;
 }
 
+type_def * fcn_ret_type(type_def * td){
+  ASSERT(td->type == FUNCTION);
+  return td->fcn.ret;
+}
+
 extern symbol * printer;
 void set_printer(symbol * sym){
   printer = sym;  
@@ -237,6 +242,7 @@ void load_functions(){
   defun("is-float-type?", str2type("(fcn bool (type (ptr type_def)))"), is_float_type);
 
   defun("fcn-arg-types", str2type("(fcn (ptr (ptr type_def)) (t (ptr type_def)))"), fcn_arg_types);
+  defun("fcn-ret-type", str2type("(fcn (ptr type_def) (t (ptr type_def)))"), fcn_ret_type);
   defun("fcn-arg-cnt", str2type("(fcn u64 (t (ptr type_def)))"), fcn_arg_cnt);
   defun("set-printer", str2type("(fcn void (ptr (ptr symbol)))"), set_printer);
   defun("is-type-compatible", str2type("(fcn bool (call-type (ptr type_def)) (arg-type (ptr type_def)) (call-expr (ptr expr)))"), is_type_compatible2);

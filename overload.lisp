@@ -3,8 +3,7 @@
  (alias 
   (struct _overload-info
 	  (sym (ptr symbol))
-	  (arg-types (ptr (ptr type_def)))
-	  (arg-cnt u64))
+	  (type (ptr type_def)))
   overload-info))
 
 (type
@@ -26,7 +25,7 @@
 	  )
   overload))
 
-(assert (eq (size-of (type overload-info)) (cast 24 u64)))
+(assert (eq (size-of (type overload-info)) (cast 16 u64)))
 
 (progn
   (defvar prototype :type overload)
@@ -47,43 +46,50 @@
     (assert (not (eq fcn-type (cast null (ptr type_def)))))
     (assert (is-fcn-type? fcn-type))
     (setf (member item sym) a)
-    (setf (member item arg-types) (fcn-arg-types fcn-type))
-    (setf (member item arg-cnt) (fcn-arg-cnt fcn-type))
+    (setf (member item type) fcn-type)
     item))
 
-(defun find-overload ((ptr symbol) (ol overload) 
-		      (call-types (ptr (ptr type_def))) (arg-cnt u64) (exprs (ptr expr)))
+(defun find-overload ((ptr symbol) (ol overload)
+		      (return-type (ptr type_def))
+		      (exprs (ptr expr)))
   (let ((i 0) (out (cast null (ptr symbol)))
 	(cnt (member ol member-cnt))
 	(mems (member ol members)))
     (assert (is-sub-expr exprs))
     (while (and (eq out (cast null (ptr symbol)))
 		(not (eq i cnt)))
-      
       (let ((mem (deref (ptr+ mems i))))
-	(let ((types (member mem arg-types))
-	      (types-cnt (member mem arg-cnt)))
-	  (when (eq types-cnt arg-cnt)
+	(let ((type (member mem type)))
+	  (when (and (eq (fcn-arg-cnt type) (sub-expr.cnt exprs))
+		     (eq return-type (fcn-ret-type type)))
+	    
 	    (let ((j (cast 0 u64))
-		  (same true))
+		  (same true)
+		  (arg-cnt (fcn-arg-cnt type))
+		  (args (fcn-arg-types type)))
 	      (while (and same (not (eq j arg-cnt)))
-		(unless (is-type-compatible 
-			 (deref (ptr+ call-types (cast j i64))) 
-			 (deref (ptr+ types (cast j i64)))
-			 (sub-expr.expr exprs j))
-		  (setf same false))
+		(let ((this-type (deref (ptr+ args j))))
+		  (printstr "OK?
+")
+	  	  (unless
+		      ;; does this create an error?
+		      
+		      (eq (type-of2 this-type (sub-expr.expr exprs j))
+			  this-type)
+		    (setf same false)))
 		(setf j (u64+ j 1)))
 	      (when same
 		(setf out (member mem sym))
 		)))))
       (setf i (i64+ i 1)))
     out))
+
 (defun expand-macro2 ((ptr expr) (sym (ptr symbol)) (expr2 (ptr expr)))
   (let ((v (cast (get-var sym) (ptr macro_store))))
     (let ((r (expand-macro v expr2)))
       r)))
 
-(defun find-overload-macro ((ptr expr) (ol overload) (exprs (ptr expr)))
+(defun find-overload-macro ((ptr expr)  (ol overload) (return-type (ptr type_def)) (exprs (ptr expr)))
   (let ((i 0) (out (cast null (ptr expr)))
 	(cnt (member ol macro-cnt))
 	(macs (member ol macros))
@@ -98,19 +104,10 @@
       (setf i (i64+ i 1)))
     out))
     
-(defun get-overloaded-expr ((ptr expr) (ol-info overload) (d (ptr expr)))
-  (let ((call-type (cast (alloc (u64* (sub-expr.cnt d) (size-of (type (ptr type_def)))))
-			 (ptr (ptr type_def))))
-	(_i (cast 0 u64)))
-    (while (not (eq _i (sub-expr.cnt d)))
-      (setf (deref (ptr+ call-type (cast _i i64)))
-	    (type-of (sub-expr.expr d _i)))
-      (setf _i (u64+ _i 1)))
-    
-    (let ((ol (find-overload ol-info  call-type (sub-expr.cnt d) d)))
-
-      (if (eq null (cast ol (ptr void)))
-	  (let ((maco (find-overload-macro ol-info d)))
+(defun get-overloaded-expr ((ptr expr) (return-type (ptr type_def)) (ol-info overload) (d (ptr expr)))
+  (let ((ol (find-overload ol-info return-type d)))
+    (if (eq null (cast ol (ptr void)))
+	(let ((maco (find-overload-macro ol-info return-type d)))
 	    (if (eq maco (cast null (ptr expr)))
 		(let ((def (member ol-info default)))
 		  (if (eq def (cast null (ptr symbol)))
@@ -121,7 +118,7 @@
 			  (let ((j (cast 0 u64)))
 			    (while (not (eq j (sub-expr.cnt d)))
 			      (progn
-				(print-type (deref (ptr+ call-type (cast j i64))))
+				;(print-type (deref (ptr+ call-type (cast j i64))))
 				(printstr " ")
 				(setf j (u64+ j 1)))))
 			  (printstr "\n")
@@ -139,41 +136,45 @@
      (progn
        (defvar (unexpr s) prototype)
        (setf (member (unexpr s) name) (quote (unexpr fcn-name)))
-       (defmacro (unexpr fcn-name) (&rest d)
-	 (get-overloaded-expr (unexpr s)  d))       
-       (noop)
+       (defmacro (unexpr fcn-name) (&type a d)
+	 (get-overloaded-expr a (unexpr s) d))
+	  
        ))))
 
-(defmacro overload (name fcn)
-  (let ((s (symbol2expr (symbol-combine (expr2symbol name) (quote -info)))))	      
-    (let ((fcn-type (var-type (expr2symbol fcn))))
-      (if (is-fcn-type? fcn-type)
-	  (expr 
-	   (let ((item (mk-ol-item (quote (unexpr fcn)))))
-
-	     (add-to-list 
-	      (cast (addrof (member (unexpr s) members)) (ptr (ptr void)))
-	      (cast (addrof (member (unexpr s) member-cnt)) (ptr u64))
-	      (cast (addrof item) (ptr void))
-	      (size-of (type overload-info))
-	      )
-	     (noop)
-))
-	  (if (eq fcn-type (type (ptr macro_store)))
+(defmacro overload (&type t namefcn)
+  (progn
+    (assert (eq (sub-expr.cnt namefcn) 2))
+    (let ((name (sub-expr.expr namefcn 0))
+	  (fcn (sub-expr.expr namefcn 1)))
+      (let ((s (symbol2expr (symbol-combine (expr2symbol name) (quote -info)))))	      
+	(let ((fcn-type (var-type (expr2symbol fcn))))
+	  (if (is-fcn-type? fcn-type)
 	      (expr 
-	       (let ((macroitem overload-macro-default))
-		 (setf (member macroitem sym) (quote (unexpr fcn)))
-		 (setf (member macroitem arg-cnt) (unexpr 
-						   (number2expr (macro-store-args 
-								 (cast 
-								  (get-var (expr2symbol fcn))
-								  (ptr macro_store))))))
-		 (add-to-list (cast (addrof (member (unexpr s) macros)) (ptr (ptr void)))
-			      (cast (addrof (member (unexpr s) macro-cnt)) (ptr u64))
-			      (cast (addrof macroitem) (ptr void))
-			      (size-of (type overload-macro)))
-		 (noop)))
-	      (expr (noop)))))))
+	       (let ((item (mk-ol-item (quote (unexpr fcn)))))
+		 (add-to-list 
+		  (cast (addrof (member (unexpr s) members)) (ptr (ptr void)))
+		  (cast (addrof (member (unexpr s) member-cnt)) (ptr u64))
+		  (cast (addrof item) (ptr void))
+		  (size-of (type overload-info))
+		  )
+		 (noop)
+		 ))
+	      (if (eq fcn-type (type (ptr macro_store)))
+		  (expr 
+		   (let ((macroitem overload-macro-default))
+		     (setf (member macroitem sym) (quote (unexpr fcn)))
+		     (setf (member macroitem arg-cnt) (unexpr 
+						       (number2expr (macro-store-args 
+								     (cast 
+								      (get-var (expr2symbol fcn))
+								      (ptr macro_store))))))
+		     (add-to-list (cast (addrof (member (unexpr s) macros)) (ptr (ptr void)))
+				  (cast (addrof (member (unexpr s) macro-cnt)) (ptr u64))
+				  (cast (addrof macroitem) (ptr void))
+				  (size-of (type overload-macro)))
+		     (noop)))
+		  (expr (noop)))))))
+  ))
 
 (defmacro overload-default (name macro)
   (let ((s (symbol2expr (symbol-combine (expr2symbol name) (quote -info)))))

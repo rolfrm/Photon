@@ -172,52 +172,6 @@
 (defun write-line (void (str (ptr char)))
   (progn (printstr str)
 	 (print-newline)))
-
-(defun *defmacro ((ptr expr) (name (ptr expr)) (args (ptr expr)) (body (ptr expr)))
-  (let ((defun-name (symbol2expr (symbol-combine (quote **) (expr2symbol name))))
-	(arg-cnt (sub-expr.cnt args))
-	(exprtype (expr (ptr expr)))
-	(use-rest false))
-    (printstr "Defining macro '")
-    (print-expr name)
-    (printstr "'.")
-    (printstr newline)
-    (let ((convargs (cast (alloc (u64* (size-of (type (ptr expr))) (u64+ 1 arg-cnt))) (ptr (ptr expr))))
-	  (it 0)
-	  (item 0))
-      (setf (deref convargs) exprtype)
-      (while (not (eq it (cast arg-cnt i64)))
-	(let ((arg (sub-expr.expr args (cast it u64))))
-	  (if! (and 
-	       (not (is-sub-expr arg))
-	       (eq (expr2symbol (sub-expr.expr args (cast it u64))) (quote &rest)))
-	      (progn
-		(setf use-rest true)
-	        (setf item (i64- item 1))
-		(noop))
-	      (setf (deref (ptr+ convargs (i64+ 1 item)))
-		    (let ((sub-args (cast (alloc (u64* (size-of (type (ptr expr))) 2)) (ptr (ptr expr)))))
-		      (setf (deref sub-args) arg)
-		      (setf (deref (ptr+ sub-args 1)) exprtype)
-		      (make-sub-expr sub-args 2))))
-	  )
-	(setf it (i64+ 1 it))
-	(setf item (i64+ 1 item))
-	)
-      (expr
-       (progn
-	 (defun (unexpr defun-name) 
-	     (unexpr (make-sub-expr convargs (u64+ (cast (not use-rest) u64) arg-cnt ))) (unexpr body))
-	 (unexpr
-	  (let ((out-expr (cast null (ptr expr))))
-	    (if! use-rest
-		(setf out-expr (expr (declare-macro (unexpr name) (unexpr defun-name) :rest)))
-		(setf out-expr (expr (declare-macro (unexpr name) (unexpr defun-name)))))
-	    out-expr))))
-      )))
-
-(declare-macro defmacro *defmacro)
-
 (defun if+ ((ptr expr) (expected-type (ptr type_def)) (exprs (ptr expr)))
   (let ((cnd (sub-expr.expr exprs 0))
 	(_then (sub-expr.expr exprs 1))
@@ -257,6 +211,77 @@
       out-expr)))
 				 
 (declare-macro if if+)
+
+
+(defun *defmacro ((ptr expr) (name (ptr expr)) (args (ptr expr)) (body (ptr expr)))
+  (let ((defun-name (symbol2expr (symbol-combine (quote **) (expr2symbol name))))
+	(arg-cnt (sub-expr.cnt args))
+	(exprtype (expr (ptr expr)))
+	(use-rest false)
+	(use-type false))
+    (printstr "Defining macro '")
+    (print-expr name)
+    (printstr "'.")
+    (printstr newline)
+    (let ((convargs (cast (alloc (u64* (size-of (type (ptr expr))) (u64+ 1 arg-cnt))) (ptr (ptr expr))))
+	  (it 0)
+	  (item 0))
+      (if (and (eq (sub-expr.cnt args) 3)
+		(and (expr-symbol? (sub-expr.expr args 0))
+		     (eq (expr2symbol (sub-expr.expr args 0)) (quote &type))))
+	   ;(defun name ((ptr expr) (expected-type (ptr type_def)) (ex (ptr expr)))
+	      ;  @body )
+	   (expr
+	    (progn
+	      (defun (unexpr defun-name) 
+		  ((ptr expr) ((unexpr (sub-expr.expr args 1)) (ptr type_def)) 
+		   ((unexpr (sub-expr.expr args 2)) (ptr expr)))
+		(unexpr body))
+	      (declare-macro (unexpr name) (unexpr defun-name))
+	      (noop)))
+	   (progn
+	   
+	     (setf (deref convargs) exprtype)
+	     (while (not (eq it (cast arg-cnt i64)))
+	       (let ((arg (sub-expr.expr args (cast it u64))))
+		 (if! (and 
+		       (not (is-sub-expr arg))
+		       (eq (expr2symbol (sub-expr.expr args (cast it u64))) (quote &rest)))
+		      (progn
+			(setf use-rest true)
+			(setf item (i64- item 1))
+			(noop))
+		      (setf (deref (ptr+ convargs (i64+ 1 item)))
+			    (let ((sub-args (cast (alloc (u64* (size-of (type (ptr expr))) 2)) (ptr (ptr expr)))))
+			      (setf (deref sub-args) arg)
+			      (setf (deref (ptr+ sub-args 1)) exprtype)
+			      (make-sub-expr sub-args 2))))
+		 )
+	       (setf it (i64+ 1 it))
+	       (setf item (i64+ 1 item))
+	       )
+	     (expr
+	      (progn
+		(defun (unexpr defun-name) 
+		    (unexpr (make-sub-expr convargs (u64+ (cast (not use-rest) u64) arg-cnt ))) (unexpr body))
+		(unexpr
+		 (let ((out-expr (cast null (ptr expr))))
+		   (if! use-rest
+			(setf out-expr (expr (declare-macro (unexpr name) (unexpr defun-name) :rest)))
+			(setf out-expr (expr (declare-macro (unexpr name) (unexpr defun-name)))))
+		   out-expr))))
+	     )))))
+
+(declare-macro defmacro *defmacro)
+
+(defmacro test1 (&type a d)
+  (sub-expr.expr d 0))
+(test1 5)
+(defmacro test2 (a d)
+  d)
+(defvar test3 :type f64)
+(setf test3 (test2 1 4))
+
 (if false "asd" 3)
   
 (defvar a :type f64)
@@ -313,7 +338,7 @@
 (defmacro assert (_expr)
   (var ((n (number2expr (cast asserts-cnt i64))))
        (progn
-	 ;(add-to-list+ asserts asserts-cnt _expr)
+	 (add-to-list+ asserts asserts-cnt _expr)
 	 (expr
 	  (unless (unexpr _expr)
 	    (printstr "\n**** ERROR *****\n")
