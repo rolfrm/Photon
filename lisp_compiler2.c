@@ -563,7 +563,7 @@ void print_current_mem(int id){
   if(current_allocator != NULL)
     logd("MEM%i: %i\n", id, trace_allocator_allocated_pointers(current_allocator));
 }
-var_def * lispcompile_expr(expr ex, compile_status * optout_status){
+var_def * lisp_compile_expr(expr ex, compile_status * optout_status){
   //allocator * trace_alloc = trace_allocator_make();
   with_allocator(/*trace_alloc*/ NULL, lambda(void,(){
 	//allocator * prev = current_allocator;
@@ -595,7 +595,7 @@ void * lisp_compile_and_run_expr(expr ex, compile_status * optout_status){
   compile_status _status;
   if(optout_status == NULL) optout_status = &_status;
        
-  var_def * var = lispcompile_expr(ex, optout_status);
+  var_def * var = lisp_compile_expr(ex, optout_status);
   if(COMPILE_ERROR == *optout_status)
     return NULL;
   void * (*fcn)() = var->data;
@@ -619,11 +619,9 @@ compile_status lisp_run_expr(expr ex){
     _ex.sub_expr.exprs = exes;
     ex = _ex;
   }
-  expr _exes[20];
-  UNUSED(_exes);
   
   compile_status status = COMPILE_OK;
-  var_def * evaldef = lispcompile_expr(ex, &status);
+  var_def * evaldef = lisp_compile_expr(ex, &status);
   if(COMPILE_ERROR == status || evaldef == NULL) 
     return COMPILE_ERROR;
   
@@ -632,11 +630,11 @@ compile_status lisp_run_expr(expr ex){
   size_t ret_size = size_of(ret);
 
   if(printer != NULL){
-    if(ret != &void_def){
+    if(ret != &void_def)
       log("Printer should return &void def");
-    }
   }else{
-    print_def(evaldef->type->fcn.ret); logd(" :: ");  
+    print_def(evaldef->type->fcn.ret); 
+    logd(" :: ");  
   }
   
   if(ret == &void_def){
@@ -679,9 +677,9 @@ compile_status lisp_run_expr(expr ex){
     i64 v = fcn();
     logd("%i\n",v);
   }else if(ret == &error_def){
-    
+    ERROR("Error\n");
   }else if(ret == SIMPLE || ret_size  <= 8){
-
+    
     void * (* fcn)() = evaldef->data;
     void * v = fcn();
     logd("try %p\n", v);

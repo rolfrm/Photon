@@ -25,7 +25,7 @@ char * read_paren(char * buffer){
   while(*buffer != ')'){
     if(*buffer == '"')
       buffer = read_string(buffer + 1);
-    if(*buffer == '(')
+    if(buffer && *buffer == '(')
       buffer = read_paren(buffer + 1);
     if(buffer == NULL || !*buffer)
       return NULL;
