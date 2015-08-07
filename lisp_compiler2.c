@@ -267,7 +267,7 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
     cmacro_def * macro = var_data;
 
     if(macro->arg_cnt != argcnt && macro->arg_cnt != -1)
-      COMPILE_ERROR("Unsupported number of arguments %i for %s",argcnt, macro->name);
+      COMPILE_ERROR("Unsupported number of arguments %i for %s",argcnt, symbol_name(name));
     type_def * ( *macro_fcn)(type_def * ex_type, c_block * block, c_value * val, ...) = macro->fcn;
 
     switch(macro->arg_cnt){
@@ -732,7 +732,7 @@ bool test_tcc();
 bool test_lisp2c(){
   TEST(test_tcc);
   load_defs();
-  compiler_state * c = compiler_make();
+  lisp_current_compiler = lisp_make_compiler();
 
   opaque_expr();
   str2type("(fcn (ptr expr) (a (ptr expr)))");
@@ -740,7 +740,6 @@ bool test_lisp2c(){
 
   lisp_load_base();
   bool ret = TEST_SUCCESS;
-  push_compiler(c);
   type_def * type = str2type("(fcn void (a (ptr type_def)))");
   type_def * type2 = str2type("(fcn void (a (ptr type_def)))");
   type_def * type3 = str2type("(fcn void (a (ptr void)))");
@@ -770,7 +769,6 @@ bool test_lisp2c(){
   TEST_ASSERT(sizeof(struct _s1) == size_of(d2));
   TEST_ASSERT(sizeof(struct _s1 *) == size_of(d3));
   
-  pop_compiler();
   return ret;
 }
 

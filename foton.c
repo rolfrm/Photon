@@ -61,15 +61,11 @@ int main(int argc, char *argv[] ){
   
   if(argc == 2 && strcmp(argv[1],"--test") == 0){
     log("Running tests...\n");
-    compiler_state * c = compiler_make();
-    push_compiler(c);
+    lisp_current_compiler = lisp_make_compiler();
     TEST(test_symbols);
     TEST(test_lisp_parser);
     TEST(test_type_pool);
     TEST(test_lisp2c);
-
-    pop_compiler();
-
     return 0;
   }
 
@@ -79,15 +75,13 @@ int main(int argc, char *argv[] ){
       loge("Error: File '%s' does not exist\n", filename);
       return 1;
     }
-    compiler_state * c = compiler_make();
-    push_compiler(c);
+    lisp_current_compiler = lisp_make_compiler();
     lisp_load_base();
 
     compile_status status = lisp_run_script_file(argv[1]);
     if(status == COMPILE_ERROR){
       return -1;
     }
-    pop_compiler();
     return 0;
   }
   

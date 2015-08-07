@@ -8,28 +8,20 @@ typedef struct _var_def{
   type_def * type;
   // Pointer to the variable data.
   void * data;
-  
+  // true if the pointer to the variable data already as a pointer.
+  // not completely related to the 'type'.
   bool is_ptr;
 } var_def;
 
+// Struct for holding the current compiler state. Structure for containing global variables.
 struct _compiler_state;
 typedef struct _compiler_state compiler_state;
 
+// Structure for storing macros defined in c.
 typedef struct{
-  compiler_state * c;
-  char * buffer;
-  char ** deps;
-  size_t dep_cnt;
-}comp_state;
-
-typedef struct{
-  type_def result_type;
-  void * fcn;
-}compiled_expr;
-
-typedef struct{
-  char * name;
+  // -1 if varadic macro.
   i64 arg_cnt;
+  // Pointer to the macro pointer.
   void * fcn;
 }cmacro_def;
 
@@ -44,20 +36,11 @@ typedef enum {
 
 #define CHECK_TYPE(expected, required) if(expected != NULL && expected != &void_def && required != expected) (COMPILE_ERROR("Unsupported type"));
 
+// allocates a new lisp compiler. Delete with dealloc.
+compiler_state * lisp_make_compiler();
 
-// Get current compiler.
-compiler_state * get_compiler();
-
-// Create a new compiler.
-compiler_state * compiler_make();
-
-// Todo: Why do I need a stack of compilers?
-
-// Pushes the compiler c onto the stack.
-void push_compiler(compiler_state * c);
-
-// pops the compiler from the stack.
-void pop_compiler();
+// Used for setting the current compiler.
+extern compiler_state * lisp_current_compiler;
 
 // Compile expression return the new variable (result).
 var_def * lisp_compile_expr(expr ex, compile_status * opt_outstatus);
@@ -88,9 +71,6 @@ void compiler_reg_type(compiler_state *c, symbol name, type_def * t);
 
 // Loads the Lisp std types
 void compiler_load_types(compiler_state *);
-
-// Creates a new compiler state
-comp_state comp_state_make();
 
 // returns the global variable named s. Returns NULL if it does not exist.
 var_def * get_global(symbol s);
