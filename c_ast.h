@@ -145,6 +145,7 @@ extern const c_value c_value_empty;
 extern const c_expr c_expr_block;
 extern const c_expr c_expr_value;
 c_value c_value_sub_expr(c_value * val);
+c_expr c_expr_keyword(char * keyword);
 // format out the c-code
 void print_c_code(c_root_code code);
 

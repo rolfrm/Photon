@@ -402,3 +402,10 @@ c_value c_value_sub_expr(c_value * val){
   c_value _val = {.type = C_SUB_EXPR, .value = val};
   return _val;
 }
+
+c_expr c_expr_keyword(char * keyword){
+  c_expr expr;
+  expr.type = C_KEYWORD;
+  expr.keyword = get_symbol(keyword);
+  return expr;
+}

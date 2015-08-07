@@ -558,7 +558,6 @@ type_def * cast_macro(type_def * expected_type, c_block * block, c_value * value
   }
   type_def * cast_to = expr2type(type);
   CHECK_TYPE(expected_type, cast_to);
-  COMPILE_ASSERT(cast_to != &error_def);
   value->type = C_CAST;
   value->cast.value = v;
   value->cast.type = cast_to;
@@ -678,29 +677,21 @@ type_def * defun_macro(type_def * expected_type, c_block * block, c_value * valu
 }
 
 type_def * math_operator(char * operator, type_def * expected_type, c_block * block, c_value * val, expr item1, expr item2){
-  UNUSED(expected_type);
   c_value * val1 = alloc0(sizeof(c_value));
   c_value * val2 = alloc0(sizeof(c_value));
-  c_value * comp = alloc0(sizeof(c_value));
-  type_def * t1 = compile_expr(NULL, block, val1, item1);
-  type_def * t2 = compile_expr(NULL, block, val2, item2);
+  c_value * comp = val;
+  type_def * t1 = compile_expr(expected_type, block, val1, item1);
+  type_def * t2 = compile_expr(expected_type, block, val2, item2);
   COMPILE_ASSERT(t1 != &error_def && t1 != &void_def);
-  if(!(is_type_compatible(t1,t2,item1) || is_type_compatible(t2,t1,item2))){
-    loge("Cannot '%s' types:\n", operator);
-    print_decl(t1, get_symbol("a")); logd("\n");
-    print_decl(t2, get_symbol("b")); logd("\n");
-    
-    COMPILE_ERROR("Types cannot be compared by '%s'", operator);
-  }
-  val->type = C_CAST;
-  val->cast.value = comp;
-  val->cast.type = is_number_literal(item1) ? t2 : t1;
+  CHECK_TYPE(expected_type,t1);
+  CHECK_TYPE(expected_type,t2);
+  
   comp->type = C_OPERATOR;
   comp->operator.operator = operator;
   comp->operator.left = val1;
   comp->operator.right = val2;
   
-  return val->cast.type;
+  return expected_type;
 }
 
 type_def * plus_macro(type_def * expected_type, c_block * block, c_value * val, expr item1, expr item2){
@@ -720,20 +711,15 @@ type_def * divide_macro(type_def * expected_type, c_block * block, c_value * val
 }
 
 type_def * comparison_macro(char * operator, type_def * expected_type, c_block * block, c_value * val, expr item1, expr item2){
-  UNUSED(expected_type);
+  CHECK_TYPE(expected_type, &bool_def);
+  ASSERT(expected_type != &void_def);
   c_value * val1 = alloc0(sizeof(c_value));
   c_value * val2 = alloc0(sizeof(c_value));
   c_value * comp = alloc0(sizeof(c_value));
   type_def * t1 = compile_expr(NULL, block, val1, item1);
-  type_def * t2 = compile_expr(NULL, block, val2, item2);
+  type_def * t2 = compile_expr(t1, block, val2, item2);
   COMPILE_ASSERT(t1 != &error_def && t1 != &void_def);
-  if(!(is_type_compatible(t1,t2,item1) || is_type_compatible(t2,t1,item2))){
-    loge("Cannot compare types:\n");
-    print_decl(t1, get_symbol("a")); logd("\n");
-    print_decl(t2, get_symbol("b")); logd("\n");
-    
-    COMPILE_ERROR("Types cannot be compared by '%s'", operator);
-  }
+  COMPILE_ASSERT(t1 == t2);
   val->type = C_CAST;
   val->cast.value = comp;
   val->cast.type = str2type("bool");
@@ -742,7 +728,6 @@ type_def * comparison_macro(char * operator, type_def * expected_type, c_block *
   comp->operator.left = val1;
   comp->operator.right = val2;
   return val->cast.type;
-
 }
 
 type_def * eq_macro(type_def * expected_type, c_block * block, c_value * val, expr item1, expr item2){
@@ -782,7 +767,6 @@ type_def * if_atom_macro(type_def * expected_type, c_block * block, c_value * va
     logd("\n");
     ERROR("!!");
   }
-  //COMPILE_ASSERT(expected_type == NULL);
   expected_type = NULL;
   
   c_expr cmpexpr;
@@ -807,28 +791,76 @@ type_def * if_atom_macro(type_def * expected_type, c_block * block, c_value * va
   COMPILE_ASSERT(td2 != &error_def);
   block_add(&else_blk_expr.block, else_expr);
   block_add(&then_blk_expr.block, then_expr);
-  c_expr elsexpr;
-  elsexpr.type = C_KEYWORD;
-  elsexpr.keyword = get_symbol("else");
-  
-  c_expr ifexpr;
-  ifexpr.type = C_KEYWORD;
-  ifexpr.keyword = get_symbol("if");
-	  
-  block_add(block, ifexpr);
+  block_add(block, c_expr_keyword("if"));
   block_add(block, cmpexpr);
   block_add(block, then_blk_expr);
-  block_add(block, elsexpr);
+  block_add(block, c_expr_keyword("else"));
   block_add(block, else_blk_expr);
   no_op(NULL, block, val);
   return &void_def;
 }
-	  
+
+type_def * while_atom_macro(type_def * expected_type, c_block * block, c_value * val, expr cnd, expr body){
+  c_expr whilexpr = c_expr_keyword("while");
+ 
+  c_expr cmpexpr;
+  cmpexpr.value = c_value_empty;
+  c_value * cmp_value = &cmpexpr.value;
+  cmp_value->type = C_SUB_EXPR;
+  cmpexpr.type = C_VALUE_UNENDED;
+  c_value * inner_value = alloc0(sizeof(c_value));
+  cmp_value->value = inner_value;
+  type_def * cmp = compile_expr(&bool_def, block, inner_value, cnd);
+  COMPILE_ASSERT(cmp == &bool_def);
+  c_value tmp = c_value_empty;
+  c_block blk = c_block_empty;
+  type_def * body_t = compile_expr(expected_type, &blk, &tmp, body);
+  COMPILE_ASSERT(body_t != &error_def);
+  c_expr bodyexpr;
+  bodyexpr.type = C_BLOCK;
+  bodyexpr.block = c_block_empty;
+  c_expr valuexpr;
+  valuexpr.type = C_VALUE;
+  if( body_t != &void_def){
+    var_def tmpsym;
+    tmpsym.name = get_symbol("_tmp");
+    tmpsym.type = body_t;
+    size_t cnt = 1;
+    var_def * tmpsymptr = &tmpsym;
+    push_symbols(&tmpsymptr, &cnt);
+    
+    setf_macro(NULL, &bodyexpr.block, &valuexpr.value, symbol_expr("_tmp"), body);
+  }else{
+    type_def * t = compile_expr(NULL, &bodyexpr.block, &valuexpr.value, body);
+    COMPILE_ASSERT(t != &error_def);
+  }
+  block_add(&bodyexpr.block, valuexpr);
+  if(body_t != &void_def){
+    c_expr tmp_expr;
+    tmp_expr.type = C_VAR;
+    tmp_expr.var.var.name = get_symbol("_tmp");
+    tmp_expr.var.var.type = body_t;
+    tmp_expr.var.value = NULL;
+    block_add(block, tmp_expr);
+  }
+  block_add(block, whilexpr);
+  block_add(block, cmpexpr);
+  block_add(block, bodyexpr);
+  
+  if(body_t != &void_def){
+    val->type = C_SYMBOL;
+    val->symbol = get_symbol("_tmp");
+    pop_symbols();
+  }else{
+    val->type = C_NOTHING;
+  }
+  return body_t;
+
+
+}
+
 type_def * while_macro(type_def * expected_type, c_block * block, c_value * val, expr cnd, expr body){
-  UNUSED(expected_type);
-  c_expr whilexpr;
-  whilexpr.type = C_KEYWORD;
-  whilexpr.keyword = get_symbol("while");
+  c_expr whilexpr = c_expr_keyword("while");
  
   c_expr cmpexpr;
   cmpexpr.value = c_value_empty;
