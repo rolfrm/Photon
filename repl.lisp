@@ -1,5 +1,6 @@
 (load "std2.lisp")
 
+
 (defvar t mat4-eye)
 (setf (member t m03) 10.0)
 t
@@ -53,7 +54,6 @@ t
   a)
 
 (asd 5 4 5)
-
 (defmacro test2 (a b c &rest d)
   (sub-expr.expr d (cast (expr2number a) u64)))
 

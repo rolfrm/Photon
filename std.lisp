@@ -49,16 +49,16 @@
 (defun *ptr+ ((ptr expr) (ptr (ptr expr)) (offset (ptr expr)))
   (var ((size_expr (number2expr (cast (size-of (ptr-inner (type-of ptr))) i64)))
 	(ptr-type (type-of ptr))
-	(out-expr (cast null (ptr expr))))
+	(out-expr null-expr))
        (progn
 	 (if! (and (is-ptr-type? ptr-type)
-		  (is-integer-type? (type-of offset)))
+		   (is-integer-type? (type-of offset)))
 	     (setf out-expr 
 		   (expr
 		    (cast 
 		     (i64+ 
 		      (cast (unexpr ptr) i64)
-		      (i64* (cast (unexpr offset) i64) 
+		      (i64* (unexpr offset) 
 			    (unexpr size_expr)))
 		     (unexpr (type2expr ptr-type)))))
 	     (noop))
@@ -176,7 +176,7 @@
   (let ((cnd (sub-expr.expr exprs 0))
 	(_then (sub-expr.expr exprs 1))
 	(_else (sub-expr.expr exprs 2)))
-    (let ((out-expr (cast null (ptr expr)))
+    (let ((out-expr null-expr)
 	  (then-type (type-of2 expected-type _then))
 	  (else-type (type-of2 expected-type _else)))
       (if! (and (and (eq then-type else-type) 
@@ -265,7 +265,7 @@
 		(defun (unexpr defun-name) 
 		    (unexpr (make-sub-expr convargs (u64+ (cast (not use-rest) u64) arg-cnt ))) (unexpr body))
 		(unexpr
-		 (let ((out-expr (cast null (ptr expr))))
+		 (let ((out-expr null-expr))
 		   (if! use-rest
 			(setf out-expr (expr (declare-macro (unexpr name) (unexpr defun-name) :rest)))
 			(setf out-expr (expr (declare-macro (unexpr name) (unexpr defun-name)))))

@@ -24,7 +24,7 @@ type_def * compile_value(type_def * expected_type, c_value * val, value_expr e){
   switch(e.type){
   case STRING:
     {
-      CHECK_TYPE(expected_type, char_ptr_def);
+      //CHECK_TYPE(expected_type, char_ptr_def);
       char * chr = fmtstr("%.*s",e.strln,e.value);
       symbol s = get_symbol(chr);
       dealloc(chr);
@@ -62,9 +62,10 @@ type_def * compile_value(type_def * expected_type, c_value * val, value_expr e){
       }else if(is_float_type(expected_type)){
 	val->raw.type = expected_type;
       }else{
-	loge("Unable to convert %s literal to", isfloat? "float" : "integer");
-	print_decl(expected_type, get_symbol("b"));
-	COMPILE_ERROR("");
+	//loge("Unable to convert %s literal to", isfloat? "float" : "integer");
+	//print_decl(expected_type, get_symbol("b"));
+	//COMPILE_ERROR("");
+	val->raw.type = isfloat ? &f64_def: &i64_def;
       }
     }else{
       val->raw.type = isfloat ? &f64_def: &i64_def;
@@ -320,10 +321,10 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
 	break;
       }
     }
+
     if(err_arg >= 0)
       COMPILE_ERROR("Non matching types for function '%s' arg %i\n", symbol_name(name), err_arg);
     
-
     c_function_call call;
     call.type = td;
     call.name = name;
@@ -337,7 +338,7 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
     type_def * _t = expand_macro(expected_type, block, value, se->exprs, se->cnt);
     ASSERT(_t != NULL)
     if(_t == &error_def){
-      COMPILE_ERROR("Caught error while expanding macro '%s'\n", symbol_name(name));
+      //COMPILE_ERROR("Caught error while expanding macro '%s'\n", symbol_name(name));
     }
     return _t;
   }else{
@@ -351,12 +352,7 @@ type_def * compile_expr(type_def * expected_type, c_block * block, c_value * val
   type_def * td;
   switch(e.type){
   case EXPR:
-    td = _compile_expr(expected_type, block, val, &e.sub_expr);
-    if(td == &error_def || td == NULL){
-      loge("Error while compiling:\n");
-      print_expr(&e);
-      return &error_def;
-    }
+    return _compile_expr(expected_type, block, val, &e.sub_expr);
     break;
   case VALUE:
     td = compile_value(expected_type, val,e.value);

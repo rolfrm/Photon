@@ -60,26 +60,25 @@
 		(not (eq i cnt)))
       (let ((mem (deref (ptr+ mems i))))
 	(let ((type (member mem type)))
-
 	  (when (and (eq (fcn-arg-cnt type) (sub-expr.cnt exprs))
 		     (or (eq (cast return-type i64) 0)
 			 (eq return-type (fcn-ret-type type))))
-
-	    (let ((j (cast 0 u64))
+	    (let ((j 0)
 		  (same true)
-		  (arg-cnt (fcn-arg-cnt type))
+		  (arg-cnt (cast (fcn-arg-cnt type) i64))
 		  (args (fcn-arg-types type)))
+	      
 	      (while (and same (not (eq j arg-cnt)))
 		(let ((this-type (deref (ptr+ args j))))
-		  (printstr "OK?
-")
-	  	  (unless
-		      ;; does this create an error?
-		      
-		      (eq (type-of2 this-type (sub-expr.expr exprs j))
-			  this-type)
-		    (setf same false)))
-		(setf j (u64+ j 1)))
+		  (let ((ntype (type-of2 this-type (sub-expr.expr
+						    exprs (cast j u64)))))
+		    
+		    (unless
+			;; does this create an error?
+			(eq ntype this-type)
+	
+		      (setf same false))))
+		(setf j (i64+ j 1)))
 	      (when same
 		(setf out (member mem sym))
 		)))))
@@ -92,15 +91,15 @@
       r)))
 
 (defun find-overload-macro ((ptr expr)  (ol overload) (return-type (ptr type_def)) (exprs (ptr expr)))
-  (let ((i 0) (out (cast null (ptr expr)))
-	(cnt (member ol macro-cnt))
+  (let ((i 0) (out null-expr)
+	(cnt (cast (member ol macro-cnt) i64))
 	(macs (member ol macros))
-	(arg-cnt (sub-expr.cnt exprs)))
-    (while (and (eq out (cast null (ptr expr)))
-		(not (eq (cast i u64) cnt)))
+	(arg-cnt (cast (sub-expr.cnt exprs) i64)))
+    (while (and (eq out null-expr)
+		(not (eq i cnt)))
       (let ((macro (deref (ptr+ macs i))))
 	(when (or (eq (member macro arg-cnt) -1)
-		  (eq (member macro arg-cnt) (cast arg-cnt i64)))
+		  (eq (cast (member macro arg-cnt) i64) arg-cnt))
 	  (setf out (expand-macro2 (member macro sym) exprs))
 	  ))
       (setf i (i64+ i 1)))
@@ -113,18 +112,20 @@
 	    (if (eq maco (cast null (ptr expr)))
 		(let ((def (member ol-info default)))
 		  (if (eq def (cast null (ptr symbol)))
-		      (progn
-			(printstr "Error no matching overload found for '")
-			(print-symbol (member ol-info name))
-			(printstr "'.\n Argument types:\n ")
-			  (let ((j (cast 0 u64)))
-			    (while (not (eq j (sub-expr.cnt d)))
-			      (progn
+		      ;(progn
+			;(print-type return-type)
+			;(print-expr d)
+			;(printstr "Error no matching  overload found for '")
+			;(print-symbol (member ol-info name))
+			;(printstr "'.\n Argument types:\n ")
+			;  (let ((j (cast 0 u64)))
+			;    (while (not (eq j (sub-expr.cnt d)))
+			;      (progn
 				;(print-type (deref (ptr+ call-type (cast j i64))))
-				(printstr " ")
-				(setf j (u64+ j 1)))))
-			  (printstr "\n")
-			  (cast null (ptr expr)))
+			;	(printstr " ")
+			;	(setf j (u64+ j 1)))))
+			;  (printstr "\n")
+			  null-expr;)
 		      (unfold-body (symbol2expr def) d)))
 		maco))
 	  
@@ -189,12 +190,10 @@
 (defoverloaded print)
 
 (overload + symbol-combine)
-
 (overload + string-concat)
-(+ 1 2)
-	  ;(+ "asd" "dsa")
+(+ "asd" "dsa")
 
-(exit 0)
+;(exit 0)
 ;(overload + add3i64)
 
 (defun u8+ (u8 (a u8) (b u8))
@@ -245,6 +244,9 @@
 (overload * f32*)
 (overload / f32/)
 
+(+ 1 2)
+;(+ (* 1 3) 2)
+;(exit 0)
 ;; (defmacro .-2 (arg1 arg2)
 ;;   (expr (.- (unexpr arg1) (unexpr arg2))))
 
@@ -358,9 +360,6 @@
   (expr
    (progn 
      (unexpr body)
-     (noop))))
-			 
+     (noop))))			 
 (set-printer (quote no-print))
 
-(print "Hello world overload
-")

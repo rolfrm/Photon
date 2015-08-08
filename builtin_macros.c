@@ -227,7 +227,11 @@ type_def * load_macro(type_def * expected_type, c_block * block, c_value * val, 
   logd("Loading: '%s'\n", filename); 
   compile_status s = lisp_run_script_file(filename);
   dealloc(filename);
-  if(s == COMPILE_ERROR) return &error_def;
+  
+  if(s == COMPILE_ERROR) {
+    logd("COMPILE ERROR..\n");
+    return &error_def;
+  }
   return compile_expr(expected_type, block, val, file_name);
 }
 
@@ -549,18 +553,30 @@ type_def * declare_macro_macro(type_def * expected_type, c_block * block, c_valu
 
 type_def * cast_macro(type_def * expected_type, c_block * block, c_value * value, 
 		      expr body, expr type){
+  UNUSED(expected_type);
   c_value * v = alloc0(sizeof(c_value));
   type_def * td = compile_expr(NULL, block, v, body);
   if(td == &error_def){
     loge("Error while compiling body\n");
     return td;
   }
+	  
   type_def * cast_to = expr2type(type);
-  CHECK_TYPE(expected_type, cast_to);
+  //CHECK_TYPE(expected_type, cast_to);
   value->type = C_CAST;
   value->cast.value = v;
   value->cast.type = cast_to;
   return cast_to;
+}
+
+type_def * the_macro(type_def * expected_type, c_block * block, c_value * value, 
+		      expr body, expr type){
+  UNUSED(expected_type);
+  type_def * cast_to = expr2type(type);
+  type_def * td = compile_expr(cast_to, block, value, body);
+  if(td == &error_def)
+    loge("Error while compiling body\n");
+  return td;
 }
 
 type_def * quote_macro(type_def * expected_type, c_block * block, c_value * value, expr name){
@@ -839,7 +855,6 @@ type_def * deref_macro(type_def * expected_type, c_block * block, c_value * val,
 
 type_def * addrof_macro(type_def * expected_type, c_block * block, c_value * val, expr value){
   if(expected_type != NULL){
-    print_decl(expected_type, get_symbol("ptr")); logd("\n----\n");
     COMPILE_ASSERT(expected_type->type == POINTER);
     expected_type = expected_type->ptr.inner;
   }
@@ -1028,6 +1043,7 @@ void builtin_macros_load(){
   define_macro("var", 2, var_macro);
   define_macro("progn", -1, progn_macro);
   define_macro("cast", 2, cast_macro);
+  define_macro("the", 2, the_macro);
   define_macro("defvar", -1, defvar_macro);
   define_macro("load", 1, load_macro);
   define_macro("quote", 1, quote_macro);

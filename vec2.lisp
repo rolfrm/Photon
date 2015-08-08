@@ -145,10 +145,12 @@
   mat4))
 
 (defvar mat4-default :type mat4)
-(memset (cast (addrof mat4-default) (ptr void)) 0 (size-of (type mat4)))
 
+(memset (cast (addrof mat4-default) (ptr void)) 0 (size-of (type mat4)))
 (defun mat4-aref ((ptr f64) (a mat4) (row i64) (col i64))
-  (ptr+ (cast (addrof a) (ptr f64)) (+ (* 4 col) row)))
+  (ptr+ (cast (addrof a) (ptr f64)) 
+	(the (+ (* col 4) row ) i64)))
+
 (overload aref mat4-aref)
 
 (defvar mat4-eye mat4-default)
@@ -201,9 +203,9 @@
 	  (optr (cast (addrof mout) (ptr f64))))
       (range c 0 4
 	     (range r 0 4
-		    (let ((cell (ptr+ optr (+ (* c 4) r))))
+		    (let ((cell (ptr+ optr (+ (* 4 c) r))))
 		      (range k 0 4
-			     (incr (deref cell)
+			     (incr (deref cell) 
 				   (* (deref (ptr+ aptr (+ (* c 4) k)))
 				      (deref (ptr+ bptr (+ (* k 4) r))))))))))
     mout))
@@ -271,3 +273,4 @@
     (if (eq len 0.0)
 	a
 	(* a (/ 1.0 len)))))
+
