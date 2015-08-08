@@ -60,9 +60,11 @@
 		(not (eq i cnt)))
       (let ((mem (deref (ptr+ mems i))))
 	(let ((type (member mem type)))
+
 	  (when (and (eq (fcn-arg-cnt type) (sub-expr.cnt exprs))
-		     (eq return-type (fcn-ret-type type)))
-	    
+		     (or (eq (cast return-type i64) 0)
+			 (eq return-type (fcn-ret-type type))))
+
 	    (let ((j (cast 0 u64))
 		  (same true)
 		  (arg-cnt (fcn-arg-cnt type))
@@ -127,8 +129,7 @@
 		maco))
 	  
 	    (unfold-body (symbol2expr ol) d)
-	    
-	  ))))
+	  )))
 
 (defmacro defoverloaded (fcn-name)
   (let ((s (symbol2expr (symbol-combine (expr2symbol fcn-name) (quote -info)))))
@@ -190,9 +191,10 @@
 (overload + symbol-combine)
 
 (overload + string-concat)
-(+ "asd" "dsa")
+(+ 1 2)
+	  ;(+ "asd" "dsa")
 
-;(exit 0)
+(exit 0)
 ;(overload + add3i64)
 
 (defun u8+ (u8 (a u8) (b u8))
