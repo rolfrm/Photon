@@ -94,13 +94,13 @@ type_def * expr2type(expr typexpr){
       COMPILE_ASSERT(sexp.cnt > 1);
       type_def * ret = expr2type(sexp.exprs[1]);
     
-      COMPILE_ASSERT(&error_def != ret);
+      COMPILE_ASSERT(error_def != ret);
       type_def * args[sexp.cnt - 2];
       for(size_t i = 0; i < sexp.cnt - 2; i++){
 	expr arg = sexp.exprs[i + 2];
 	COMPILE_ASSERT(arg.type == EXPR && arg.sub_expr.cnt == 2 && is_symbol(arg.sub_expr.exprs[0]));
 	args[i] = expr2type(arg.sub_expr.exprs[1]);
-	COMPILE_ASSERT(args[i] != NULL && args[i] != &error_def);
+	COMPILE_ASSERT(args[i] != NULL && args[i] != error_def);
       } 
       out.fcn.ret = ret;
       out.fcn.args = args;
@@ -157,12 +157,12 @@ type_def * expr2type(expr typexpr){
     }
   }else{
     type_def * td = type_pool_simple(expr_symbol(typexpr));
-    if(td != NULL && td != &error_def) return td;
+    if(td != NULL && td != error_def) return td;
   }
   loge("Unable to understand type: ");
   print_expr(&typexpr);
   logd("\n");
-  return &error_def;
+  return error_def;
 }
 
 bool is_number_literal(expr ex){
@@ -242,14 +242,14 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
       loge("Unable to call type:\n");
       print_decl(td, get_symbol("f"));
       logd("\n");
-      return &error_def;
+      return error_def;
     }
   }
   if(name_expr.value.type != SYMBOL){
     loge("Cannot call expr ");
     print_expr(&name_expr);
     logd("\n");
-    return &error_def;
+    return error_def;
   }
   
   expr * args = se->exprs + 1;
@@ -336,8 +336,8 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
     return td->fcn.ret;
   }else if(var_type == macro_store_type()){
     type_def * _t = expand_macro(expected_type, block, value, se->exprs, se->cnt);
-    ASSERT(_t != NULL)
-    if(_t == &error_def){
+    
+    if(_t == error_def){
       //COMPILE_ERROR("Caught error while expanding macro '%s'\n", symbol_name(name));
     }
     return _t;
@@ -345,7 +345,7 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
 
     ERROR("Not supported.. %i\n", var_type->type);
   }
-  return &error_def;
+  return error_def;
 }
 
 type_def * compile_expr(type_def * expected_type, c_block * block, c_value * val,  expr e ){
@@ -358,7 +358,7 @@ type_def * compile_expr(type_def * expected_type, c_block * block, c_value * val
     td = compile_value(expected_type, val,e.value);
     break;
   case ERROR:
-    return &error_def;
+    return error_def;
   }	  
   
   return td;
@@ -559,7 +559,7 @@ var_def * lisp_compile_expr(expr ex, compile_status * optout_status){
 	//current_allocator = trace_alloc;
 	c_root_code cl = compile_lisp_to_eval(ex);
 	//print_current_mem(1);
-	if(cl.fcndef.type->fcn.ret == &error_def){
+	if(cl.fcndef.type->fcn.ret == error_def){
 	  if(optout_status != NULL)*optout_status = COMPILE_ERROR;
 	  return;
 	}
@@ -665,7 +665,7 @@ compile_status lisp_run_expr(expr ex){
     i64 (* fcn)() = evaldef->data;
     i64 v = fcn();
     logd("%i\n",v);
-  }else if(ret == &error_def){
+  }else if(ret == error_def){
     ERROR("Error\n");
   }else if(ret == SIMPLE || ret_size  <= 8){
     void * (* fcn)() = evaldef->data;

@@ -27,8 +27,6 @@ void load_defs(){
   void_def = make_simple("void", sizeof(void));
   r(&void_def);
   void_ptr_def = make_ptr(&void_def);
-  error_def = make_simple("error",sizeof(u64));
-  r2(&error_def);
   char_def = make_simple("char",sizeof(char));
   r2(&char_def);
   i64_def = make_simple("i64",sizeof(i64));
@@ -293,6 +291,7 @@ void load_defs(){
     members[2].type = void_ptr_def;
     r2(&cmacro_def_def);
   }
+  error_def = NULL;
 }
 
 bool is_integer_type(type_def * td){

@@ -9,6 +9,7 @@
 (defun not (bool (x bool)) (eq false x))
 (defvar null (cast 0 (ptr void)))
 (defvar null-expr (cast null (ptr expr)))
+(defvar error-type (cast null (ptr type_def)))
 (defvar libc (load-lib "/lib/x86_64-linux-gnu/libc.so.6"))
 
 ;; Loading a library

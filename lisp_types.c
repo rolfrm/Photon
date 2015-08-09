@@ -326,8 +326,9 @@ void _make_dependency_graph(type_def ** defs, type_def * def, bool nested, bool 
   }
 }
 
-
 u64 size_of(type_def * t){
+  //ASSERT(t != NULL);
+  if(t == NULL) return 0;
   size_t s = 0;
   switch(t->type){
   case UNION:

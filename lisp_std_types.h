@@ -29,7 +29,7 @@ type_def type_def_kind_def;
 type_def type_def_ptr_def;
 type_def decl_def;
 type_def decl_ptr_def;
-type_def error_def;
+type_def * error_def;
 type_def fcn_def_def;
 type_def cmacro_def_def;
 type_def symbol_def;

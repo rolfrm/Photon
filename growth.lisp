@@ -225,7 +225,7 @@ length
     ))
 
 (load-game)
-;(exit 0)
+
 (let ((iteration 0)
 
       (height (cast 0.0 f64))
@@ -242,6 +242,7 @@ length
 	  (setf dead-timer 0))
 	(incr dead-timer 1)
 	)
+
       (when alive
 	(let ((lastpt (deref (+ points (cast (- points-cnt 1) i64)))))
 	  (add-to-list+ points points-cnt 
@@ -305,7 +306,6 @@ length
 		   (print "dead." newline)
 		   ))))
 
-
       (gl:bind-buffer gl:array-buffer vbo)
       (gl:vertex-attrib-pointer 0 2 gl:float gl:false 0 null) 
       (gl:uniform offset-loc (vec 0.0 0.0))
@@ -323,16 +323,16 @@ length
 
       (gl:bind-buffer gl:array-buffer vbo-circle)
       (gl:vertex-attrib-pointer 0 2 gl:float gl:false 0 null) 
-
+      
       (range it 0 5
       	     (let ((phase (* (cast it f64) (/ 1.0 5.0) pi 2.0)))
       	       (let ((offset (vec (cos phase) (sin phase))))
 		 
-      		  (gl:uniform offset-loc (+ cam-pos (* offset 0.5)))      
-      		  (gl:uniform color-loc 1.0 1.0 0.0 1)      
-      		  (gl:uniform size-loc 0.25 0.25)
-       		  (gl:draw-arrays gl:polygon 0 (cast circ-pts u32))
-		  )))
+		 (gl:uniform offset-loc (+ cam-pos (* offset 0.5)))      
+		 (gl:uniform color-loc 1.0 1.0 0.0 1)      
+		 (gl:uniform size-loc 0.25 0.25)
+		 (gl:draw-arrays gl:polygon 0 (cast circ-pts u32))
+      		  )))
       
       (gl:uniform offset-loc cam-pos)      
       (gl:uniform color-loc 1.0 1.0 1.0 1.0)      

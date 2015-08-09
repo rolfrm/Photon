@@ -80,9 +80,6 @@ type_def * var_macro(type_def * expected_type, c_block * block, c_value * val, e
       var.var.type = compile_expr(NULL, block, cval, var_expr.exprs[1]);
       
     }else if(var_expr.cnt == 3){
-      logd("----\n");
-      print_expr( &vars);
-      logd("\n=====\n");
       COMPILE_ASSERT(var_expr.exprs[0].type == VALUE 
 		     && var_expr.exprs[1].type == VALUE 
 		     && var_expr.exprs[0].value.type == SYMBOL);
@@ -94,7 +91,7 @@ type_def * var_macro(type_def * expected_type, c_block * block, c_value * val, e
     var.var.name = expr_symbol(var_expr.exprs[0]);
     
     if(!check_decl(var.var.name, var.var.type))
-      return &error_def;
+      return error_def;
     var.value = cval;
     lisp_vars[i].name = var.var.name;
     lisp_vars[i].type = var.var.type;
@@ -174,7 +171,7 @@ type_def * defvar_macro(type_def * expected_type, c_block * block,
     vl->type = C_SYMBOL;
     vl->symbol = sym;
     t = compile_expr(expected_type, block, vr, body);
-    COMPILE_ASSERT(t != &error_def);
+    COMPILE_ASSERT(t != error_def);
     val->type = C_OPERATOR;
     val->operator.left = vl;
     val->operator.right = vr;
@@ -197,12 +194,12 @@ type_def * setf_macro(type_def * expected_type, c_block * block, c_value * val, 
   c_value * vl = alloc0(sizeof(c_value));
   type_def * t1 = compile_expr(expected_type, block, vl, name);
   type_def * t = compile_expr(t1, block, vr, body);
-  if(t == &error_def){
+  if(t == error_def){
     loge("Compile error for body of setf at ");
     print_expr(&body);
     logd("\n");
   }
-  COMPILE_ASSERT(t1 != &error_def && t != &error_def);
+  COMPILE_ASSERT(t1 != error_def && t != error_def);
   if(!is_type_compatible(t,t1,body)){
     loge("same types required for setf. Requires '");
     print_min_type(t1);
@@ -233,7 +230,7 @@ type_def * load_macro(type_def * expected_type, c_block * block, c_value * val, 
   
   if(s == COMPILE_ERROR) {
     logd("COMPILE ERROR..\n");
-    return &error_def;
+    return error_def;
   }
   return compile_expr(expected_type, block, val, file_name);
 }
@@ -246,7 +243,8 @@ type_def * progn_macro(type_def * expected_type, c_block * block, c_value * val,
     if(expr_cnt - 1 == i)
       exp = expected_type;
     d = compile_expr(exp, block, &_val, expressions[i]);
-    COMPILE_ASSERT(d != &error_def);
+   
+    COMPILE_ASSERT(d != error_def);
     if(i == expr_cnt -1){
       *val = _val;
       return d;
@@ -371,7 +369,7 @@ type_def * expand_macro(type_def * expected_type, c_block * block, c_value * val
   // The rest could be deleted, but user has to mark for deletion.
   // furthermore there is a potential bug connected to last_sub_expr (see expand_macro_store)/
   if(outexpr == NULL)
-    return &error_def;
+    return error_def;
   
   return compile_expr(expected_type, block, val, *outexpr);
 }
@@ -450,7 +448,7 @@ bool recurse_expr(expr * ex, c_block * block, int id, int * cnt, var_def ** vars
     ASSERT(exp.cnt == 2);
     c_value cval;
     type_def * t = compile_expr(opaque_expr(), block, &cval, exp.exprs[1]);
-    if(t == &error_def){
+    if(t == error_def){
       return false;
     }
     
@@ -534,7 +532,7 @@ type_def * unexpr_macro(type_def * expected_type, c_block * block, c_value * val
   UNUSED(expected_type);
   UNUSED(block);UNUSED(val);UNUSED(body);
   loge("Calls to unexpr must be nested inside an expr body\n");
-  return &error_def;
+  return error_def;
 }
 
 type_def * declare_macro_macro(type_def * expected_type, c_block * block, c_value * val, 
@@ -559,7 +557,7 @@ type_def * cast_macro(type_def * expected_type, c_block * block, c_value * value
   UNUSED(expected_type);
   c_value * v = alloc0(sizeof(c_value));
   type_def * td = compile_expr(NULL, block, v, body);
-  if(td == &error_def){
+  if(td == error_def){
     loge("Error while compiling body\n");
     return td;
   }
@@ -577,7 +575,7 @@ type_def * the_macro(type_def * expected_type, c_block * block, c_value * value,
   UNUSED(expected_type);
   type_def * cast_to = expr2type(type);
   type_def * td = compile_expr(cast_to, block, value, body);
-  if(td == &error_def)
+  if(td == error_def)
     loge("Error while compiling body\n");
   return td;
 }
@@ -657,7 +655,7 @@ type_def * defun_macro(type_def * expected_type, c_block * block, c_value * valu
     vars[i].name = arg_names[i];
     vars[i].type = arg_types[i];
     if(!check_decl(vars[i].name, vars[i].type)){
-      return &error_def;
+      return error_def;
     }
   }
   
@@ -666,7 +664,7 @@ type_def * defun_macro(type_def * expected_type, c_block * block, c_value * valu
   push_symbols(&vars, &varcnt);
   type_def * td = compile_expr(ret, blk, &val, body);
   pop_symbols();
-  if(td == &error_def){
+  if(td == error_def){
     loge("Caught error while defining function '%s'.\n", symbol_name(fcnname));
     return td;
   }
@@ -677,7 +675,7 @@ type_def * defun_macro(type_def * expected_type, c_block * block, c_value * valu
     logd("\"\nfunction body returns \n\"");
     print_min_type(td);
     logd("\"\n\n");
-    return &error_def;
+    return error_def;
   }
   
   c_expr expr;
@@ -700,7 +698,7 @@ type_def * math_operator(char * operator, type_def * expected_type, c_block * bl
   c_value * comp = val;
   type_def * t1 = compile_expr(expected_type, block, val1, item1);
   type_def * t2 = compile_expr(expected_type, block, val2, item2);
-  COMPILE_ASSERT(t1 != &error_def && t1 != &void_def);
+  COMPILE_ASSERT(t1 != error_def && t1 != &void_def);
   CHECK_TYPE(expected_type,t1);
   CHECK_TYPE(expected_type,t2);
   
@@ -736,7 +734,7 @@ type_def * comparison_macro(char * operator, type_def * expected_type, c_block *
   c_value * comp = alloc0(sizeof(c_value));
   type_def * t1 = compile_expr(NULL, block, val1, item1);
   type_def * t2 = compile_expr(t1, block, val2, item2);
-  COMPILE_ASSERT(t1 != &error_def && t1 != &void_def);
+  COMPILE_ASSERT(t1 != error_def && t1 != &void_def);
   COMPILE_ASSERT(t1 == t2);
   val->type = C_CAST;
   val->cast.value = comp;
@@ -804,9 +802,9 @@ type_def * if_atom_macro(type_def * expected_type, c_block * block, c_value * va
   
   type_def * td1 = compile_expr(expected_type, &then_blk_expr.block, &then_expr.value, then);
   
-  COMPILE_ASSERT(td1 != &error_def);
+  COMPILE_ASSERT(td1 != error_def);
   type_def * td2 = compile_expr(expected_type, &else_blk_expr.block, &else_expr.value, _else);
-  COMPILE_ASSERT(td2 != &error_def);
+  COMPILE_ASSERT(td2 != error_def);
   block_add(&else_blk_expr.block, else_expr);
   block_add(&then_blk_expr.block, then_expr);
   block_add(block, c_expr_keyword("if"));
@@ -835,7 +833,7 @@ type_def * while_atom_macro(type_def * expected_type, c_block * block, c_value *
   c_expr valuexpr;
   valuexpr.type = C_VALUE;
   type_def * t = compile_expr(NULL, &bodyexpr.block, &valuexpr.value, body);
-  COMPILE_ASSERT(t != &error_def);
+  COMPILE_ASSERT(t != error_def);
   block_add(&bodyexpr.block, valuexpr);
   block_add(block, whilexpr);
   block_add(block, cmpexpr);

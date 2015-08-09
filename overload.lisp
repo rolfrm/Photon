@@ -60,7 +60,8 @@
 		(not (eq i cnt)))
       (let ((mem (deref (ptr+ mems i))))
 	(let ((type (member mem type)))
-	  (when (and (eq (fcn-arg-cnt type) (sub-expr.cnt exprs))
+	  (when (and (eq (fcn-arg-cnt type) 
+			 (sub-expr.cnt exprs))
 		     (or (eq (cast return-type i64) 0)
 			 (eq return-type (fcn-ret-type type))))
 	    (let ((j 0)
@@ -73,10 +74,12 @@
 		  (let ((ntype (type-of2 this-type (sub-expr.expr
 						    exprs (cast j u64)))))
 		    
-		    (unless
+		    (when
 			;; does this create an error?
-			(eq ntype this-type)
-	
+			(or
+			 (not (eq ntype this-type))
+			 (eq error-type ntype))
+		      
 		      (setf same false))))
 		(setf j (i64+ j 1)))
 	      (when same
