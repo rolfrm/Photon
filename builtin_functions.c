@@ -127,7 +127,7 @@ bool is_fcn_type(type_def * t){
 }
 
 bool is_ptr_type(type_def * t){
-  return t->type == POINTER;
+  return t != NULL && t->type == POINTER;
 }
 
 type_def ** fcn_arg_types(type_def * td){
