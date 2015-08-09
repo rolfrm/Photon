@@ -5,7 +5,7 @@
 #include "lisp_compiler.h"
 #include "expr_utils.h"
 #include <dlfcn.h>
-
+#include "lisp_std_types.h"
 void defun(char * name, type_def * t, void * fcn){
   define_variable(get_symbol(name), t, fcn, true);
 }
@@ -19,8 +19,8 @@ type_def * ptr_inner(type_def * ptr_def){
     loge("Can only get inner pointer of a pointer type;\ngot:");
     print_decl(ptr_def, get_symbol("tmp"));
     logd("\n");
-    ERROR("Unable to get inner pointer");
-    return NULL;
+    //ERROR("Unable to get inner pointer");
+    return &error_def;
   }
   return ptr_def->ptr.inner;
 }

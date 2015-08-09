@@ -80,6 +80,9 @@ type_def * var_macro(type_def * expected_type, c_block * block, c_value * val, e
       var.var.type = compile_expr(NULL, block, cval, var_expr.exprs[1]);
       
     }else if(var_expr.cnt == 3){
+      logd("----\n");
+      print_expr( &vars);
+      logd("\n=====\n");
       COMPILE_ASSERT(var_expr.exprs[0].type == VALUE 
 		     && var_expr.exprs[1].type == VALUE 
 		     && var_expr.exprs[0].value.type == SYMBOL);
@@ -1013,12 +1016,9 @@ expr * sub_expr_skip(expr * e){
   return e2;
 }
 
-static int symid = 0;
-
 expr * gensym(){
-  char buf[100];
-  sprintf(buf, "_sym_%i", symid++);
-  expr e = symbol_expr(clone(buf, strlen(buf)));
+  static int symid = 0;
+  expr e = symbol_expr2(get_symbol_fmt("__sym_%i", symid++));
   return (expr *) clone(&e, sizeof(e));
 }
 

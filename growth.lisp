@@ -266,12 +266,13 @@ length
 	  (setf cam-pos (deref (+ points (cast (- points-cnt 1) i64))))
 	  (load-points))
 	
+	
 	(let ((cheight (deref (+ points (cast (- points-cnt 1) i64)))))
 	  (when (> (member cheight y) height)
 	    (setf height (member cheight y))
 	    (print "height: " height newline))
 	  ))
-
+      
       (setf speed (* 0.9995 speed))
       (gl:clear gl:color-buffer-bit)
       (gl:uniform cam-size-loc cam-size)
@@ -289,10 +290,12 @@ length
 	       (gl:uniform size-loc (vec (member circle z) (member circle z)))
 	       (gl:draw-arrays gl:polygon 0 (cast circ-pts u32))))
 
+
       (let ((r (deref grass-rects)))
 	(setf (member r upper-left)
 	    (+ (member r upper-left) (vec 0 0.095)))
 	(setf (deref grass-rects) r))
+      
       (when alive
 	(range it 0 grass-rect-cnt
 	       (let ((r (deref (+ grass-rects it))))
@@ -309,7 +312,7 @@ length
       (gl:uniform size-loc (vec 1 1))
       (gl:uniform color-loc 0.5 0.8 0.3 1)
       (gl:draw-arrays gl:line-strip 0 (cast points-cnt u32))
-
+      
       (load-boxes)
       (gl:bind-buffer gl:array-buffer vbo-grass-boxes)
       (gl:vertex-attrib-pointer 0 2 gl:float gl:false 0 null) 
@@ -320,13 +323,16 @@ length
 
       (gl:bind-buffer gl:array-buffer vbo-circle)
       (gl:vertex-attrib-pointer 0 2 gl:float gl:false 0 null) 
+
       (range it 0 5
-	     (let ((phase (* (cast it f64) (/ 1.0 5.0) pi 2.0)))
-	       (let ((offset (vec (cos phase) (sin phase))))
-		 (gl:uniform offset-loc (+ cam-pos (* offset 0.5)))      
-		 (gl:uniform color-loc 1.0 1.0 0.0 1)      
-		 (gl:uniform size-loc 0.25 0.25)
-		 (gl:draw-arrays gl:polygon 0 (cast circ-pts u32)))))
+      	     (let ((phase (* (cast it f64) (/ 1.0 5.0) pi 2.0)))
+      	       (let ((offset (vec (cos phase) (sin phase))))
+		 
+      		  (gl:uniform offset-loc (+ cam-pos (* offset 0.5)))      
+      		  (gl:uniform color-loc 1.0 1.0 0.0 1)      
+      		  (gl:uniform size-loc 0.25 0.25)
+       		  (gl:draw-arrays gl:polygon 0 (cast circ-pts u32))
+		  )))
       
       (gl:uniform offset-loc cam-pos)      
       (gl:uniform color-loc 1.0 1.0 1.0 1.0)      
