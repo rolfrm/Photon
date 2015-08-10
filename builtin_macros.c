@@ -11,6 +11,7 @@
 #include "expr_utils.h"
 #include <stdlib.h>
 type_def * setf_macro(type_def * expected_type, c_block * block, c_value * val, expr name, expr body);
+bool lisp_print_errors = true;
 type_def * opaque_expr(){
   static type_def * exprtd = NULL;
   if(exprtd == NULL){
@@ -212,7 +213,7 @@ type_def * setf_macro(type_def * expected_type, c_block * block, c_value * val, 
     logd("\nexpr:\n");
     print_expr(&body);
     logd("\n");
-    ERROR("cannot implicitly convert type");
+    COMPILE_ERROR("cannot implicitly convert type");
   }
   val->type = C_OPERATOR;
   val->operator.left = vl;
@@ -228,9 +229,8 @@ type_def * load_macro(type_def * expected_type, c_block * block, c_value * val, 
   compile_status s = lisp_run_script_file(filename);
   dealloc(filename);
   
-  if(s == COMPILE_ERROR) {
-    logd("COMPILE ERROR..\n");
-    return error_def;
+  if(s == COMPILE_ERROR){
+    COMPILE_ERROR("Unable to compile and run '%s'.", filename);
   }
   return compile_expr(expected_type, block, val, file_name);
 }
@@ -368,8 +368,9 @@ type_def * expand_macro(type_def * expected_type, c_block * block, c_value * val
   // Anything going in is already deleted later, stuff going out might be. 
   // The rest could be deleted, but user has to mark for deletion.
   // furthermore there is a potential bug connected to last_sub_expr (see expand_macro_store)/
+  
   if(outexpr == NULL)
-    return error_def;
+    COMPILE_ERROR("Unable to expand macro '%s'.", symbol_name(name));
   
   return compile_expr(expected_type, block, val, *outexpr);
 }

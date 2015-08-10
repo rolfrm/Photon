@@ -30,9 +30,11 @@ typedef enum {
   COMPILE_ERROR
 }compile_status;
 
-#define COMPILE_ASSERT(expr) if(!(expr)){loge("at %s : %i:", __FILE__, __LINE__);loge("Compile error '" #expr "' at %s: %l", __FILE__, __LINE__ ); logd("\n");return error_def;}
+extern bool lisp_print_errors;
 
-#define COMPILE_ERROR(fmt, ...) {loge("at %s : %i: ", __FILE__, __LINE__);loge(fmt,##__VA_ARGS__);logd("\n"); return error_def;}
+#define COMPILE_ASSERT(expr) if(!(expr)){ if(lisp_print_errors){loge("at %s : %i:", __FILE__, __LINE__);loge("Compile error '" #expr "' at %s: %l", __FILE__, __LINE__ ); logd("\n");}return error_def;}
+
+#define COMPILE_ERROR(fmt, ...) {if(lisp_print_errors){loge("at %s : %i: ", __FILE__, __LINE__);loge(fmt,##__VA_ARGS__);logd("\n"); }return error_def;}
 
 #define CHECK_TYPE(expected, required) if(expected != NULL && expected != &void_def && required != expected) (COMPILE_ERROR("Unsupported type"));
 

@@ -108,7 +108,10 @@ type_def * type_of2(type_def * expected_type, expr * ex){
   blk.exprs = NULL;
   blk.expr_cnt = 0;
   c_value val;
+  bool prev_print = lisp_print_errors;
+  lisp_print_errors = false;
   type_def * td = compile_expr(expected_type, &blk, &val, *ex);
+  lisp_print_errors = prev_print;
   c_block_delete(blk);
   c_value_delete(val);
   return td;
