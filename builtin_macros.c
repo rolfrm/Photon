@@ -381,7 +381,6 @@ int recurse_count(expr ex){
   sub_expr exp = ex.sub_expr;
   if(exp.cnt > 0 && is_symbol(exp.exprs[0]) 
      && expr_symbol(exp.exprs[0]).id == get_symbol("unexpr").id){
-    //ASSERT(exp.cnt == 2);
     return 1;
   }
   
@@ -505,11 +504,9 @@ type_def * expr_macro(type_def * expected_type, c_block * block, c_value * val, 
   ftype.fcn.cnt = cnt + 1;
 
   type_def * ftype2 = type_pool_get(&ftype);
-  char _expandname[20];
-  sprintf(_expandname, "___expand%i", cnt);
-  symbol expandname = get_symbol(_expandname);
+  symbol expandname = get_symbol_fmt("___expand%i", cnt);
   if(get_global(expandname) == NULL)
-    defun(_expandname, ftype2, expand_expr);
+    defun(symbol_name(expandname), ftype2, expand_expr);
 
   expr callexprs[cnt + 2];
   callexprs[0] = symbol_expr2(expandname);
@@ -526,15 +523,13 @@ type_def * expr_macro(type_def * expected_type, c_block * block, c_value * val, 
   pop_symbols();
   list_clean((void **) &vars, &vars_cnt);
   return td;
-
 }
 
-// Really just a sanity check
+// Just a code sanity check. Will generate an error if unexpr is used outside expr.
 type_def * unexpr_macro(type_def * expected_type, c_block * block, c_value * val, expr body){
   UNUSED(expected_type);
   UNUSED(block);UNUSED(val);UNUSED(body);
-  loge("Calls to unexpr must be nested inside an expr body\n");
-  return error_def;
+  COMPILE_ERROR("Calls to unexpr must be nested inside an expr body\n");
 }
 
 type_def * declare_macro_macro(type_def * expected_type, c_block * block, c_value * val, 
@@ -554,34 +549,34 @@ type_def * declare_macro_macro(type_def * expected_type, c_block * block, c_valu
   return compile_value(expected_type, val, string_expr(read_symbol(macro_name)).value);
 }
 
+// Casts a variable to a new type.
 type_def * cast_macro(type_def * expected_type, c_block * block, c_value * value, 
 		      expr body, expr type){
-  UNUSED(expected_type);
   c_value * v = alloc0(sizeof(c_value));
   type_def * td = compile_expr(NULL, block, v, body);
-  if(td == error_def){
-    loge("Error while compiling body\n");
-    return td;
-  }
-	  
+  COMPILE_ASSERT(td != error_def);	  
   type_def * cast_to = expr2type(type);
-  //CHECK_TYPE(expected_type, cast_to);
+  CHECK_TYPE(expected_type, cast_to);
   value->type = C_CAST;
   value->cast.value = v;
   value->cast.type = cast_to;
   return cast_to;
 }
 
+// Ensures that the type constraints knows which type this should become.
+// Kind of the opposite of what cast does.
 type_def * the_macro(type_def * expected_type, c_block * block, c_value * value, 
 		      expr body, expr type){
-  UNUSED(expected_type);
-  type_def * cast_to = expr2type(type);
-  type_def * td = compile_expr(cast_to, block, value, body);
-  if(td == error_def)
-    loge("Error while compiling body\n");
+  type_def * type_constraint = expr2type(type);
+  COMPILE_ASSERT(type_constraint != error_def);
+  CHECK_TYPE(expected_type, type_constraint);
+  type_def * td = compile_expr(type_constraint, block, value, body);
+  COMPILE_ASSERT(td != error_def);
+  COMPILE_ASSERT(td == type_constraint);
   return td;
 }
 
+// Todo: consider replacing quote with str
 type_def * quote_macro(type_def * expected_type, c_block * block, c_value * value, expr name){
   type_def * sym_type = str2type("(ptr symbol)");
   CHECK_TYPE(expected_type, sym_type);
@@ -604,7 +599,7 @@ type_def * quote_macro(type_def * expected_type, c_block * block, c_value * valu
 }
 
 type_def * defun_macro(type_def * expected_type, c_block * block, c_value * value, expr name, expr args, expr body){
-  UNUSED(expected_type);
+  CHECK_TYPE(expected_type, char_ptr_def);
 
   // This function is rather complicated.
   // it handles turning something this: (defun funname (void (a i64) (b i64)) (+ a b)) 
