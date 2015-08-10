@@ -576,26 +576,10 @@ type_def * the_macro(type_def * expected_type, c_block * block, c_value * value,
   return td;
 }
 
-// Todo: consider replacing quote with str
-type_def * quote_macro(type_def * expected_type, c_block * block, c_value * value, expr name){
-  type_def * sym_type = str2type("(ptr symbol)");
-  CHECK_TYPE(expected_type, sym_type);
-  TEST_ASSERT(is_symbol(name));
-  expr nexpr[2];
-  nexpr[1] = name;
-  nexpr[1].value.type = STRING;
-  nexpr[1].type = VALUE;
-
-  char * fcn= "get-symbol";
-  nexpr[0].type = VALUE;
-  nexpr[0].value.type = SYMBOL;
-  nexpr[0].value.value = fcn;
-  nexpr[0].value.strln = strlen(fcn); 
-  expr pexpr;
-  pexpr.type = EXPR;
-  pexpr.sub_expr.exprs = nexpr;
-  pexpr.sub_expr.cnt = array_count(nexpr);
-  return compile_expr(sym_type, block, value, pexpr); 
+type_def * stringify_macro(type_def * expected_type, c_block * block, c_value * value, expr str){
+  TEST_ASSERT(is_symbol(str));
+  str.value.type = STRING;
+  return compile_expr(expected_type, block, value, str);
 }
 
 type_def * defun_macro(type_def * expected_type, c_block * block, c_value * value, expr name, expr args, expr body){
@@ -604,12 +588,10 @@ type_def * defun_macro(type_def * expected_type, c_block * block, c_value * valu
   // This function is rather complicated.
   // it handles turning something this: (defun funname (void (a i64) (b i64)) (+ a b)) 
   // into a function that can be called from througout the system.
-
   // there is really no simple way of doing this. <100 lines of code is ok for this task.
   // it generates a new c AST for defining the function and compiles it runtime.
   // it then registers the new function as a variable and returns the name of it.
 
-  UNUSED(block);
   COMPILE_ASSERT(is_symbol(name));
   COMPILE_ASSERT(args.type == EXPR && args.sub_expr.cnt > 0);
 
@@ -686,7 +668,7 @@ type_def * defun_macro(type_def * expected_type, c_block * block, c_value * valu
   compile_as_c(&newfcn_root,1);
   c_root_code_delete(newfcn_root);
   // ** Just return the function name ** //
-  return compile_value(char_ptr_def, value, string_expr(symbol_name(fcnname)).value);
+  return compile_expr(char_ptr_def, block, value, string_expr(symbol_name(fcnname)));
 }
 
 type_def * math_operator(char * operator, type_def * expected_type, c_block * block, c_value * val, expr item1, expr item2){
@@ -1041,7 +1023,7 @@ void builtin_macros_load(){
   define_macro("the", 2, the_macro);
   define_macro("defvar", -1, defvar_macro);
   define_macro("load", 1, load_macro);
-  define_macro("quote", 1, quote_macro);
+  define_macro("stringify", 1, stringify_macro);
   define_macro("setf", 2, setf_macro);
 
   define_macro("declare-macro", -1, declare_macro_macro);

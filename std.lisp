@@ -12,6 +12,10 @@
 (defvar error-type (cast null (ptr type_def)))
 (defvar libc (load-lib "/lib/x86_64-linux-gnu/libc.so.6"))
 
+(defun +quote ((ptr expr) (sstr (ptr expr)))
+  (expr (get-symbol (stringify (unexpr sstr)))))
+(declare-macro quote +quote)
+
 ;; Loading a library
 (defun +load-symbol+ ((ptr expr) (_lib (ptr expr)) (name (ptr expr)) (cname (ptr expr)) (_type (ptr expr)))
   (expr (load-symbol (unexpr _lib) 
