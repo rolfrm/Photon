@@ -672,12 +672,17 @@ type_def * defun_macro(type_def * expected_type, c_block * block, c_value * valu
 }
 
 type_def * math_operator(char * operator, type_def * expected_type, c_block * block, c_value * val, expr item1, expr item2){
+  if(expected_type != NULL)
+    COMPILE_ASSERT(is_number_type(expected_type));
   c_value * val1 = alloc0(sizeof(c_value));
   c_value * val2 = alloc0(sizeof(c_value));
   c_value * comp = val;
   type_def * t1 = compile_expr(expected_type, block, val1, item1);
-  type_def * t2 = compile_expr(expected_type, block, val2, item2);
   COMPILE_ASSERT(t1 != error_def && t1 != &void_def);
+  COMPILE_ASSERT(is_number_type(t1));
+
+  type_def * t2 = compile_expr(expected_type, block, val2, item2);
+  COMPILE_ASSERT(is_number_type(t2));  
   CHECK_TYPE(expected_type,t1);
   CHECK_TYPE(expected_type,t2);
   
@@ -685,7 +690,6 @@ type_def * math_operator(char * operator, type_def * expected_type, c_block * bl
   comp->operator.operator = operator;
   comp->operator.left = val1;
   comp->operator.right = val2;
-  
   return t1;
 }
 
@@ -707,7 +711,6 @@ type_def * divide_macro(type_def * expected_type, c_block * block, c_value * val
 
 type_def * comparison_macro(char * operator, type_def * expected_type, c_block * block, c_value * val, expr item1, expr item2){
   CHECK_TYPE(expected_type, &bool_def);
-  ASSERT(expected_type != &void_def);
   c_value * val1 = alloc0(sizeof(c_value));
   c_value * val2 = alloc0(sizeof(c_value));
   c_value * comp = alloc0(sizeof(c_value));
@@ -745,23 +748,8 @@ type_def * beq_macro(type_def * expected_type, c_block * block, c_value * val, e
   return comparison_macro(">=", expected_type, block, val, item1, item2);
 }
 
-symbol get_tmp_sym(){
-  static int tmpid = 0;
-  symbol tmpsym;
-  do{
-    tmpsym = get_symbol_fmt("_tmp%i", tmpid);
-    tmpid++;
-  }while(get_any_variable(tmpsym) != NULL);
-  return tmpsym;
-}
-
 type_def * if_atom_macro(type_def * expected_type, c_block * block, c_value * val, expr cnd, expr then, expr _else){
-  if(expected_type != NULL && expected_type != &void_def){
-    print_decl(expected_type, get_symbol("tmp"));
-    print_expr(&cnd);
-    logd("\n");
-    ERROR("!!");
-  }
+  CHECK_TYPE(expected_type, &void_def);
   expected_type = NULL;
   
   c_expr cmpexpr;
@@ -877,14 +865,15 @@ type_def * boolean_operator(char * operator, type_def * expected_type, c_block *
 }
 
 type_def * bitwise_operator(char * operator, type_def * expected_type, c_block * blk, c_value * val, expr left, expr right){
-  UNUSED(expected_type);
-  c_value left_value, right_value;
-  type_def * left_t = compile_expr(&i64_def, blk,&left_value,left);
-  type_def * right_t = compile_expr(&i64_def, blk,&right_value,right);
-  COMPILE_ASSERT(left_t == &i64_def && left_t == right_t);
+  if(expected_type != NULL)
+    COMPILE_ASSERT(is_integer_type(expected_type));
+  c_value * left_value = alloc(sizeof(c_value)), * right_value = alloc(sizeof(c_value));
+  type_def * left_t = compile_expr(expected_type, blk,left_value,left);
+  type_def * right_t = compile_expr(left_t, blk,right_value,right);
+  COMPILE_ASSERT(is_integer_type(left_t) && left_t == right_t);
   val->type = C_OPERATOR;
-  val->operator.left = clone(&left_value, sizeof(c_value));
-  val->operator.right = clone(&right_value, sizeof(c_value));
+  val->operator.left = left_value;
+  val->operator.right = right_value;
   val->operator.operator = operator;
   return left_t;
 }
@@ -951,7 +940,7 @@ expr * symbol2expr(symbol * s){
   out->type = VALUE;
   out->value.type = SYMBOL;
   out->value.value = symbol_name(*s);
-  out->value.strln = strlen(symbol_name(*s));
+  out->value.strln = strlen(out->value.value);
   return out;
 }
 
@@ -1035,12 +1024,11 @@ void builtin_macros_load(){
   define_macro(">", 2, bigger_than_macro);
   define_macro("<=", 2, leq_macro);
   define_macro(">=", 2, beq_macro);
-  //define_macro("if", 3, if_macro);
   define_macro("if!", 3, if_atom_macro);
 
   define_macro("bit-or", 2, bitor_operator);
   define_macro("bit-and", 2, bitand_operator);
-  define_macro("<<", 2, bit_leftshift_operator);
+   define_macro("<<", 2, bit_leftshift_operator);
   define_macro(">>", 2, bit_rightshift_operator);
 
   define_macro("while!", 2, while_atom_macro);

@@ -311,4 +311,7 @@ bool is_float_type(type_def * td){
   return td == &f32_def || td == &f64_def;
 }
 
+bool is_number_type(type_def *td){
+  return is_float_type(td) || is_integer_type(td);
+}
 

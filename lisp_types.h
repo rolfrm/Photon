@@ -114,3 +114,4 @@ type_def * get_inner_function(type_def * td, int * out_ptrs);
 
 bool is_integer_type(type_def * td);
 bool is_float_type(type_def * td);
+bool is_number_type(type_def * td);
