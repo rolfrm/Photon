@@ -381,13 +381,13 @@ int recurse_count(expr ex){
   sub_expr exp = ex.sub_expr;
   if(exp.cnt > 0 && is_symbol(exp.exprs[0]) 
      && expr_symbol(exp.exprs[0]).id == get_symbol("unexpr").id){
-    ASSERT(exp.cnt == 2);
+    //ASSERT(exp.cnt == 2);
     return 1;
   }
   
   if(exp.cnt > 0 && is_symbol(exp.exprs[0]) 
      && expr_symbol(exp.exprs[0]).id == get_symbol("expr").id){
-    ASSERT(exp.cnt == 2);
+    //ASSERT(exp.cnt == 2);
     return 0;
   }
 
@@ -430,7 +430,6 @@ expr * expand_expr(expr * exprs, ...){
   expr * list[nexprs];
   for(int i = 0; i < nexprs; i++)
     list[i] =va_arg(vl, expr *);
-
   va_end(vl);
   expr _new = recurse_expand(*first, list, &cnt);
   return clone(&_new, sizeof(expr));
@@ -446,7 +445,9 @@ bool recurse_expr(expr * ex, c_block * block, int id, int * cnt, var_def ** vars
   sub_expr exp = ex->sub_expr;
   if(exp.cnt > 0 && is_symbol(exp.exprs[0]) 
      && expr_symbol(exp.exprs[0]).id == get_symbol("unexpr").id){
-    ASSERT(exp.cnt == 2);
+    if(exp.cnt != 2)
+      return false;
+    
     c_value cval;
     type_def * t = compile_expr(opaque_expr(), block, &cval, exp.exprs[1]);
     if(t == error_def){
