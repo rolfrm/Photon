@@ -57,6 +57,7 @@ char * parse_symbol(char * code, value_expr * sym){
   return end;
 }
 
+// assuming we are standing on the first ", this will return the position after the next '"', except if it is iscaped by \\.
 char * read_to_end_of_string(char * code){
   while(true){
     code++;
@@ -73,10 +74,9 @@ char * read_to_end_of_string(char * code){
 
 char * parse_string(char * code, value_expr * string){
   if(*code != '"') return NULL;
-  code++;
   char * end = read_to_end_of_string(code);
-  string->value = code;
-  string->strln = (int) (end - code - 1); // -1: do not include last \" 
+  string->value = code + 1;
+  string->strln = (int) (end - code - 2);
   string->type = STRING;
   return end;
 }
