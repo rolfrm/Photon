@@ -26,6 +26,7 @@
 
 
 (defvar pi 3.141592653)
+(defvar 2pi (* pi 2))
 (load "vec2.lisp")
 
 (type (alias (ptr i32) thread-handle))

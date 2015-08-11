@@ -2,7 +2,7 @@
 (load "glfw.lisp")
 (load "gl.lisp")
 (load "gl-ext.lisp")
-;(load "truetype.lisp")
+(load "truetype.lisp")
 ;(exit 0)
 (glfw:init)
 (defvar win (glfw:create-window 400 400 "Flowery!" null null))
@@ -96,11 +96,12 @@ length
 
 (defvar circ-pts (cast 64 i64))
 (let ((buf2 (cast (alloc (* 2 (size-of (type f32)) (cast circ-pts u64))) (ptr f32))))
-  (range it 0 (cast circ-pts i64)
-	 (setf (deref (+ buf2 (* it 2)))
-	       (sin32 (* 0.1 (cast it f32))))
-     (setf (deref (+ buf2 (* it 2) 1))
-	   (cos32 (* 0.1 (cast it f32)))))
+  (range it 0 circ-pts
+	 (let ((phase (* (cast it f32) (/ (cast 2pi f32) (cast circ-pts f32))))
+	       (buf3 (+ buf2 (* it 2))))
+	   (print phase newline)
+	   (setf (deref buf3) (sin32 phase))
+	   (setf (deref (+ buf3 1)) (cos32 phase))))
   (let ((s (* (size-of (type f32)) (cast circ-pts u64) (cast 2 u64))))
 
     (gl:buffer-data gl:array-buffer (cast s u32) (cast buf2 (ptr void)) gl:static-draw)
@@ -111,7 +112,6 @@ length
   (size vec2))
 (defvar rect-default :type rect)
 (memset (cast (addrof rect-default) (ptr void)) 0 (size-of (type rect)))
-
 
 (defvar vbo-grass-boxes (cast 0 u32))
 (gl:gen-buffers 1 (addrof vbo-grass-boxes))
@@ -125,10 +125,9 @@ length
     (setf (member r size) size)
     r))
 
-
 (defun load-boxes(void)
-  (let ((size (cast (* grass-rect-cnt (cast (size-of (type f32)) i64) 4 2) u64)))
-  (let ((buf (cast (alloc size) (ptr f32))))
+  (let ((size (* (cast grass-rect-cnt u64) (size-of (type f32)) 4 2)))
+    (let ((buf (cast (alloc size) (ptr f32))))
     ; n rects x 4 vertices x 2 dimensions
     (range it 0 grass-rect-cnt
 	   (let ((offset (+ buf (* it 4 2)))
@@ -189,8 +188,6 @@ length
 	(if (< amount (- 0 dead-zone))
 	    (+ amount dead-zone)
 	    0.0))))
-  
-      
 
 (defun load-game(void)
   (progn
@@ -202,7 +199,7 @@ length
     ;(setf cam-size (vec 50 50))
     (setf circles (cast null (ptr vec3)))
     (setf circle-cnt 0)
-    (setf speed 0.12)
+    (setf speed 0.10)
 
     (clear-list+ grass-rects grass-rect-cnt)
     (add-to-list+ grass-rects grass-rect-cnt (make-rect (vec -500 -500) (vec 1000 500)))
@@ -244,7 +241,7 @@ length
 	)
 
       (when alive
-	(let ((lastpt (deref (+ points (cast (- points-cnt 1) i64)))))
+	(let ((lastpt (deref (+ points (- points-cnt 1)))))
 	  (add-to-list+ points points-cnt 
 			(+ lastpt 
 					;(* (vec (randf) (randf)) speed 1.0)
@@ -274,7 +271,7 @@ length
 	    (print "height: " height newline))
 	  ))
       
-      (setf speed (* 0.9995 speed))
+      ;(setf speed (* 0.9995 speed))
       (gl:clear gl:color-buffer-bit)
       (gl:uniform cam-size-loc cam-size)
       (gl:uniform cam-loc cam-pos)
@@ -294,7 +291,7 @@ length
 
       (let ((r (deref grass-rects)))
 	(setf (member r upper-left)
-	    (+ (member r upper-left) (vec 0 0.095)))
+	    (+ (member r upper-left) (vec 0 0.1)))
 	(setf (deref grass-rects) r))
       
       (when alive

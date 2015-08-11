@@ -15,7 +15,8 @@ void print_type(type_def * def){
 }
 
 type_def * ptr_inner(type_def * ptr_def){
-  if(ptr_def->type != POINTER){
+  
+  if(ptr_def == error_def || ptr_def->type != POINTER){
     return error_def;
   }
   return ptr_def->ptr.inner;

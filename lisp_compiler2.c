@@ -337,7 +337,7 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
   }else if(var_type == macro_store_type()){
     return expand_macro(expected_type, block, value, se->exprs, se->cnt);
   }else{
-    ERROR("Not supported.. %i\n", var_type->type);
+    COMPILE_ERROR("Not supported.. %i\n", var_type->type);
   }
   return error_def;
 }

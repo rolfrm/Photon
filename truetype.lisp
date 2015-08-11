@@ -44,7 +44,7 @@
 
 ;stbtt_GetCodepointBitmapBoxSubpixel
 ;void stbtt_GetCodepointBitmapBoxSubpixel(const stbtt_fontinfo *font, int codepoint, float scale_x, float scale_y, float shift_x, float shift_y, int *ix0, int *iy0, int *ix1, int *iy1)
-(load-symbol+ libtt tt:get-codepoint-bitmap-box-sub-pixel stbtt_GetCodepointBitmapBoxSubpixel
+(load-symbol+ libtt tt:get-codepoint-bitmap-box-subpixel stbtt_GetCodepointBitmapBoxSubpixel
 	      (fcn void (info (ptr tt:fontinfo)) (codepoint i32) (scale-x f32) (scale-y f32)
 		   (shift-x f32) (shift-y f32) (ix0 (ptr i32)) (iy0 (ptr i32)) 
 		   (ix1 (ptr i32)) (iy1 (ptr i32))))
@@ -119,39 +119,103 @@
       	    (setf (deref out-pt) out)))1
       (+ string (+ nchars 1)))))
 
+(defstruct size
+  (width i64)
+  (height i64))
 
-;; (defun test(void)
-;;   (let ((baked (cast (alloc0 100) (ptr tt:fontinfo)))
-;; 	(fontpath "/usr/share/fonts/truetype/freefont/FreeMono.ttf")
-;; 	(s (cast 0 u64)))
-    
-;;     (let ((data (read-all-data fontpath (addrof s))))
-;;       (print "read font:" (cast data i64))
-;;       (if (ptr-null? data)
-;; 	  (print "Error!" newline)
-;; 	  (let ((xpos (cast 0.0 i32)) (ypos (cast 0.0 i32))
-;; 		(width (cast 0 i32)) (height (cast 0 i32)))
-;; 	    (tt:init-font baked data (tt:get-font-offset-for-index data 0))
-;; 	    (let ((h (tt:scale-for-pixel-height baked 15))
-;; 		  (codept (cast 0xb5 i32)))
-;; 	      (print newline "codepoint:" codept newline)
-;; 	      (let ((bitmap (tt:get-codepoint-bitmap baked 0 0.05 codept  (addrof width) (addrof height) (addrof xpos) (addrof ypos))))
-;; 		(range y 0 (cast height i64)
-;; 		       (range x 0 (cast width i64)
-;; 			      (let ((v (cast (deref (ptr+ bitmap (+ x (* y (cast width i64)))))
-;; 					     i64)))
-;; 			      (if (eq v -1)
-;; 				(print " ")
-;; 				(print "#"))))
-;; 		     (print newline))
-	      
-;; 	    (print newline width " " height " " "inited.." newline))))))
-	
-
-;;     (print "Testing ttf" newline)))
-;(test)
-;(let ((cpt (cast 0 i32)))
-;  (read-utf8-codepoint "µ" (addrof cpt))
-;  (print-hex (cast cpt i64))
-;  (print newline))
+(defun print-size(void (s size))
+  (print "(size width: " (member s width) " height: " (member s
+							      height)
+	 ")" newline))
+(overload print print-size)
+(let ((s :type size))
+  (setf (member s width) 10)
+  (setf (member s height) (+ (cast 1 i64) 1))
+  (print s))
 ;(exit 0)
+(defun get-text-size (size (text (ptr char)) (font-size i32) (max-width i32) (font (ptr tt:fontinfo)))
+  (let ((len (cast (strlen text) i64))
+	(ascent :type i32)
+	(xpos 2.0 f32)
+	(max-width-reached (the 0 i64))
+	(scale (tt:scale-for-pixel-height font (cast font-size f32))))
+    (tt:get-font-v-metrics font (addrof ascent) (cast 0 (ptr i32)) (cast 0 (ptr i32)))
+    (let ((baseline (* ascent font-size)))
+       (range it 0 len ;x0,y0,x1,y1
+      	     (let ((advance :type i32)
+      		   (lsb :type i32)
+      		   (x0 :type i32)
+      		   (x1 :type i32)
+      		   (y0 :type i32)
+      		   (y1 :type i32)
+      		   (x-shift (the 0.0 f32))
+		   (codepoint (cast (deref (+ text it)) i32)))
+	       
+	       (tt:get-codepoint-h-metrics font codepoint (addrof advance) (addrof lsb))
+      ;; 	     ;stbtt_GetCodepointBitmapBoxSubpixel(&font, text[ch], scale,scale,x_shift,0, &x0,&y0,&x1,&y1);
+	       (tt:get-codepoint-bitmap-box-subpixel font codepoint 
+						     scale scale x-shift 0 (addrof x0) (addrof y0)
+						     (addrof x1)
+						     (addrof y1))
+	       (print x0 " " scale newline)
+       	     (when (> (cast (+ xpos (cast advance f32)) i32) max-width)
+       	       (setf xpos 0)
+       	       (incr baseline (* advance font-size)))
+       	     (incr xpos (cast advance f32))
+       	     (setf max-width-reached (cast xpos i64)) 
+	     
+	       ))
+      ;(print (+ baseline 1))
+      (let ((s :type size))
+	(setf (member s width) max-width-reached)
+	(setf (member s height) (.+ (cast 1 i64) 1))
+	s))))
+
+	     
+;; (defun write-text ((ptr char) (out-size (ptr size)) (text (ptr char)))
+;;   (let ((len (cast (strlen text) i64)))
+;;     (range it 0 len ;x0,y0,x1,y1
+;; 	   (let ((advance :type i32)
+;; 		 (lsb :type i32)
+;; 		 (x0 :type i32)
+;; 		 (x1 :type i32)
+;; 		 (y0 :type i32)
+;; 		 (y1 :type i32))
+		 
+;;   "" )
+
+ (defun test
+     (let ((baked (cast (alloc0 100) (ptr tt:fontinfo)))
+	   (fontpath "/usr/share/fonts/truetype/freefont/FreeMono.ttf")
+	   (s (cast 0 u64)))
+       (let ((data (read-all-data fontpath (addrof s))))
+	(if (ptr-null? data)
+	    (print "Error!" newline)
+	    (let ((xpos (cast 0.0 i32)) (ypos (cast 0.0 i32))
+		  (width (cast 0 i32)) (height (cast 0 i32)))
+	      (tt:init-font baked data (tt:get-font-offset-for-index data 0))
+	      (let ((h (tt:scale-for-pixel-height baked 15))
+		    (codept (cast 0xb5 i32)))
+		(print newline "codepoint:" codept newline)
+		(print (get-text-size "!" 15 100 baked))
+		))))))
+(test)
+;(exit 0)
+
+;; 		(let ((bitmap (tt:get-codepoint-bitmap baked 0 0.05 codept  (addrof width) (addrof height) (addrof xpos) (addrof ypos))))
+;; 		  (range y 0 (cast height i64)
+;; 			 (range x 0 (cast width i64)
+;; 				(let ((v (cast (deref (ptr+ bitmap (+ x (* y (cast width i64)))))
+;; 					       i64)))
+;; 				  (if (eq v -1)
+;; 				      (print " ")
+;; 				      (print "#"))))
+;; 			 (print newline))
+		  
+;; 		  (print newline width " " height " " "inited.." newline))))))))
+;; ;;     (print "Testing ttf" newline)))
+;; 					;(let ((cpt (cast 0 i32)))
+;; 					;  (read-utf8-codepoint "µ" (addrof cpt))
+;; 					;  (print-hex (cast cpt i64))
+;; 					;  (print newline))
+

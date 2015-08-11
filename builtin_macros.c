@@ -72,7 +72,6 @@ type_def * var_macro(type_def * expected_type, c_block * block, c_value * val, e
     COMPILE_ASSERT(sexpr.exprs[i].type == EXPR);
     sub_expr var_expr = sexpr.exprs[i].sub_expr;
     
-    
     c_var var;
     if(var_expr.cnt == 2){
       COMPILE_ASSERT(var_expr.exprs[0].type == VALUE 
@@ -85,6 +84,7 @@ type_def * var_macro(type_def * expected_type, c_block * block, c_value * val, e
 		     && var_expr.exprs[1].type == VALUE 
 		     && var_expr.exprs[0].value.type == SYMBOL);
       var.var.type = expr2type(var_expr.exprs[2]);
+      COMPILE_ASSERT(var.var.type != error_def);
     }else{
       COMPILE_ERROR("Invalid var form");
     }
@@ -586,7 +586,7 @@ type_def * stringify_macro(type_def * expected_type, c_block * block, c_value * 
   return compile_expr(expected_type, block, value, str);
 }
 
-type_def * defun_macro(type_def * expected_type, c_block * block, c_value * value, expr name, expr args, expr body){
+type_def * defun_macro(type_def * expected_type, c_block * block, c_value * value, expr * sub_exprs, size_t expr_cnt){
   CHECK_TYPE(expected_type, char_ptr_def);
   if(!lisp_print_errors) return char_ptr_def;
   // This function is rather complicated.
@@ -595,10 +595,30 @@ type_def * defun_macro(type_def * expected_type, c_block * block, c_value * valu
   // there is really no simple way of doing this. <100 lines of code is ok for this task.
   // it generates a new c AST for defining the function and compiles it runtime.
   // it then registers the new function as a variable and returns the name of it.
-
+  
+  if(!(expr_cnt == 2 || expr_cnt == 3)){
+    print_expr(sub_exprs + 2);
+    logd("\n");
+    COMPILE_ERROR("Invalid number of arguments for defun %i, expected 2 or 3", expr_cnt);
+  }
+  
+  expr name = sub_exprs[0];
+  
   COMPILE_ASSERT(is_symbol(name));
-  COMPILE_ASSERT(args.type == EXPR && args.sub_expr.cnt > 0);
-
+  
+  static expr subargs[1] = {{.type = VALUE, .value = {.type = SYMBOL, .value = "void", .strln = 4}}};
+  static expr args2 = {.type = EXPR, .sub_expr.cnt = 1, .sub_expr.exprs = subargs};
+  expr args;
+  expr body;
+  if(expr_cnt == 2 || sub_exprs[1].sub_expr.cnt == 0){
+    args = args2;
+    if(expr_cnt == 2)
+      body = sub_exprs[1];
+  }else{
+    args = sub_exprs[1];
+    body = sub_exprs[2];
+  }
+  COMPILE_ASSERT(args.type == EXPR || args.sub_expr.cnt > 0);
   symbol fcnname = expr_symbol(name);
   logd("Defining function: '%s'.\n", symbol_name(fcnname));
   c_root_code newfcn_root;
@@ -1021,7 +1041,7 @@ void builtin_macros_load(){
   // Macros
   macro_store_type();
   define_macro("type", 1, type_macro);
-  define_macro("defun", 3, defun_macro);
+  define_macro("defun", -1, defun_macro);
   define_macro("var", 2, var_macro);
   define_macro("progn", -1, progn_macro);
   define_macro("cast", 2, cast_macro);
