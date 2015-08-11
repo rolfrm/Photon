@@ -83,10 +83,7 @@ var_def * get_stack_variable(symbol name);
 // Finds a variable on the stack or globally. It searches the stack from the top and last the global scope.
 var_def * get_any_variable(symbol name);
 void define_variable(symbol name, type_def * type, void * data, bool is_ptr);
-
-// Returns true if call_type is equal to arg_type or if callexpr is a literal number and call_type takes a number.
-bool is_type_compatible(type_def * call_type, type_def * arg_type, expr callexpr);
-
+ 
 // writes out the dependencies for deps as c code.
 void write_dependencies(type_def ** deps);
 

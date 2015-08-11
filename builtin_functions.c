@@ -121,10 +121,6 @@ void set_printer(symbol * sym){
   printer = sym;  
 }
 
-bool is_type_compatible2(type_def * call_type, type_def * arg_type, expr * exp){
-  return is_type_compatible(call_type, arg_type, *exp);
-}
-
 type_def * var_type(symbol * sym){
   var_def * var = get_any_variable(*sym);
   if(var != NULL)
@@ -184,7 +180,7 @@ void load_functions(){
   defun("fcn-ret-type", str2type("(fcn (ptr type_def) (t (ptr type_def)))"), fcn_ret_type);
   defun("fcn-arg-cnt", str2type("(fcn u64 (t (ptr type_def)))"), fcn_arg_cnt);
   defun("set-printer", str2type("(fcn void (ptr (ptr symbol)))"), set_printer);
-  defun("is-type-compatible", str2type("(fcn bool (call-type (ptr type_def)) (arg-type (ptr type_def)) (call-expr (ptr expr)))"), is_type_compatible2);
+
   defun("invoke", str2type("(fcn void (func (fcn void )))"), invoke);
   
   str2type("(alias (opaque-struct _ccdispatch) ccdispatch)");

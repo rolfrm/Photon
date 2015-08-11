@@ -203,7 +203,7 @@ type_def * setf_macro(type_def * expected_type, c_block * block, c_value * val, 
   type_def * t1 = compile_expr(expected_type, block, vl, name);
   type_def * t = compile_expr(t1, block, vr, body);
   COMPILE_ASSERT(t1 != error_def && t != error_def);
-  if(!is_type_compatible(t,t1,body)){
+  if(t != t1){
     loge("same types required for setf. Requires '");
     print_min_type(t1);
     loge("' got '");

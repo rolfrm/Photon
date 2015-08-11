@@ -179,20 +179,6 @@ bool is_float_literal(expr ex){
   return false;
 }
 
-bool is_type_compatible(type_def * call_type, type_def * arg_type, expr callexpr){
-  if(call_type == arg_type)
-    return true;
-  bool is_number = is_number_literal(callexpr);
-  bool is_float = is_float_literal(callexpr);
-  bool is_integral = is_number && !is_float;
-  if(is_float_type(arg_type)&& is_number){
-    return true;
-  }else if(is_integral && is_integer_type(arg_type)){
-    return true;
-  }
-  return false;	   
-}
-
 type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * value, sub_expr * se){
   COMPILE_ASSERT(se->cnt > 0);
   expr name_expr = se->exprs[0];
@@ -321,7 +307,7 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
     int err_arg = -1;
     for(i64 i = 0; i < argcnt; i++){
       farg_types[i] = compile_expr(td->fcn.args[i], block, fargs + i, args[i]);
-      if(!is_type_compatible(farg_types[i],td->fcn.args[i], args[i])){
+      if(td->fcn.args[i] != farg_types[i]){
 	char buf[10];
 	sprintf(buf, "arg%i", i);
 	symbol fcnsym = get_symbol(buf);
