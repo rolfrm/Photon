@@ -24,28 +24,29 @@ t
 (defvar tid :type i32)
 (setf a 0)
 
-(defun test-ptr (void)
-  (progn
-    (print "hello!" newline)
-    (usleep 1000000)
-    (print "thread!" newline)
-    null))
+;; (defun test-ptr (void)
+;;   (progn
+;;     (print "hello!" newline)
+;;     (usleep 1000000)
+;;     (print "thread!" newline)
+;;     null))
 
-(defun test-launch (void)
-  (progn
-    (launch (addrof test-ptr))
-    (launch (addrof test-ptr))
-    (launch (addrof test-ptr))
-    (launch (addrof test-ptr))
-    (launch (addrof test-ptr))
-))
-(test-launch)
+;; (defun test-launch (void)
+;;   (progn
+;;     (launch (addrof test-ptr))
+;;     (launch (addrof test-ptr))
+;;     (launch (addrof test-ptr))
+;;     (launch (addrof test-ptr))
+;;     (launch (addrof test-ptr))
+;; ))
+;; (test-launch)
 (set-printer (quote printnl))
 
 
 (defun *test-macro ((ptr expr) (take (ptr expr)) (exprs (ptr expr)))
     (sub-expr.expr exprs (cast (expr2number take) u64)))
-
+;(print "hello?
+;")
 (declare-macro test-macro *test-macro :rest)
 
 (test-macro 1 2 3 4)
@@ -72,16 +73,20 @@ t
 
 ((addrof plus1) 3)
 
-(defun cctest(void (userdata (ptr void)))
-  (while true
-    (print "hello cc: " userdata newline)
-    (ccyield)))
+;(defun cctest(void (userdata (ptr void)))
+;  (while true
+;    (print "hello cc: " userdata newline)
+;    (ccyield)))
 
-(defvar cc (ccstart))
-(ccthread cc cctest (cast 0 (ptr void)))
-(ccthread cc cctest (cast 3 (ptr void)))
-(ccthread cc cctest (cast 4 (ptr void)))
+;(defvar cc (ccstart))
+;(ccthread cc cctest (cast 0 (ptr void)))
+;(ccthread cc cctest (cast 3 (ptr void)))
+;(ccthread cc cctest (cast 4 (ptr void)))
 
-(for it 0 (< it 100) (i64+ it 1)
-     (ccstep cc))
+;(for it 0 (< it 100) (i64+ it 1)
+;     (ccstep cc))
 
+(defmacro anyadd (a b)
+  (expr (.+ (unexpr a) (unexpr b))))
+(overload + anyadd)
+(print (+ 1 2) newline)

@@ -61,9 +61,9 @@
 	     (setf out-expr 
 		   (expr
 		    (cast 
-		     (i64+ 
+		     (.+ 
 		      (cast (unexpr ptr) i64)
-		      (i64* (unexpr offset) 
+		      (.* (unexpr offset) 
 			    (unexpr size_expr)))
 		     (unexpr (type2expr ptr-type)))))
 	     (noop))
@@ -74,7 +74,7 @@
 (defun string-concat ((ptr char) (a (ptr char)) (b (ptr char)))
   (var ((a-len (cast (strlen a) u64))
 	(b-len (cast (strlen b) u64)))
-       (var ((buffer (alloc0 (u64+ 1 (u64+ a-len b-len)))))
+       (var ((buffer (alloc0 (.+ 1 (.+ a-len b-len)))))
 	    (progn
 	      (memcpy buffer (cast a (ptr void)) a-len)
 	      (memcpy (ptr+ buffer (cast a-len i64)) (cast b (ptr void)) b-len)
@@ -91,16 +91,16 @@
 
 (defun unfold-body ((ptr expr) (header (ptr expr)) (args (ptr expr)))
   (var ((sexprs (cast
-		 (alloc (u64* (cast (size-of (type (ptr expr))) u64)
-			      (u64+ 1 (sub-expr.cnt args)))) (ptr (ptr expr))))
+		 (alloc (.* (cast (size-of (type (ptr expr))) u64)
+			      (.+ 1 (sub-expr.cnt args)))) (ptr (ptr expr))))
 	(i (cast 0 u64)))
        (progn
 	 (setf (deref sexprs) header)
 	 (while! (not (eq  i (sub-expr.cnt args)))
 		 (progn
-		   (setf (deref (ptr+ sexprs (i64+ 1 (cast i i64)))) (sub-expr.expr args i))
-		   (setf i (u64+ i 1))))
-	 (make-sub-expr sexprs (u64+ i 1)))))
+		   (setf (deref (ptr+ sexprs (.+ 1 (cast i i64)))) (sub-expr.expr args i))
+		   (setf i (.+ i 1))))
+	 (make-sub-expr sexprs (.+ i 1)))))
 
 (defun *let ((ptr expr) (vars (ptr expr)) (args (ptr expr)))
   (expr
@@ -182,8 +182,8 @@
 	(_then (sub-expr.expr exprs 1))
 	(_else (sub-expr.expr exprs 2)))
     (let ((out-expr null-expr)
-	  (then-type (type-of2 expected-type _then))
-	  (else-type (type-of2 expected-type _else)))
+	  (then-type (type-of3 expected-type _then))
+	  (else-type (type-of3 expected-type _else)))
       (if! (and (and (eq then-type else-type) 
 		     (eq expected-type (cast null (ptr type_def))))
 		(not (eq then-type (type void))))
@@ -201,6 +201,14 @@
 	   ;; set the return value of the body
 	   ;; and the types needs to be the same.
 	   (let ((tmp-sym (gensym)))
+	     (printstr "Types:")
+	     (printstr newline)
+	     (print-type expected-type)
+	     (printstr newline)
+	     (print-type then-type)
+	     (printstr newline)
+	     (print-type else-type)
+	     (printstr newline)
 	     (if! (and (eq then-type else-type) (eq expected-type then-type))
 		  (setf out-expr
 			(expr (var (((unexpr tmp-sym) :type (unexpr (type2expr expected-type))))
@@ -228,7 +236,7 @@
     (print-expr name)
     (printstr "'.")
     (printstr newline)
-    (let ((convargs (cast (alloc (u64* (size-of (type (ptr expr))) (u64+ 1 arg-cnt))) (ptr (ptr expr))))
+    (let ((convargs (cast (alloc (.* (size-of (type (ptr expr))) (.+ 1 arg-cnt))) (ptr (ptr expr))))
 	  (it 0)
 	  (item 0))
       (if (and (eq (sub-expr.cnt args) 3)
@@ -254,7 +262,7 @@
 		       (eq (expr2symbol (sub-expr.expr args (cast it u64))) (quote &rest)))
 		      (progn
 			(setf use-rest true)
-			(setf item (i64- item 1))
+			(setf item (.- item 1))
 			(noop))
 		      (setf (deref (ptr+ convargs (i64+ 1 item)))
 			    (let ((sub-args (cast (alloc (u64* (size-of (type (ptr expr))) 2)) (ptr (ptr expr)))))
@@ -262,13 +270,13 @@
 			      (setf (deref (ptr+ sub-args 1)) exprtype)
 			      (make-sub-expr sub-args 2))))
 		 )
-	       (setf it (i64+ 1 it))
-	       (setf item (i64+ 1 item))
+	       (setf it (.+ 1 it))
+	       (setf item (.+ 1 item))
 	       )
 	     (expr
 	      (progn
 		(defun (unexpr defun-name) 
-		    (unexpr (make-sub-expr convargs (u64+ (cast (not use-rest) u64) arg-cnt ))) (unexpr body))
+		    (unexpr (make-sub-expr convargs (.+ (cast (not use-rest) u64) arg-cnt ))) (unexpr body))
 		(unexpr
 		 (let ((out-expr null-expr))
 		   (if! use-rest
@@ -296,9 +304,9 @@
 		    (cnt (ptr u64)) (data (ptr void)) (elem-size u64))
   (progn
     (setf (deref list) 
-	  (realloc (deref list) (u64* elem-size (u64+ (deref cnt) 1))))
+	  (realloc (deref list) (.* elem-size (.+ (deref cnt) 1))))
     (memcpy (cast
-	     (u64+ (cast (deref list) u64) (u64* (deref cnt) elem-size))
+	     (.+ (cast (deref list) u64) (.* (deref cnt) elem-size))
 	     (ptr void))
 	    data
 	    elem-size)

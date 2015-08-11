@@ -151,6 +151,11 @@ void print_function_decl(int ptrs, type_def * def, symbol name){
 void print_cdecl(decl idecl){
   
   type_def * def = idecl.type;
+  if(def == NULL){
+    format("(null)");
+    return;
+  }
+    
   switch(def->type){
   case ENUM:
   case UNION:
@@ -198,6 +203,11 @@ void print_decl(type_def * t, symbol name){
 }
 
 void print_def(type_def * type){
+  if(type == NULL){
+    format("(null)");
+    return;
+  }
+    
   type_def * inner;
   switch(type->type){
   case SIMPLE:

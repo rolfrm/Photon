@@ -11,15 +11,11 @@ void defun(char * name, type_def * t, void * fcn){
 }
 
 void print_type(type_def * def){
-  logd("type: '"); print_def(def); logd("'\n");
+  print_decl(def, get_symbol("t"));
 }
 
 type_def * ptr_inner(type_def * ptr_def){
   if(ptr_def->type != POINTER){
-    //loge("Can only get inner pointer of a pointer type;\ngot:");
-    //print_decl(ptr_def, get_symbol("tmp"));
-    //logd("\n");
-    //ERROR("Unable to get inner pointer");
     return error_def;
   }
   return ptr_def->ptr.inner;
@@ -83,7 +79,6 @@ i8 i8_sub(i8 a, i8 b){ return a - b; }
 i8 i8_mul(i8 a, i8 b){ return a * b; }
 i8 i8_div(i8 a, i8 b){ return a / b; }
 
-
 u64 u64_add(u64 a, u64 b){ return a + b; }
 u64 u64_sub(u64 a, u64 b){ return a - b; }
 u64 u64_mul(u64 a, u64 b){ return a * b; }
@@ -103,23 +98,31 @@ i32 i32_add(i32 a, i32 b) { return a + b; }
 i64 i64_mod(i64 a, i64 b) { return a % b; }
 i8 i8_mod(i8 a, i8 b) { return a % b; }
 
-type_def * type_of2(type_def * expected_type, expr * ex){
-  c_block blk;
+type_def * type_of3(type_def * expected_type, expr * ex){
+ c_block blk;
   blk.exprs = NULL;
   blk.expr_cnt = 0;
   c_value val;
-  bool prev_print = lisp_print_errors;
-  lisp_print_errors = false;
   type_def * td = compile_expr(expected_type, &blk, &val, *ex);
-  lisp_print_errors = prev_print;
   c_block_delete(blk);
   c_value_delete(val);
+  return td;
+}
+
+type_def * type_of2(type_def * expected_type, expr * ex){
+
+  bool prev_print = lisp_print_errors;
+  lisp_print_errors = false;
+  type_def * td = type_of3(expected_type, ex);
+  lisp_print_errors = prev_print;
   return td;
 }
 
 type_def * type_of(expr * ex){
   return type_of2(NULL, ex);
 }
+
+
 
 char * symbol_name2(symbol * sym){
   return symbol_name(*sym);
@@ -233,6 +236,8 @@ void load_functions(){
   defun("type-of",str2type("(fcn (ptr type_def) (expr (ptr expr)))"), type_of);
   defun("type-of2",str2type("(fcn (ptr type_def) (expected_type (ptr type_def)) (expr (ptr expr)))"), 
 	type_of2);
+  defun("type-of3",str2type("(fcn (ptr type_def) (expected_type (ptr type_def)) (expr (ptr expr)))"), 
+	type_of3);
   defun("print-expr", str2type("(fcn void (theexpr (ptr expr)))"), print_expr);
   defun("ptr-inner", str2type("(fcn (ptr type_def) (ptr (ptr type_def)))"),  ptr_inner);
   defun("type2expr", str2type("(fcn (ptr expr) (t (ptr type_def)))"), type2expr);

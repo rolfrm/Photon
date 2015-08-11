@@ -140,7 +140,7 @@ type_def * var_macro(type_def * expected_type, c_block * block, c_value * val, e
   block_add(block, sblk_expr);
   if(!is_void){
     type_def * ret = compile_value(expected_type, val, symbol_expr2(tmpvar.var.var.name).value);
-    ASSERT(ret == ret_type);
+    COMPILE_ASSERT(ret == ret_type);
   }else{
     val->type = C_NOTHING;
   }
@@ -195,11 +195,6 @@ type_def * setf_macro(type_def * expected_type, c_block * block, c_value * val, 
   c_value * vl = alloc0(sizeof(c_value));
   type_def * t1 = compile_expr(expected_type, block, vl, name);
   type_def * t = compile_expr(t1, block, vr, body);
-  if(t == error_def){
-    loge("Compile error for body of setf at ");
-    print_expr(&body);
-    logd("\n");
-  }
   COMPILE_ASSERT(t1 != error_def && t != error_def);
   if(!is_type_compatible(t,t1,body)){
     loge("same types required for setf. Requires '");
@@ -288,8 +283,10 @@ expr * expand_macro_store(type_def * expected_type, macro_store * ms, expr * exp
     return d(expected_type, &last_sub_expr);
   }
 
-  if(!(t->fcn.cnt == (i32)cnt || (ms->rest && t->fcn.cnt <= (i32)cnt)))
-    ERROR("Unvalid number of arguments %i for macro function '%s'", t->fcn.cnt, symbol_name(ms->fcn));
+  if(!(t->fcn.cnt == (i32)cnt || (ms->rest && t->fcn.cnt <= (i32)cnt))){
+    ERROR("Unvalid number of arguments %i for macro function '%s' expected %i.", t->fcn.cnt, symbol_name(ms->fcn), cnt);
+    return NULL;
+  }
   
   expr * (* d)(expr * e, ...) = v->data;
   expr * (* d0)() = v->data;
@@ -682,7 +679,7 @@ type_def * math_operator(char * operator, type_def * expected_type, c_block * bl
   COMPILE_ASSERT(is_number_type(t1));
 
   type_def * t2 = compile_expr(expected_type, block, val2, item2);
-  COMPILE_ASSERT(is_number_type(t2));  
+  COMPILE_ASSERT(is_number_type(t2));
   CHECK_TYPE(expected_type,t1);
   CHECK_TYPE(expected_type,t2);
   
@@ -814,7 +811,7 @@ type_def * deref_macro(type_def * expected_type, c_block * block, c_value * val,
   if(expected_type != NULL)
     expected_type = make_ptr(expected_type);
   type_def * td = compile_expr(expected_type, block, _val, ptr);
-  COMPILE_ASSERT(td->type == POINTER);
+  COMPILE_ASSERT(td != error_def && td->type == POINTER);
   val->type = C_DEREF;
   val->deref.inner = _val;
   val->deref.return_type = td->ptr.inner;
@@ -828,6 +825,7 @@ type_def * addrof_macro(type_def * expected_type, c_block * block, c_value * val
   }
   c_value * _val = new(c_value);
   type_def * td = compile_expr(expected_type, block, _val, value);
+  COMPILE_ASSERT(td != error_def);
   val->type = C_ADDRESS_OF;
   val->value = _val;
   return type_pool_get(make_ptr(td));

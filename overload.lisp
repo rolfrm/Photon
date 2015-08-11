@@ -199,55 +199,77 @@
 ;(exit 0)
 ;(overload + add3i64)
 
-(defun u8+ (u8 (a u8) (b u8))
-  (.+ a b))
+;; (defun u8+ (u8 (a u8) (b u8))
+;;   (.+ a b))
 
-(defun u8- (u8 (a u8) (b u8))
-  (.- a b))
+;; (defun u8- (u8 (a u8) (b u8))
+;;   (.- a b))
 
-(defun u8* (u8 (a u8) (b u8))
-  (.* a b))
+;; (defun u8* (u8 (a u8) (b u8))
+;;   (.* a b))
 
-(defun u8/ (u8 (a u8) (b u8))
-  (./ a b))
+;; (defun u8/ (u8 (a u8) (b u8))
+;;   (./ a b))
 
-(overload * i64*)
-(overload / i64/)
-(overload - i64-)
-(overload + i64+)
-(overload % i64%)
+;; (overload * i64*)
+;; (overload / i64/)
+;; (overload - i64-)
+;; (overload + i64+)
+ (overload % i64%)
 
-(overload * i8*)
-(overload / i8/)
-(overload - i8-)
-(overload + i8+)
+;; (overload * i8*)
+;; (overload / i8/)
+;; (overload - i8-)
+;; (overload + i8+)
 
-(overload * u8*)
-(overload / u8/)
-(overload - u8-)
-(overload + u8+)
+;; (overload * u8*)
+;; (overload / u8/)
+;; (overload - u8-)
+;; (overload + u8+)
 
-(overload + u64+)
-(overload * u64*)
-(overload - u64-)
-(overload / u64/)
+;; (overload + u64+)
+;; (overload * u64*)
+;; (overload - u64-)
+;; (overload / u64/)
 
-(overload + f+)
-(overload - f-)
-(overload * f*)
-(overload / f/)
+;; (overload + f+)
+;; (overload - f-)
+;; (overload * f*)
+;; (overload / f/)
 
-(overload + u32+)
-(overload - u32-)
-(overload * u32*)
-(overload / u32/)
+;; (overload + u32+)
+;; (overload - u32-)
+;; (overload * u32*)
+;; (overload / u32/)
 
-(overload + f32+)
-(overload - f32-)
-(overload * f32*)
-(overload / f32/)
+;; (overload + f32+)
+;; (overload - f32-)
+;; (overload * f32*)
+;; (overload / f32/)
 
-(+ 1 2)
+(defmacro any+ (a b)
+  (expr (.+ (unexpr a) (unexpr b))))
+
+(defmacro any- (a b)
+  (expr (.- (unexpr a) (unexpr b))))
+
+
+(defmacro any* (a b)
+  (expr (.* (unexpr a) (unexpr b))))
+
+(defmacro any/ (a b)
+  (expr (./ (unexpr a) (unexpr b))))
+
+(overload + ptr+)
+(overload + any+)
+(overload - any-)
+(overload * any*)
+(overload / any/)
+
+
+;(printi64 (+ 1.0 2.5))
+;(print (+ 1 2))
+;(printstr newline)
 ;(+ (* 1 3) 2)
 ;(exit 0)
 ;; (defmacro .-2 (arg1 arg2)
@@ -261,14 +283,12 @@
  
 ;; (defmacro /2 (arg1 arg2)
 ;;   (expr (.* (unexpr arg1) (unexpr arg2))))
-(overload + ptr+)
+
 
 ;; (overload - .-2)
 ;; (overload + +2)
 ;; (overload * *2)
 ;; (overload / /2)
-
-
 
 
 ;; (* 1 2 3 4 5) -> (* (* 1 2) (* 3 (* 4 5)))
@@ -284,16 +304,18 @@
 (defun expand-multi-arg ((ptr expr) (fcn (ptr expr)) (values (ptr expr)))
   (if (< (sub-expr.cnt values) 3)
       null-expr
-      (let ((top (sub-expr.expr values (- (sub-expr.cnt values) 1))))
-	(range it (cast (- (sub-expr.cnt values) 2) i64) -1
-	       (let ((buffer (cast 
-			      (alloc (*  (size-of (type (ptr expr))) 3))
-			      (ptr (ptr expr)))))
-		 (setf (deref (+ buffer 0)) fcn)
-		 (setf (deref (+ buffer 1)) (sub-expr.expr values (cast it u64)))
-		 (setf (deref (+ buffer 2)) top)
-		 (setf top (make-sub-expr buffer 3))))
-	top)))
+      (the 
+       (let ((top (sub-expr.expr values (- (sub-expr.cnt values) 1))))
+	 (range it (cast (- (sub-expr.cnt values) 2) i64) -1
+		(let ((buffer (cast 
+			       (alloc (*  (size-of (type (ptr expr))) 3))
+			       (ptr (ptr expr)))))
+		  (setf (deref (ptr+ buffer 0)) fcn)
+		  (setf (deref (ptr+ buffer 1)) (sub-expr.expr values (cast it u64)))
+		  (setf (deref (ptr+ buffer 2)) top)
+		  (setf top (make-sub-expr buffer 3))))
+	top)
+       (ptr expr))))
 
 (defmacro +any (&rest args)
 

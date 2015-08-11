@@ -272,28 +272,42 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
     if(macro->arg_cnt != argcnt && macro->arg_cnt != -1)
       COMPILE_ERROR("Unsupported number of arguments %i for %s",argcnt, symbol_name(name));
     type_def * ( *macro_fcn)(type_def * ex_type, c_block * block, c_value * val, ...) = macro->fcn;
-
+    type_def * td = NULL;
     switch(macro->arg_cnt){
     case 0:
-      return macro_fcn(expected_type, block, value);
+      td =  macro_fcn(expected_type, block, value); 
+      break;
     case 1:
-      return macro_fcn(expected_type, block, value, args[0]);
+      td =  macro_fcn(expected_type, block, value, args[0]);
+      break;
     case 2:
-      return macro_fcn(expected_type, block, value, args[0], args[1]);
+      td =  macro_fcn(expected_type, block, value, args[0], args[1]);
+      break;
     case 3:
-      return macro_fcn(expected_type, block, value, args[0], args[1], args[2]);
+      td =  macro_fcn(expected_type, block, value, args[0], args[1], args[2]);
+      break;
     case 4:
-      return macro_fcn(expected_type, block, value, args[0], args[1], args[2], args[3]);
+      td =  macro_fcn(expected_type, block, value, args[0], args[1], args[2], 
+		      args[3]);
+      break;
     case 5:
-      return macro_fcn(expected_type, block, value, args[0], args[1], args[2], args[3], args[4]);
+      td =  macro_fcn(expected_type, block, value, args[0], args[1], args[2], 
+		      args[3], args[4]);
+      break;
     case 6:
-      return macro_fcn(expected_type, block, value, args[0], args[1], args[2], args[3], args[4], args[5]);
+      td =  macro_fcn(expected_type, block, value, args[0], args[1], args[2], 
+		      args[3], args[4], args[5]);
+      break;
     case -1:
-      return ((type_def *(*)(type_def * exp, c_block * block, c_value * value, expr *,size_t))macro->fcn)
+      td = ((type_def *(*)(type_def * exp, c_block * block, c_value * value, expr *,size_t))macro->fcn)
 	(expected_type, block,value,args, argcnt);
+      break;
     default:
       ERROR("Number of macro arguments not supported: %i", argcnt);
     }
+    COMPILE_ASSERT(td != error_def);
+    return td;
+      
   }else if(var_type->type == FUNCTION || 
 	   (var_type->type == POINTER && var_type->ptr.inner->type == FUNCTION)){
     type_def * td = var_type->type == POINTER ? var_type->ptr.inner : var_type;
@@ -335,14 +349,8 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
     value->call = call;   
     return td->fcn.ret;
   }else if(var_type == macro_store_type()){
-    type_def * _t = expand_macro(expected_type, block, value, se->exprs, se->cnt);
-    
-    if(_t == error_def){
-      //COMPILE_ERROR("Caught error while expanding macro '%s'\n", symbol_name(name));
-    }
-    return _t;
+    return expand_macro(expected_type, block, value, se->exprs, se->cnt);
   }else{
-
     ERROR("Not supported.. %i\n", var_type->type);
   }
   return error_def;
@@ -364,7 +372,7 @@ type_def * compile_expr(type_def * expected_type, c_block * block, c_value * val
   return td;
 }
 
-c_root_code compile_lisp_to_eval(expr exp){
+c_root_code compile_lisp_to_eval(expr exp, compile_status * status){
 
   c_root_code r;
   r.type = C_FUNCTION_DEF;
@@ -373,12 +381,16 @@ c_root_code compile_lisp_to_eval(expr exp){
   
   c_expr expr = {.type = C_VALUE};
   type_def * t = compile_expr(NULL, &r.fcndef.block, &expr.value, exp);
-  
+  if(t == error_def){
+    *status = COMPILE_ERROR;
+    return r;
+  }
   type_def td = {.type = FUNCTION, .fcn = {.ret = t, .args = NULL, .cnt = 0}};
   r.fcndef.type = type_pool_get(&td);
 
   if(t != type_pool_get(&void_def)) expr.type = C_RETURN;
   block_add(&r.fcndef.block, expr);
+  *status = COMPILE_OK;
   return r;
 }
 
@@ -433,7 +445,6 @@ void go_write(type_def ** deps, symbol * vdeps, c_root_code * codes, size_t code
     while(t->type == POINTER){
       t = t->ptr.inner;
     }
-
    
     decl dcl;
     dcl.name = var->name;
@@ -557,7 +568,9 @@ var_def * lisp_compile_expr(expr ex, compile_status * optout_status){
   with_allocator(/*trace_alloc*/ NULL, lambda(void,(){
 	//allocator * prev = current_allocator;
 	//current_allocator = trace_alloc;
-	c_root_code cl = compile_lisp_to_eval(ex);
+	c_root_code cl = compile_lisp_to_eval(ex, optout_status);
+	if(*optout_status == COMPILE_ERROR)
+	  return;
 	//print_current_mem(1);
 	if(cl.fcndef.type->fcn.ret == error_def){
 	  if(optout_status != NULL)*optout_status = COMPILE_ERROR;
@@ -588,10 +601,8 @@ void * lisp_compile_and_run_expr(expr ex, compile_status * optout_status){
   if(COMPILE_ERROR == *optout_status)
     return NULL;
   void * (*fcn)() = var->data;
-  
   ASSERT(fcn != NULL);
-  void * r = fcn();
-  return r;
+  return fcn();
 }
 
 symbol * printer = NULL;
@@ -680,11 +691,12 @@ compile_status lisp_run_expr(expr ex){
 
 compile_status lisp_run_exprs(expr * exprs, size_t exprcnt){
   for(u32 i = 0; i < exprcnt; i++){
-    compile_status s = lisp_run_expr(exprs[i]);    
+    expr e = exprs[i];
+    compile_status s = lisp_run_expr(e);    
     if(COMPILE_ERROR == s){
       
       loge("Error at: ");
-      print_expr(exprs + i);
+      print_expr(&e);
       logd("\n");
       return COMPILE_ERROR;
     }
