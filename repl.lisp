@@ -67,7 +67,7 @@ t
 (dealloc (cast buf (ptr void)))
 (setf buf (cast null (ptr char)))
 
-(defun plus1 (i64 (a i64)) (i64+ 1 a))
+(defun plus1 (i64 (a i64)) (+ 1 a))
 
 (defvar plus12 (addrof plus1))
 

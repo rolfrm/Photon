@@ -69,7 +69,7 @@ length
 
 ;;; -- Load Vertex Buffer Object -- ;;;
 (defvar vbo (cast 0 u32))
-(defvar vbo-data (cast (alloc0 (u64* 8 4)) (ptr f32))) ; 4 floats
+(defvar vbo-data (cast (alloc0 (* 8 4)) (ptr f32))) ; 4 floats
 (setf (deref (ptr+ vbo-data 2)) 1.0)
 (setf (deref (ptr+ vbo-data 4)) 1.0)
 (setf (deref (ptr+ vbo-data 5)) 1.0)
@@ -77,7 +77,7 @@ length
 (gl:gen-buffers 1 (addrof vbo))
 (gl:bind-buffer gl:array-buffer vbo)
 
-(gl:buffer-data gl:array-buffer (u32* 8 4) (cast vbo-data (ptr void)) gl:static-draw)
+(gl:buffer-data gl:array-buffer (the (* 8 4) u32) (cast vbo-data (ptr void)) gl:static-draw)
 
 (gl:enable-vertex-attrib-array 0)
 (gl:bind-buffer gl:array-buffer vbo)
@@ -161,12 +161,6 @@ length
 		 (* tiles-width (% y tiles-height)))))
 
 
-
-;; (for it2 0 (< it2 100) (i64+ it2 1)
-;;      (for it 0 (not (eq it 10)) (i64+ it 1)
-;; 	  (setf (deref (get-tile it it2)) (cast (+ 1 (i64% (+ it it2) 3)) i8))))
-
-
 (defvar color-lut (cast (alloc (* (size-of (type vec4)) 16)) (ptr vec4)))
 (setf (deref color-lut) (vec 0 0 0 0))
 (setf (deref (ptr+ color-lut 1)) (vec 1 0 0 1))
@@ -184,16 +178,17 @@ length
     (gl:uniform size-loc 1.0 1.0)
     (gl:uniform color-loc 1 1 1 1)
     
-    (for row (max 0 cam-top) (<= row (min cam-bottom tiles-height)) (i64+ row 1)
-	 (for col (max 0 cam-left) (<= col (min cam-right tiles-width)) (i64+ col 1)
-	      (let ((fx (cast col f32))
-		    (fy (cast row f32)))
+     (range row (max 0 cam-top) (min cam-bottom tiles-height)
+     	 (range col (max 0 cam-left) (min cam-right tiles-width)
+     	      (let ((fx (cast col f32))
+     		    (fy (cast row f32)))
 		(let ((tile (deref (get-tile col row))))
-		  (unless (eq 0 tile)
+		    (unless (eq 0 tile)
 		    (gl:uniform color-loc (deref (ptr+ color-lut (cast tile i64))))
 		    (gl:uniform offset-loc fx fy)
 		    (gl:draw-arrays drawtype 0 pts)))
-	      )))))
+     	      )))
+    ))
 
 (defun vec2-eq(bool (a vec2) (b vec2))
   (and
@@ -225,7 +220,7 @@ length
 
 (defun update-cell(void (col i64) (row i64))
   (let (( tile (get-tile col row)))
-    (setf (deref tile) (cast (i64+ 1 (i64% (i64+ (cast (deref tile) i64) 1) 3)) i8))))
+    (setf (deref tile) (cast (the (+ 1 (% (+ (cast (deref tile) i64) 1) 3)) i64) i8))))
 
 (defun ccwait(void (seconds f64))
   (let ((start (timestamp)))

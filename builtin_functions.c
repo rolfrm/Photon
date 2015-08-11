@@ -65,39 +65,6 @@ void * load_symbol(void * lib, symbol * sym, symbol * name, type_def * t){
   return ptr;
 }
 
-double double_add(double a, double b){ return a + b;}
-double double_sub(double a, double b){ return a - b;}
-double double_div(double a, double b){ return a / b;}
-double double_mul(double a, double b){ return a * b;}
-i64 i64_add(i64 a, i64 b){ return a + b; }
-i64 i64_sub(i64 a, i64 b){ return a - b; }
-i64 i64_mul(i64 a, i64 b){ return a * b; }
-i64 i64_div(i64 a, i64 b){ return a / b; }
-
-i8 i8_add(i8 a, i8 b){ return a + b; }
-i8 i8_sub(i8 a, i8 b){ return a - b; }
-i8 i8_mul(i8 a, i8 b){ return a * b; }
-i8 i8_div(i8 a, i8 b){ return a / b; }
-
-u64 u64_add(u64 a, u64 b){ return a + b; }
-u64 u64_sub(u64 a, u64 b){ return a - b; }
-u64 u64_mul(u64 a, u64 b){ return a * b; }
-u64 u64_div(u64 a, u64 b){ return a / b; }
-
-u32 u32_add(u32 a, u32 b){ return a + b; }
-u32 u32_sub(u32 a, u32 b){ return a - b; }
-u32 u32_mul(u32 a, u32 b){ return a * b; }
-u32 u32_div(u32 a, u32 b){ return a / b; }
-
-f32 f32_add(f32 a, f32 b){ return a + b; }
-f32 f32_sub(f32 a, f32 b){ return a - b; }
-f32 f32_mul(f32 a, f32 b){ return a * b; }
-f32 f32_div(f32 a, f32 b){ return a / b; }
-
-i32 i32_add(i32 a, i32 b) { return a + b; }
-i64 i64_mod(i64 a, i64 b) { return a % b; }
-i8 i8_mod(i8 a, i8 b) { return a % b; }
-
 type_def * type_of3(type_def * expected_type, expr * ex){
  c_block blk;
   blk.exprs = NULL;
@@ -121,8 +88,6 @@ type_def * type_of2(type_def * expected_type, expr * ex){
 type_def * type_of(expr * ex){
   return type_of2(NULL, ex);
 }
-
-
 
 char * symbol_name2(symbol * sym){
   return symbol_name(*sym);
@@ -185,49 +150,14 @@ void builtin_print_string(char * str){
   logd("%s\n", str);
 }
 
+bool is_check_type_run(){
+  return !lisp_print_errors;
+}
+
 void load_functions(){
   defun("print-type", str2type("(fcn void (a (ptr type_def)))"), print_type);
   defun("builtin-print-str", str2type("(fcn void (str (ptr char)))"), builtin_print_string);
-  type_def * i64fcn_def = str2type("(fcn i64 (a i64) (b i64))");
-  defun("i64+", i64fcn_def, &i64_add);
-  defun("i64-", i64fcn_def, &i64_sub);
-  defun("i64*", i64fcn_def, &i64_mul);
-  defun("i64/", i64fcn_def, &i64_div);
-  defun("i64%", i64fcn_def, &i64_mod);
-
-  type_def * i8fcn_def = str2type("(fcn i8 (a i8) (b i8))");
-  defun("i8+", i8fcn_def, &i8_add);
-  defun("i8-", i8fcn_def, &i8_sub);
-  defun("i8*", i8fcn_def, &i8_mul);
-  defun("i8/", i8fcn_def, &i8_div);
-  defun("i8%", i8fcn_def, &i8_mod);
-
-  type_def * u64fcn_def = str2type("(fcn u64 (a u64) (b u64))");
-  defun("u64+", u64fcn_def, &u64_add);
-  defun("u64-", u64fcn_def, &u64_sub);
-  defun("u64*", u64fcn_def, &u64_mul);
-  defun("u64/", u64fcn_def, &u64_div);
-
-  type_def * u32fcn_def = str2type("(fcn u32 (a u32) (b u32))");
-  defun("u32+", u32fcn_def, &u32_add);
-  defun("u32-", u32fcn_def, &u32_sub);
-  defun("u32*", u32fcn_def, &u32_mul);
-  defun("u32/", u32fcn_def, &u32_div);
-
-  type_def * f32fcn_def = str2type("(fcn f32 (a f32) (b f32))");
-  defun("f32+", f32fcn_def, &f32_add);
-  defun("f32-", f32fcn_def, &f32_sub);
-  defun("f32*", f32fcn_def, &f32_mul);
-  defun("f32/", f32fcn_def, &f32_div);
-
   defun("get-symbol", str2type("(fcn (ptr symbol) (a (ptr char)))"), get_symbol2);
-  
-  type_def * d2t =  str2type("(fcn f64 (a f64) (b f64))");
-  defun("f+", d2t, double_add);
-  defun("f-", d2t, double_sub);
-  defun("f/", d2t, double_div);
-  defun("f*", d2t, double_mul);
-
   defun("size-of",str2type("(fcn u64 (type (ptr type_def)))"), size_of);
   str2type("(alias (ptr (opaque-struct _lib)) lib)"); // declare the lib tyoedef
   defun("load-lib",str2type("(fcn lib (libname (ptr char)))"), load_lib);
@@ -238,6 +168,7 @@ void load_functions(){
 	type_of2);
   defun("type-of3",str2type("(fcn (ptr type_def) (expected_type (ptr type_def)) (expr (ptr expr)))"), 
 	type_of3);
+  defun("check-type-run?", str2type("(fcn bool)"), is_check_type_run);
   defun("print-expr", str2type("(fcn void (theexpr (ptr expr)))"), print_expr);
   defun("ptr-inner", str2type("(fcn (ptr type_def) (ptr (ptr type_def)))"),  ptr_inner);
   defun("type2expr", str2type("(fcn (ptr expr) (t (ptr type_def)))"), type2expr);

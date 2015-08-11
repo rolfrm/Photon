@@ -104,7 +104,7 @@
 
 (defun randf(f64)
   (let ((rand-var (std:rand)))
-    (f/ (f- (cast (i64% (cast rand-var i64) 20000) f64) 10000.0) 10000.0)))
+    (/ (- (cast (% (cast rand-var i64) 20000) f64) 10000.0) 10000.0)))
 
 (defun rand(i64)
   (bit-or (cast (std:rand) i64) 

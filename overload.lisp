@@ -81,11 +81,11 @@
 			 (eq error-type ntype))
 		      
 		      (setf same false))))
-		(setf j (i64+ j 1)))
+		(setf j (.+ j 1)))
 	      (when same
 		(setf out (member mem sym))
 		)))))
-      (setf i (i64+ i 1)))
+      (setf i (.+ i 1)))
     out))
 
 (defun expand-macro2 ((ptr expr) (sym (ptr symbol)) (expr2 (ptr expr)))
@@ -105,7 +105,7 @@
 		  (eq (cast (member macro arg-cnt) i64) arg-cnt))
 	  (setf out (expand-macro2 (member macro sym) exprs))
 	  ))
-      (setf i (i64+ i 1)))
+      (setf i (.+ i 1)))
     out))
     
 (defun get-overloaded-expr ((ptr expr) (return-type (ptr type_def)) (ol-info overload) (d (ptr expr)))
@@ -196,63 +196,11 @@
 (overload + string-concat)
 (+ "asd" "dsa")
 
-;(exit 0)
-;(overload + add3i64)
-
-;; (defun u8+ (u8 (a u8) (b u8))
-;;   (.+ a b))
-
-;; (defun u8- (u8 (a u8) (b u8))
-;;   (.- a b))
-
-;; (defun u8* (u8 (a u8) (b u8))
-;;   (.* a b))
-
-;; (defun u8/ (u8 (a u8) (b u8))
-;;   (./ a b))
-
-;; (overload * i64*)
-;; (overload / i64/)
-;; (overload - i64-)
-;; (overload + i64+)
- (overload % i64%)
-
-;; (overload * i8*)
-;; (overload / i8/)
-;; (overload - i8-)
-;; (overload + i8+)
-
-;; (overload * u8*)
-;; (overload / u8/)
-;; (overload - u8-)
-;; (overload + u8+)
-
-;; (overload + u64+)
-;; (overload * u64*)
-;; (overload - u64-)
-;; (overload / u64/)
-
-;; (overload + f+)
-;; (overload - f-)
-;; (overload * f*)
-;; (overload / f/)
-
-;; (overload + u32+)
-;; (overload - u32-)
-;; (overload * u32*)
-;; (overload / u32/)
-
-;; (overload + f32+)
-;; (overload - f32-)
-;; (overload * f32*)
-;; (overload / f32/)
-
 (defmacro any+ (a b)
   (expr (.+ (unexpr a) (unexpr b))))
 
 (defmacro any- (a b)
   (expr (.- (unexpr a) (unexpr b))))
-
 
 (defmacro any* (a b)
   (expr (.* (unexpr a) (unexpr b))))
@@ -260,11 +208,15 @@
 (defmacro any/ (a b)
   (expr (./ (unexpr a) (unexpr b))))
 
+(defmacro any% (a b)
+  (expr (.% (unexpr a) (unexpr b))))
+
 (overload + ptr+)
 (overload + any+)
 (overload - any-)
 (overload * any*)
 (overload / any/)
+(overload % any%)
 
 
 ;(printi64 (+ 1.0 2.5))
@@ -310,9 +262,9 @@
 		(let ((buffer (cast 
 			       (alloc (*  (size-of (type (ptr expr))) 3))
 			       (ptr (ptr expr)))))
-		  (setf (deref (ptr+ buffer 0)) fcn)
-		  (setf (deref (ptr+ buffer 1)) (sub-expr.expr values (cast it u64)))
-		  (setf (deref (ptr+ buffer 2)) top)
+		  (setf (deref (+ buffer 0)) fcn)
+		  (setf (deref (+ buffer 1)) (sub-expr.expr values (cast it u64)))
+		  (setf (deref (+ buffer 2)) top)
 		  (setf top (make-sub-expr buffer 3))))
 	top)
        (ptr expr))))

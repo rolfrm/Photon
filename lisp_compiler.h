@@ -31,7 +31,7 @@ typedef enum {
 }compile_status;
 
 extern bool lisp_print_errors;
-
+bool is_check_type_run();
 #define COMPILE_ASSERT(expr) if(!(expr)){ if(lisp_print_errors){loge("at %s : %i:", __FILE__, __LINE__);loge("Compile error '" #expr "' at %s: %l", __FILE__, __LINE__ ); logd("\n");}return error_def;}
 
 #define COMPILE_ERROR(fmt, ...) {if(lisp_print_errors){loge("at %s : %i: ", __FILE__, __LINE__);ERROR(fmt,##__VA_ARGS__);logd("\n"); }return error_def;}

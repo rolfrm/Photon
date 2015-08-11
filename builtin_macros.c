@@ -156,7 +156,8 @@ type_def * defvar_macro(type_def * expected_type, c_block * block,
   expr name = exprs[0];
   COMPILE_ASSERT(is_symbol(name));
   symbol sym = expr_symbol(name);
-  logd("Defining variable '%s'.\n", symbol_name(sym));
+  if(!is_check_type_run())
+    logd("Defining variable '%s'.\n", symbol_name(sym));
   type_def * t;
 
   if(is_keyword(exprs[1]) && expr_symbol(exprs[1]).id == get_symbol("type").id && cnt == 3){
@@ -164,6 +165,9 @@ type_def * defvar_macro(type_def * expected_type, c_block * block,
     t = expr2type(exprs[2]);
     val->type = C_SYMBOL;
     val->symbol = sym;
+    if(is_check_type_run()){
+      return t;
+    }
   }else{
     COMPILE_ASSERT(cnt == 2);
     expr body = exprs[1];
@@ -172,6 +176,9 @@ type_def * defvar_macro(type_def * expected_type, c_block * block,
     vl->type = C_SYMBOL;
     vl->symbol = sym;
     t = compile_expr(expected_type, block, vr, body);
+    if(is_check_type_run()){
+      return t;
+    }
     COMPILE_ASSERT(t != error_def);
     val->type = C_OPERATOR;
     val->operator.left = vl;
@@ -581,7 +588,7 @@ type_def * stringify_macro(type_def * expected_type, c_block * block, c_value * 
 
 type_def * defun_macro(type_def * expected_type, c_block * block, c_value * value, expr name, expr args, expr body){
   CHECK_TYPE(expected_type, char_ptr_def);
-
+  if(!lisp_print_errors) return char_ptr_def;
   // This function is rather complicated.
   // it handles turning something this: (defun funname (void (a i64) (b i64)) (+ a b)) 
   // into a function that can be called from througout the system.
@@ -706,15 +713,26 @@ type_def * divide_macro(type_def * expected_type, c_block * block, c_value * val
   return math_operator("/", expected_type, block, val, item1, item2);
 }
 
+type_def * modulus_macro(type_def * expected_type, c_block * block, c_value * val, expr item1, expr item2){
+  return math_operator("%", expected_type, block, val, item1, item2);
+}
+
+
 type_def * comparison_macro(char * operator, type_def * expected_type, c_block * block, c_value * val, expr item1, expr item2){
   CHECK_TYPE(expected_type, &bool_def);
   c_value * val1 = alloc0(sizeof(c_value));
   c_value * val2 = alloc0(sizeof(c_value));
   c_value * comp = alloc0(sizeof(c_value));
-  type_def * t1 = compile_expr(NULL, block, val1, item1);
-  type_def * t2 = compile_expr(t1, block, val2, item2);
+  type_def * t1 = type_of2(NULL,&item1);//
+  type_def * t2 = type_of2(t1,&item2);//compile_expr(t1, block, val2, item2);
+  if(t2 != t1){
+    t2 = type_of2(NULL,&item2);    
+    t1 = type_of2(t2, &item1);
+  }
   COMPILE_ASSERT(t1 != error_def && t1 != &void_def);
   COMPILE_ASSERT(t1 == t2);
+  COMPILE_ASSERT(t1 == compile_expr(t1, block, val1, item1));
+  COMPILE_ASSERT(t2 == compile_expr(t2, block, val2, item2));
   val->type = C_CAST;
   val->cast.value = comp;
   val->cast.type = str2type("bool");
@@ -1041,6 +1059,7 @@ void builtin_macros_load(){
   define_macro(".-", 2, minus_macro);
   define_macro(".*", 2, multiply_macro);  
   define_macro("./", 2, divide_macro);
+  define_macro(".%", 2, modulus_macro);
 
   opaque_expr();
   defun("number2expr",str2type("(fcn (ptr expr) (a i64))"), number2expr);
