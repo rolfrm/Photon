@@ -8,12 +8,13 @@
 
 (defmacro range (var from to &rest body)
   (expr
-   (let (((unexpr var) (unexpr from)))
-     (while (not (eq (unexpr var) (unexpr to)))
-       (unexpr (unfold-body (expr progn)
-			    body))
-       (incr (unexpr var) 1)
-       ))))
+   (var! (((unexpr var) (unexpr from)))
+     (while! (not (eq (unexpr var) (unexpr to)))
+	     (progn
+	       (unexpr (unfold-body (expr progn)
+				    body))
+	       (incr (unexpr var) 1)
+	       )))))
 
 (defvar libm (load-lib "libm.so"))
 (load-symbol+ libm cos cos (fcn f64 (x f64)))

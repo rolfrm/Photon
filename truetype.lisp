@@ -57,8 +57,6 @@
 ;stbtt_MakeCodepointBitmapSubpixel
 ;stbtt_GetCodepointKernAdvance
 
-
-
 (defun read-utf8-codepoint ((ptr char) (string (ptr char)) (out-pt (ptr i32)))
 ;; eeh lets see..
 ;; UTF8 char str to codepoint conversion.
@@ -255,33 +253,14 @@
 		    (print (cast r i64) newline)
 		    (range y 0 (member s height)
 			   (range x 0 (member s width)
-				  (let ((v (deref (+ r (+ x (* y (member s width)))))))
+				  (var ((v (deref (ptr+ r (.+ x (.* y (member s width)))))))
 				    ;(print (cast v i64) newline)
 				    (if (< (cast v i64) 0)
-					(print " ")
-					(print "#")
+					(printstr " ")
+					(printstr "#")
 					)
 				  ))
-			   (print newline))
+			   (printstr newline))
 		))))))))
 ;(test)
 ;(exit 0)
-	  ;(exit 0)
-
-;; 		(let ((bitmap (tt:get-codepoint-bitmap baked 0 0.05 codept  (addrof width) (addrof height) (addrof xpos) (addrof ypos))))
-;; 		  (range y 0 (cast height i64)
-;; 			 (range x 0 (cast width i64)
-;; 				(let ((v (cast (deref (ptr+ bitmap (+ x (* y (cast width i64)))))
-;; 					       i64)))
-;; 				  (if (eq v -1)
-;; 				      (print " ")
-;; 				      (print "#"))))
-;; 			 (print newline))
-		  
-;; 		  (print newline width " " height " " "inited.." newline))))))))
-;; ;;     (print "Testing ttf" newline)))
-;; 					;(let ((cpt (cast 0 i32)))
-;; 					;  (read-utf8-codepoint "µ" (addrof cpt))
-;; 					;  (print-hex (cast cpt i64))
-;; 					;  (print newline))
-

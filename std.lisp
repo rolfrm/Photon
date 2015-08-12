@@ -52,22 +52,22 @@
 	 buffer)))
 
 (defun *ptr+ ((ptr expr) (ptr (ptr expr)) (offset (ptr expr)))
-  (var ((size_expr (number2expr (cast (size-of (ptr-inner (type-of ptr))) i64)))
-	(ptr-type (type-of ptr))
-	(out-expr null-expr))
-       (progn
-	 (if! (and (is-ptr-type? ptr-type)
-		   (is-integer-type? (type-of offset)))
-	     (setf out-expr 
-		   (expr
-		    (cast 
-		     (.+ 
-		      (cast (unexpr ptr) i64)
-		      (.* (unexpr offset) 
+  (var ((ptr-type (type-of ptr)))
+   (var ((size_expr (number2expr (cast (size-of (ptr-inner ptr-type)) i64)))
+	 (out-expr null-expr))
+	(progn
+	  (if! (and (is-ptr-type? ptr-type)
+		    (is-integer-type? (type-of offset)))
+	       (setf out-expr 
+		     (expr
+		      (cast 
+		       (.+ 
+			(cast (unexpr ptr) i64)
+			(.* (unexpr offset) 
 			    (unexpr size_expr)))
-		     (unexpr (type2expr ptr-type)))))
-	     (noop))
-	 out-expr)))
+		       (unexpr (type2expr ptr-type)))))
+	       (noop))
+	  out-expr))))
 
 (declare-macro ptr+ *ptr+)
 
@@ -314,8 +314,8 @@
        (if (not (is-integer-type? (type-of cnt)))
 	   null-expr
 	   (expr 
-	    (var (((unexpr item-sym) (unexpr item)))
-		 (var ((lstptr (addrof (unexpr lst)))
+	    (var! (((unexpr item-sym) (unexpr item)))
+		 (var! ((lstptr (addrof (unexpr lst)))
 		       (cntptr (cast (addrof (unexpr cnt)) (ptr u64)))
 		       (itemaddr (addrof (unexpr item-sym))))
 		      (add-to-list (cast lstptr (ptr (ptr void)))
@@ -332,12 +332,12 @@
 
 (defmacro unless (test &rest body)
   (expr 
-   (if (unexpr test)
-       (noop)
-       (progn
-	 (unexpr (unfold-body (expr progn)
-			      body))
-	 ))))
+   (if! (unexpr test)
+	(noop)
+	(progn
+	  (unexpr (unfold-body (expr progn)
+			       body))
+	  ))))
 
 (defvar asserts (cast null (ptr (ptr expr))))
 (defvar asserts-cnt (cast 0 u64))
@@ -379,7 +379,7 @@
 
 (defmacro max (a b)
   (let ((as (gensym)) (bs (gensym)))
-    (expr (let (((unexpr as) (unexpr a)) ((unexpr bs) (unexpr b)))
+    (expr (var (((unexpr as) (unexpr a)) ((unexpr bs) (unexpr b)))
 	    (if (< (unexpr as) (unexpr bs))
 		(unexpr bs)
 		(unexpr as))))))
@@ -387,7 +387,7 @@
 
 (defmacro min (a b)
   (let ((as (gensym)) (bs (gensym)))
-    (expr (let (((unexpr as) (unexpr a)) ((unexpr bs) (unexpr b)))
+    (expr (var (((unexpr as) (unexpr a)) ((unexpr bs) (unexpr b)))
 	    (if (> (unexpr as) (unexpr bs))
 		(unexpr bs)
 		(unexpr as))))))
@@ -410,9 +410,9 @@
   (let ((s (gensym))
 	(d (gensym)))
     (expr
-     (var (((unexpr it) (unexpr start))
+     (var! (((unexpr it) (unexpr start))
 	   ((unexpr s) (unexpr stop)))
-       (var(((unexpr d) (sign (.- (unexpr s) (unexpr start)))))
+       (var!(((unexpr d) (sign (.- (unexpr s) (unexpr start)))))
 	 (while! (not (eq (unexpr it) (unexpr s)))
 		 (progn
 		   (unexpr (unfold-body (expr progn) body))

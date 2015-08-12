@@ -65,6 +65,71 @@ bool check_decl(symbol name, type_def * type){
   return true;
 }
 
+type_def * var_atom_macro(type_def * expected_type, c_block * block, c_value * val, expr vars, expr body){
+  if(is_check_type_run())
+    return &void_def;
+
+  CHECK_TYPE(expected_type, &void_def);
+  COMPILE_ASSERT(vars.type == EXPR);
+  sub_expr sexpr = vars.sub_expr;
+  c_expr cvars[sexpr.cnt];
+
+  var_def * lisp_vars = alloc(sizeof(var_def) * (sexpr.cnt + 1));
+  for(size_t i = 0; i < sexpr.cnt; i++){
+    c_value * cval = NULL;
+    COMPILE_ASSERT(sexpr.exprs[i].type == EXPR);
+    sub_expr var_expr = sexpr.exprs[i].sub_expr;
+    
+    c_var var;
+    if(var_expr.cnt == 2){
+      COMPILE_ASSERT(var_expr.exprs[0].type == VALUE 
+		     && var_expr.exprs[0].value.type == SYMBOL);
+      cval = alloc0(sizeof(c_value));
+      var.var.type = compile_expr(NULL, block, cval, var_expr.exprs[1]);
+      
+    }else if(var_expr.cnt == 3){
+      COMPILE_ASSERT(var_expr.exprs[0].type == VALUE 
+		     && var_expr.exprs[1].type == VALUE 
+		     && var_expr.exprs[0].value.type == SYMBOL);
+      var.var.type = expr2type(var_expr.exprs[2]);
+      COMPILE_ASSERT(var.var.type != error_def);
+    }else{
+      COMPILE_ERROR("Invalid var form");
+    }
+    
+    var.var.name = expr_symbol(var_expr.exprs[0]);
+    
+    if(!check_decl(var.var.name, var.var.type))
+      return error_def;
+    var.value = cval;
+    lisp_vars[i].name = var.var.name;
+    lisp_vars[i].type = var.var.type;
+    lisp_vars[i].data = NULL;
+    cvars[i].type = C_VAR;
+    cvars[i].var = var;
+  }
+  c_expr sblk_expr;
+  sblk_expr.type = C_BLOCK;
+  sblk_expr.block = c_block_empty;
+
+  for(size_t i = 0; i < sexpr.cnt; i++)
+    block_add(&sblk_expr.block, cvars[i]);
+  size_t varcnt = sexpr.cnt;
+  push_symbols(&lisp_vars, &varcnt);
+  c_expr set_expr;
+  set_expr.type = C_VALUE;
+  type_def * ret_type = NULL;
+  ret_type = compile_expr(NULL, &sblk_expr.block, &set_expr.value, body);
+  block_add(&sblk_expr.block, set_expr);
+  block_add(block, sblk_expr);
+  val->type = C_NOTHING;
+  pop_symbols();
+
+  dealloc(lisp_vars);
+  return ret_type;
+}
+
+
 type_def * var_macro(type_def * expected_type, c_block * block, c_value * val, expr vars, expr body){
 
   COMPILE_ASSERT(vars.type == EXPR);
@@ -713,8 +778,16 @@ type_def * defun_macro(type_def * expected_type, c_block * block, c_value * valu
 }
 
 type_def * math_operator(char * operator, type_def * expected_type, c_block * block, c_value * val, expr item1, expr item2){
-  if(expected_type != NULL)
-    COMPILE_ASSERT(is_number_type(expected_type));
+  if(expected_type != NULL){
+    if(!is_number_type(expected_type)){
+      return NULL;
+    }
+    // It is not possible to early out here, because its needed to check that
+    // the types returned by sub calls can be used with the operators.
+    // otherwise issues with function overloading.
+    // if(is_check_type_run())
+    //   return expected_type;    
+  }
   c_value * val1 = alloc0(sizeof(c_value));
   c_value * val2 = alloc0(sizeof(c_value));
   c_value * comp = val;
@@ -924,8 +997,12 @@ type_def * boolean_operator(char * operator, type_def * expected_type, c_block *
 }
 
 type_def * bitwise_operator(char * operator, type_def * expected_type, c_block * blk, c_value * val, expr left, expr right){
-  if(expected_type != NULL)
+  if(expected_type != NULL){
     COMPILE_ASSERT(is_integer_type(expected_type));
+    // see math operator
+    //if(is_check_type_run())
+    //  return expected_type;
+  }
   c_value * left_value = alloc(sizeof(c_value)), * right_value = alloc(sizeof(c_value));
   type_def * left_t = compile_expr(expected_type, blk,left_value,left);
   type_def * right_t = compile_expr(left_t, blk,right_value,right);
@@ -1066,6 +1143,7 @@ void builtin_macros_load(){
   define_macro("type", 1, type_macro);
   define_macro("defun", -1, defun_macro);
   define_macro("var", 2, var_macro);
+  define_macro("var!", 2, var_atom_macro);
   define_macro("progn", -1, progn_macro);
   define_macro("cast", 2, cast_macro);
   define_macro("the", 2, the_macro);
