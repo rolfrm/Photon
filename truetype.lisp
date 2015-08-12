@@ -49,7 +49,11 @@
 		   (shift-x f32) (shift-y f32) (ix0 (ptr i32)) (iy0 (ptr i32)) 
 		   (ix1 (ptr i32)) (iy1 (ptr i32))))
 
-
+;STBTT_DEF void stbtt_MakeCodepointBitmapSubpixel(const stbtt_fontinfo *info, unsigned char *output, int out_w, int out_h, int out_stride, float scale_x, float scale_y, float shift_x, float shift_y, int codepoint);
+(load-symbol+ libtt tt:make-codepoint-bitmap-subpixel stbtt_MakeCodepointBitmapSubpixel
+	      (fcn void (info (ptr tt:fontinfo)) (output (ptr char)) (out-w i32) (out-h i32)
+		   (out-stride i32) (scale-x f32) (scale-y f32) (shift-x f32) (shift-y f32) (codepoint i32)))
+			      
 ;stbtt_MakeCodepointBitmapSubpixel
 ;stbtt_GetCodepointKernAdvance
 
@@ -166,8 +170,8 @@
 	       ))
       ;(print (+ baseline 1))
       (let ((s :type size))
-	(setf (member s width) max-width-reached)
-	(setf (member s height) (cast baseline i64))
+	(setf (member s width) (+ max-width-reached 10))
+	(setf (member s height) (cast (+ baseline 10) i64))
 	s))))
 
 (defun size-area (i64 (s size))
@@ -190,17 +194,27 @@
       		   (y0 :type i32)
       		   (y1 :type i32)
       		   (x-shift (the 0.0 f32))
-		   (codepoint (cast (deref (+ text it)) i32)))
+		   (codepoint (cast (deref (+ text it)) i32))		   
+		   )
 	       
 	       (tt:get-codepoint-h-metrics font codepoint (addrof advance) (addrof lsb))
 	       (tt:get-codepoint-bitmap-box-subpixel font codepoint 
 						     scale scale x-shift 0 (addrof x0) (addrof y0)
 						     (addrof x1)
 						     (addrof y1))
-					;(tt:make-codepoint-bitmap-box-subpixel font 
+	       (let ((buffer-pt (ptr+ buffer (cast (+ (cast xpos i32) x0
+						      (* (+ y0 baseline) (cast (member s width) i32))
+						      ) i64))))
+					;)))
+		     
+		 (tt:make-codepoint-bitmap-subpixel font buffer-pt (- x1 x0) (- y1 y0) (cast (member s width) i32)
+						    scale scale x-shift 0 codepoint)
+		 )
+						      
+						      
 	       (when (> (cast (+ xpos (* scale (cast advance f32))) i32) max-width)
 		 (setf xpos 0)
-		 (incr baseline (cast (* (cast advance f32) scale) i32))
+		 (incr baseline (cast (* (cast ascent f32) scale) i32))
 	       )
        	     (setf xpos (+ xpos (* scale (cast advance f32))))
 	       )))
@@ -232,14 +246,25 @@
 	      (let ((h (tt:scale-for-pixel-height baked 15))
 		    (codept (cast 0xb5 i32)))
 		(print newline "codepoint:" codept newline)
-		(let ((s (get-text-size "hello world! hello world!" 16
+		(let ((s (get-text-size "hello!" 16
 				      100 baked)))
-		  (let ((r (write-text-to-buffer s "hello world! hello world!"
+		  (print "Writing bitmap..
+")
+		  (let ((r (write-text-to-buffer s "hello!"
 					16 100 baked)))
 		    (print (cast r i64) newline)
-		
+		    (range y 0 (member s height)
+			   (range x 0 (member s width)
+				  (let ((v (deref (+ r (+ x (* y (member s width)))))))
+				    ;(print (cast v i64) newline)
+				    (if (< (cast v i64) 0)
+					(print " ")
+					(print "#")
+					)
+				  ))
+			   (print newline))
 		))))))))
-(test)
+;(test)
 ;(exit 0)
 	  ;(exit 0)
 
