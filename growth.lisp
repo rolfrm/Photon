@@ -1,8 +1,9 @@
 (load "std2.lisp")
+(load "truetype.lisp")
+
 (load "glfw.lisp")
 (load "gl.lisp")
 (load "gl-ext.lisp")
-(load "truetype.lisp")
 ;(exit 0)
 (glfw:init)
 (defvar win (glfw:create-window 400 400 "Flowery!" null null))

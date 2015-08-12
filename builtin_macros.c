@@ -48,8 +48,13 @@ expr mk_sub_expr(expr * exprs, size_t cnt){
 
 // checks for conflict in argtypename and argname.
 bool check_decl(symbol name, type_def * type){
+  if(type == NULL){
+    loge("Type is error, symbol: '%s'\n", symbol_name(name));
+    return false;
+  }
   type_def * td = type_pool_simple(name);
   type_def * td2 = type;
+  
   while(td2->type == POINTER){
     td2 = td2->ptr.inner;
   }
@@ -587,6 +592,7 @@ type_def * stringify_macro(type_def * expected_type, c_block * block, c_value * 
 }
 
 type_def * defun_macro(type_def * expected_type, c_block * block, c_value * value, expr * sub_exprs, size_t expr_cnt){
+  u64 ts = timestamp();
   CHECK_TYPE(expected_type, char_ptr_def);
   if(!lisp_print_errors) return char_ptr_def;
   // This function is rather complicated.
@@ -620,7 +626,7 @@ type_def * defun_macro(type_def * expected_type, c_block * block, c_value * valu
   }
   COMPILE_ASSERT(args.type == EXPR || args.sub_expr.cnt > 0);
   symbol fcnname = expr_symbol(name);
-  logd("Defining function: '%s'.\n", symbol_name(fcnname));
+  
   c_root_code newfcn_root;
   newfcn_root.type = C_FUNCTION_DEF;
   c_fcndef * f = &newfcn_root.fcndef;
@@ -691,6 +697,7 @@ type_def * defun_macro(type_def * expected_type, c_block * block, c_value * valu
   block_add(blk,expr);
   compile_as_c(&newfcn_root,1);
   c_root_code_delete(newfcn_root);
+  logd("Defined function: '%s' tool %i µs.\n", symbol_name(fcnname), (timestamp() - ts) );
   // ** Just return the function name ** //
   return compile_expr(char_ptr_def, block, value, string_expr(symbol_name(fcnname)));
 }
