@@ -243,6 +243,11 @@ type_def * load_macro(type_def * expected_type, c_block * block, c_value * val, 
 }
 
 type_def * progn_macro(type_def * expected_type, c_block * block, c_value * val, expr * expressions, size_t expr_cnt){
+  if(is_check_type_run()){
+    if(expr_cnt == 0)
+      return &void_def;
+    return compile_expr(expected_type, block, val, expressions[expr_cnt-1]);
+  }
   type_def * d;
   type_def * exp = NULL;
   for(size_t i = 0; i < expr_cnt; i++){
@@ -577,6 +582,8 @@ type_def * cast_macro(type_def * expected_type, c_block * block, c_value * value
 type_def * the_macro(type_def * expected_type, c_block * block, c_value * value, 
 		      expr body, expr type){
   type_def * type_constraint = expr2type(type);
+  if(is_check_type_run())
+    return type_constraint;
   COMPILE_ASSERT(type_constraint != error_def);
   CHECK_TYPE(expected_type, type_constraint);
   type_def * td = compile_expr(type_constraint, block, value, body);
@@ -697,7 +704,7 @@ type_def * defun_macro(type_def * expected_type, c_block * block, c_value * valu
   block_add(blk,expr);
   compile_as_c(&newfcn_root,1);
   c_root_code_delete(newfcn_root);
-  logd("Defined function: '%s' tool %i µs.\n", symbol_name(fcnname), (timestamp() - ts) );
+  logd("Defined function: '%s' [%i µs].\n", symbol_name(fcnname), (timestamp() - ts) );
   // ** Just return the function name ** //
   return compile_expr(char_ptr_def, block, value, string_expr(symbol_name(fcnname)));
 }
@@ -746,6 +753,8 @@ type_def * modulus_macro(type_def * expected_type, c_block * block, c_value * va
 
 
 type_def * comparison_macro(char * operator, type_def * expected_type, c_block * block, c_value * val, expr item1, expr item2){
+  if(is_check_type_run())
+    return &bool_def;
   CHECK_TYPE(expected_type, &bool_def);
   c_value * val1 = alloc0(sizeof(c_value));
   c_value * val2 = alloc0(sizeof(c_value));
@@ -791,6 +800,8 @@ type_def * beq_macro(type_def * expected_type, c_block * block, c_value * val, e
 }
 
 type_def * if_atom_macro(type_def * expected_type, c_block * block, c_value * val, expr cnd, expr then, expr _else){
+  if(is_check_type_run())
+    return &void_def;
   CHECK_TYPE(expected_type, &void_def);
   expected_type = NULL;
   
@@ -826,6 +837,8 @@ type_def * if_atom_macro(type_def * expected_type, c_block * block, c_value * va
 }
 
 type_def * while_atom_macro(type_def * expected_type, c_block * block, c_value * val, expr cnd, expr body){
+  if(is_check_type_run())
+    return &void_def;
   CHECK_TYPE(expected_type, &void_def);
   
   c_expr whilexpr = c_expr_keyword("while");

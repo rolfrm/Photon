@@ -71,6 +71,7 @@ type_def * type_of3(type_def * expected_type, expr * ex){
   blk.exprs = NULL;
   blk.expr_cnt = 0;
   c_value val;
+  val.type = C_NOTHING;
   type_def * td = compile_expr(expected_type, &blk, &val, *ex);
   c_block_delete(blk);
   c_value_delete(val);
