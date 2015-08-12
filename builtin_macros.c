@@ -566,10 +566,13 @@ type_def * declare_macro_macro(type_def * expected_type, c_block * block, c_valu
 // Casts a variable to a new type.
 type_def * cast_macro(type_def * expected_type, c_block * block, c_value * value, 
 		      expr body, expr type){
+  type_def * cast_to = expr2type(type);
+  if(is_check_type_run())
+    return cast_to;
   c_value * v = alloc0(sizeof(c_value));
   type_def * td = compile_expr(NULL, block, v, body);
   COMPILE_ASSERT(td != error_def);	  
-  type_def * cast_to = expr2type(type);
+  
   CHECK_TYPE(expected_type, cast_to);
   value->type = C_CAST;
   value->cast.value = v;
