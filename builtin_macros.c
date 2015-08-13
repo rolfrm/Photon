@@ -794,12 +794,18 @@ type_def * math_operator(char * operator, type_def * expected_type, c_block * bl
   type_def * t1 = compile_expr(expected_type, block, val1, item1);
   COMPILE_ASSERT(t1 != error_def && t1 != &void_def);
   COMPILE_ASSERT(is_number_type(t1));
-
   type_def * t2 = compile_expr(expected_type == NULL ? t1 : expected_type, block, val2, item2);
   COMPILE_ASSERT(is_number_type(t2));
   if(t1 != t2){
+    // todo: Find a better way!.
+    t2 = compile_expr(expected_type, block, val2, item2);
+    t1 = compile_expr(expected_type == NULL ? t2 : expected_type, block, val1, item1);
+  }
+
+  if(t1 != t2){
     if(!is_check_type_run()){
       loge("'%s' cannot handle the two different types:\n'", operator);
+      print_expr(&item1); logd(" "); print_expr(&item2); logd("\n");
       print_decl(t1, get_symbol("t1"));logd("'\n and \n'");
       print_decl(t2, get_symbol("t2"));logd("'\n\n");
     }
