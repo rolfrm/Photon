@@ -69,8 +69,8 @@
 ;; 11111110 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 36 ;;this probably does not exist.
   (let ((ustr (cast string (ptr u8))))
     (let ((first (deref ustr)) 
-	  (nchars 0))
-      (if (< first 0b10000000)
+	  (nchars (the 0 i32)))
+      (if! (< first 0b10000000)
 	  (progn
 	    (setf nchars 0)
 	    (noop))
@@ -97,29 +97,36 @@
 				(setf first (.- first 0b11111100)))
 			      ))))))
 
-      ;(print "nchars: " nchars newline)
+      (print "nchars: " nchars newline)
        (if (eq nchars 0)
 	   (progn
 	     (setf (deref out-pt) (cast first i32))
 	     (noop))
 	   (let ((out (cast first i32)))
-	     (setf out (cast (<< (cast out i64) (cast (* nchars 6) i64))
-			     i32))
-	     (print "out:" out newline)
-	     (range it 1 (.+ nchars 1)
-       		    (let ((chr (cast (deref (ptr+ ustr it)) i64)))
-		      (setf out
-			    (.+ out 
-				(cast 
-				 (<< (cast (bit-and chr 0b00111111)  i64)
-				     (cast (.* (- nchars it 1) 6) i64))
-				 i32)
-				)))
-		    (print "out:" out newline)
+	     (setf out (<< out (* nchars 6)))
+	     ;(print "out:" out newline)
+	     (range _it 1 (.+ nchars 1)
+		    (let ((it (cast _it i32)))
+		      (let ((chr (cast (deref (ptr+ ustr it)) i32)))
+			(setf out
+			      (.+ out 
+				  (<< (bit-and chr 0b00111111)
+				      (.* (- nchars it 1) 6))
+				  ))))
+		    ;(print "out:" out newline)
 		    )
 	     
-      	    (setf (deref out-pt) out)))1
+      	    (setf (deref out-pt) out)))
       (+ string (+ nchars 1)))))
+
+(defun test-codepoint
+  (let ((str "µ") (codepoint :type i32))
+      (read-utf8-codepoint str (addrof codepoint))
+      (print ": Should be 0xc3xx something.. : ")
+      (print-hex (cast codepoint i64))
+      (print newline)))
+(test-codepoint)
+(exit 0)
 
 (defstruct size
   (width i64)
@@ -177,7 +184,7 @@
 		    )
 		  (progn
 		    (setf text (read-utf8-codepoint text (addrof (member status codepoint))))
-	       
+		    (print "codepoint: " (member status codepoint) newline)
 		    (tt:get-codepoint-h-metrics font 
 						(member status codepoint) 
 						(addrof (member status advance)) 
@@ -267,12 +274,12 @@ In Truetype
 format:
 
 
-'abcdef
+'|abcdef
 ghijklm
 opqrstu
-vxyz'.
+vxyz|'.
 
-[ ... ]"))
+[ ... ]µáßðåäé "))
        (let ((data (read-all-data fontpath (addrof s))))
 	(if (ptr-null? data)
 	    (print "Error!" newline)
@@ -309,5 +316,5 @@ vxyz'.
 (defun printhi (void (a (ptr void)))
     (print "Hi, im davey! " (cast a (ptr char)) newline))
 ;(defer-test printhi (cast (+ " hello ddd-dd-davey? " 2) (ptr void)))
-;(test)
-;(exit 0)
+(test)
+(exit 0)
