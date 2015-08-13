@@ -2,6 +2,7 @@
 (load "std.lisp")
 (load "overload.lisp")
 
+;; uses generic +. Hence is compatible with anything that uses it
 (defmacro incr (var amount)
   (expr
    (setf (unexpr var) (+ (unexpr var) (unexpr amount)))))
@@ -24,7 +25,8 @@
 (load-symbol+ libm sqrt sqrt (fcn f64 (x f64)))
 (load-symbol+ libm sqrt32 sqrtf (fcn f32 (x f32)))
 (load-symbol+ libm fabs fabs (fcn f64 (x f64)))
-
+(load-symbol+ libm ceilf ceilf (fcn f32 (x f32)))
+(load-symbol+ libm ceil ceil (fcn f64 (x f64)))
 
 (defvar pi 3.141592653)
 (defvar 2pi (* pi 2))
@@ -178,4 +180,3 @@
 
 (defmacro ptr-null? (_ptr)
   (expr (eq null (cast (unexpr _ptr) (ptr void)))))
-  
