@@ -686,7 +686,7 @@ type_def * defun_macro(type_def * expected_type, c_block * block, c_value * valu
   expr name = sub_exprs[0];
   
   COMPILE_ASSERT(is_symbol(name));
-  
+
   static expr subargs[1] = {{.type = VALUE, .value = {.type = SYMBOL, .value = "void", .strln = 4}}};
   static expr args2 = {.type = EXPR, .sub_expr.cnt = 1, .sub_expr.exprs = subargs};
   expr args;
@@ -701,7 +701,7 @@ type_def * defun_macro(type_def * expected_type, c_block * block, c_value * valu
   }
   COMPILE_ASSERT(args.type == EXPR || args.sub_expr.cnt > 0);
   symbol fcnname = expr_symbol(name);
-  
+  logd("Defining function '%s'\n", symbol_name(fcnname));  
   c_root_code newfcn_root;
   newfcn_root.type = C_FUNCTION_DEF;
   c_fcndef * f = &newfcn_root.fcndef;
@@ -795,8 +795,16 @@ type_def * math_operator(char * operator, type_def * expected_type, c_block * bl
   COMPILE_ASSERT(t1 != error_def && t1 != &void_def);
   COMPILE_ASSERT(is_number_type(t1));
 
-  type_def * t2 = compile_expr(expected_type, block, val2, item2);
+  type_def * t2 = compile_expr(expected_type == NULL ? t1 : expected_type, block, val2, item2);
   COMPILE_ASSERT(is_number_type(t2));
+  if(t1 != t2){
+    if(!is_check_type_run()){
+      loge("'%s' cannot handle the two different types:\n'", operator);
+      print_decl(t1, get_symbol("t1"));logd("'\n and \n'");
+      print_decl(t2, get_symbol("t2"));logd("'\n\n");
+    }
+    COMPILE_ERROR("");
+  }
   CHECK_TYPE(expected_type,t1);
   CHECK_TYPE(expected_type,t2);
   
