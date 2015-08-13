@@ -302,7 +302,8 @@ bool is_integer_type(type_def * td){
      td == &u64_def ||
      td == &u32_def ||
      td == &u16_def ||
-     td == &u8_def){
+     td == &u8_def ||
+     td == &char_def){
     return true;
   }
   return false;

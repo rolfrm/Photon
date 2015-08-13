@@ -159,6 +159,9 @@
 (defun printu8 (void (x u8))
   (printu64 (cast x u64)))
 
+(defun printchar (void (x char))
+  (std:print-i64 "%c" (cast x i64)))
+
 (defun printstr (void (x (ptr char)))
   (std:print-f64 x 0.0))
 

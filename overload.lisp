@@ -307,6 +307,7 @@
 (overload print printu8)
 (overload print printf64)
 (overload print printf32)
+(overload print printchar)
 (overload print printstr)
 (overload print print-symbol)
 (overload print print-type)
