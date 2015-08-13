@@ -791,16 +791,25 @@ type_def * math_operator(char * operator, type_def * expected_type, c_block * bl
   c_value * val1 = alloc0(sizeof(c_value));
   c_value * val2 = alloc0(sizeof(c_value));
   c_value * comp = val;
-  type_def * t1 = compile_expr(expected_type, block, val1, item1);
+  c_block blk2 = c_block_empty;
+  type_def * t1 = compile_expr(expected_type, &blk2, val1, item1);
   COMPILE_ASSERT(t1 != error_def && t1 != &void_def);
   COMPILE_ASSERT(is_number_type(t1));
-  type_def * t2 = compile_expr(expected_type == NULL ? t1 : expected_type, block, val2, item2);
+  type_def * t2 = compile_expr(expected_type == NULL ? t1 : expected_type, &blk2, val2, item2);
   COMPILE_ASSERT(is_number_type(t2));
   if(t1 != t2){
-    // todo: Find a better way!.
-    t2 = compile_expr(expected_type, block, val2, item2);
-    t1 = compile_expr(expected_type == NULL ? t2 : expected_type, block, val1, item1);
+    // If this is the case, i need to delete val1,val2 and blk2.
+    c_block_delete(blk2);
+    c_value_delete(*val1);
+    c_value_delete(*val2);
+    list_clean((void **) &blk2.exprs, &blk2.expr_cnt);
+    t2 = compile_expr(expected_type, &blk2, val2, item2);
+    t1 = compile_expr(expected_type == NULL ? t2 : expected_type, &blk2, val1, item1);
   }
+  for(size_t i = 0; i < blk2.expr_cnt; i++){
+    block_add(block,blk2.exprs[i]);
+  }
+  list_clean((void **) &blk2.exprs, &blk2.expr_cnt);
 
   if(t1 != t2){
     if(!is_check_type_run()){
