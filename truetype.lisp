@@ -310,4 +310,4 @@ vxyz|'.
     (print "Hi, im davey! " (cast a (ptr char)) newline))
 ;(defer-test printhi (cast (+ " hello ddd-dd-davey? " 2) (ptr void)))
 (test)
-(exit 0)
+;(exit 0)
