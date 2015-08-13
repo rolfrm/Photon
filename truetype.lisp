@@ -79,7 +79,7 @@
 	      (if (< first 0b11100000)
 		  (progn
 		    (setf nchars 1)
-		    (setf first (.- first (cast 0b11000000 u8))))
+		    (setf first (bit-and first (cast 0b00011111 u8))))
 		  (if (< first 0b11110000)
 		      (progn
 			(setf nchars 2)
@@ -97,23 +97,19 @@
 				(setf first (.- first 0b11111100)))
 			      ))))))
 
-      (print "nchars: " nchars newline)
        (if (eq nchars 0)
 	   (progn
 	     (setf (deref out-pt) (cast first i32))
 	     (noop))
 	   (let ((out (cast first i32)))
-	     (setf out (<< out (* nchars 6)))
-	     (print "out:" out newline)
 	     (range _it 1 (.+ (cast nchars i64) 1)
 		    (let ((it (cast _it i32)))
 		      (let ((chr (cast (deref (ptr+ ustr (cast it i64))) i32)))
 			(setf out
-			      (.+ out 
-				  (<< (bit-and chr 0b00111111)
-				      (.* (- nchars it 1) 6))
+			      (bit-or (bit-and chr 0b00111111)
+				      (<< out 6)
+
 				  ))))
-		    (print "out:" out newline)
 		    )
 	     
       	    (setf (deref out-pt) out)))
@@ -125,8 +121,6 @@
       (print ": Should be 0xc3xx something.. : ")
       (print-hex (cast codepoint i64))
       (print newline)))
-(test-codepoint)
-;(exit 0)
 
 (defstruct size
   (width i64)
@@ -316,5 +310,5 @@ vxyz|'.
 (defun printhi (void (a (ptr void)))
     (print "Hi, im davey! " (cast a (ptr char)) newline))
 ;(defer-test printhi (cast (+ " hello ddd-dd-davey? " 2) (ptr void)))
-;(test)
-;(exit 0)
+(test)
+(exit 0)
