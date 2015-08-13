@@ -96,9 +96,8 @@
 				(setf nchars 5)
 				(setf first (.- first 0b11111100)))
 			      ))))))
-
-       (if (eq nchars 0)
-	   (progn
+      (if (eq nchars 0)
+	  (progn
 	     (setf (deref out-pt) (cast first i32))
 	     (noop))
 	   (let ((out (cast first i32)))
@@ -108,19 +107,19 @@
 			(setf out
 			      (bit-or (bit-and chr 0b00111111)
 				      (<< out 6)
-
-				  ))))
-		    )
-	     
-      	    (setf (deref out-pt) out)))
+				      )))))
+	     (setf (deref out-pt) out)))
       (+ string (cast (+ nchars 1) i64)))))
 
 (defun test-codepoint
-  (let ((str "µ") (codepoint :type i32))
-      (read-utf8-codepoint str (addrof codepoint))
-      (print ": Should be 0xc3xx something.. : ")
-      (print-hex (cast codepoint i64))
-      (print newline)))
+  (let ((str "ǂ") (codepoint :type i32))
+    (read-utf8-codepoint str (addrof codepoint))
+    (print-hex (cast codepoint i64))
+    (print newline)
+    (assert (eq codepoint 0x1c2))
+    ))
+(test-codepoint)
+;(exit 0)
 
 (defstruct size
   (width i64)
