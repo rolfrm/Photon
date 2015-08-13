@@ -349,19 +349,17 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
 }
 
 type_def * compile_expr(type_def * expected_type, c_block * block, c_value * val,  expr e ){
-  type_def * td;
   switch(e.type){
   case EXPR:
     return _compile_expr(expected_type, block, val, &e.sub_expr);
     break;
   case VALUE:
-    td = compile_value(expected_type, val,e.value);
+    return compile_value(expected_type, val,e.value);
     break;
   case ERROR:
     return error_def;
   }	  
-  
-  return td;
+  return error_def;
 }
 
 c_root_code compile_lisp_to_eval(expr exp, compile_status * status){
