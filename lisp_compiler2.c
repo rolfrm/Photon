@@ -291,7 +291,13 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
     default:
       ERROR("Number of macro arguments not supported: %i", argcnt);
     }
-    COMPILE_ASSERT(td != error_def);
+    if(td == error_def && !is_check_type_run()){
+      loge("Unable to compile: ");
+      expr e = {.type = EXPR};
+      e.sub_expr = *se;
+      print_expr(&e); loge("\n");
+    }
+      
     return td;
       
   }else if(var_type->type == FUNCTION || 
