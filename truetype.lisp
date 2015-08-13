@@ -142,7 +142,7 @@
 	(max-width-reached (the 0 i64))
 	(scale (tt:scale-for-pixel-height font (cast font-size f32))))
     (tt:get-font-v-metrics font (addrof ascent) (cast 0 (ptr i32)) (cast 0 (ptr i32)))
-    (let ((baseline (* ascent scale)))
+    (let ((baseline (cast (* (cast ascent f32) scale) i32)))
        (range it 0 len ;x0,y0,x1,y1
       	     (let ((advance :type i32)
       		   (lsb :type i32)
@@ -183,7 +183,7 @@
 	(buffer (cast (alloc0 (cast (size-area s) u64)) (ptr char)))
 	(scale (tt:scale-for-pixel-height font (cast font-size f32))))
     (tt:get-font-v-metrics font (addrof ascent) (cast 0 (ptr i32)) (cast 0 (ptr i32)))
-    (let ((baseline (* ascent scale)))
+    (let ((baseline (cast (* (cast ascent f32) scale) i32)))
        (range it 0 len ;x0,y0,x1,y1
       	     (let ((advance :type i32)
       		   (lsb :type i32)
@@ -217,6 +217,73 @@
        	     (setf xpos (+ xpos (* scale (cast advance f32))))
 	       )))
     buffer))
+
+(defstruct tt:iterate-data
+  (x0 i32)
+  (x1 i32)
+  (y0 i32)
+  (y1 i32)
+  (codepoint i32)
+  (x-shift f32)
+  (scale f32)
+  (xpos f32)
+  (baseline i32))
+
+(defun print-tt:iterate-data (void (it-data tt:iterate-data))
+  (progn
+    (print "tt x0:" (member it-data x0) " x1:" (member it-data x1) " y0:" (member it-data y0) " y1:" (member it-data y1))
+    (print " pt:" (member it-data codepoint) " x-sh:" (member it-data x-shift) " s:" (member it-data scale))
+    (print " xpos:" (member it-data xpos) " baseline:" (member it-data baseline) " ")
+  ))
+(overload print print-tt:iterate-data)
+
+(defun tt:iterate (void (text (ptr char))
+		   (font-size i32) (max-width i32) (font (ptr tt:fontinfo))
+		   (callback (fcn void (userdata (ptr void)) (status tt:iterate-data)))
+		   (userdata (ptr void))) 
+  (let ((len (cast (strlen text) i64))
+	(ascent :type i32)
+	;(xpos (the 2.0 f32))
+	;(buffer (cast (alloc0 (cast (size-area s) u64)) (ptr char)))
+	;(scale (tt:scale-for-pixel-height font (cast font-size f32)))
+	(status :type tt:iterate-data))
+    (setf (member status xpos) 2.0)
+    (setf (member status scale) (tt:scale-for-pixel-height font (cast font-size f32)))
+    (tt:get-font-v-metrics font (addrof ascent) (cast 0 (ptr i32)) (cast 0 (ptr i32)))
+    (setf (member status baseline) (cast (* (cast ascent f32) (member status scale)) i32))
+    ;(let ((baseline (* ascent scale)))
+    (while! (not (eq (cast (deref text) i32) 0))
+	   (let ((advance :type i32)
+		 (lsb :type i32)
+		   ;(x0 :type i32)
+      		   ;(x1 :type i32)
+      		   ;(y0 :type i32)
+      		   ;(y1 :type i32)
+      		   ;(x-shift (the 0.0 f32))
+		 (codepoint (cast (deref text) i32))		   
+		 (it :type tt:iterate-data)
+		 )
+	       
+	     (tt:get-codepoint-h-metrics font codepoint (addrof advance) (addrof lsb))
+	     (tt:get-codepoint-bitmap-box-subpixel font codepoint 
+						   (member status scale)
+						   (member status scale) 
+						   (member status x-shift) 
+						   0 
+						   (addrof (member status x0))
+						   (addrof (member status y0))
+						   (addrof (member status x1))
+						   (addrof (member status y1)))
+					
+	     (callback userdata status)
+	     (if! (> (cast (+ (member status xpos) (* (member status scale) (cast advance f32))) i32) max-width)
+		  (progn
+		    (setf (member status xpos) 0)
+		    (incr (member status baseline) (cast (* (cast ascent f32) (member status scale)) i32)))
+		  (setf (member status xpos) (+ (member status xpos) (* (member status scale) (cast advance f32)))))
+	     (setf text (ptr+ text 1))
+	     ))))
+
 	  
 	     
 ;; (defun write-text ((ptr char) (out-size (ptr size)) (text (ptr char)))
@@ -231,10 +298,23 @@
 		 
 ;;   "" )
 
+(defun rect-calc-callback (void (userdata (ptr void)) (status tt:iterate-data))
+  (var! ((rect (cast userdata (ptr size)))
+	(right (cast (ceilf (+ (cast (member status x1) f32) (member status xpos))) i64))
+	(bottom (cast (+ (member status y1) (member status baseline)) i64)))
+    (let ((recti (deref rect)))
+      (setf (member (deref rect) width) (max (member recti width) right))
+      (setf (member (deref rect) height) (max (member recti height) bottom))
+      )))
+
+(defun test-callback (void (userdata (ptr void)) (status tt:iterate-data))
+  (print status newline))
+
  (defun test
      (let ((baked (cast (alloc0 100) (ptr tt:fontinfo)))
 	   (fontpath "/usr/share/fonts/truetype/freefont/FreeMono.ttf")
-	   (s (cast 0 u64)))
+	   (s (cast 0 u64))
+	   (str "hello im davey"))
        (let ((data (read-all-data fontpath (addrof s))))
 	(if (ptr-null? data)
 	    (print "Error!" newline)
@@ -244,23 +324,22 @@
 	      (let ((h (tt:scale-for-pixel-height baked 15))
 		    (codept (cast 0xb5 i32)))
 		(print newline "codepoint:" codept newline)
-		(let ((s (get-text-size "hello!" 16
-				      100 baked)))
-		  (print "Writing bitmap..
-")
-		  (let ((r (write-text-to-buffer s "hello!"
-					16 100 baked)))
-		    (print (cast r i64) newline)
-		    (range y 0 (member s height)
-			   (range x 0 (member s width)
-				  (var ((v (deref (ptr+ r (.+ x (.* y (member s width)))))))
-				    ;(print (cast v i64) newline)
-				    (if (< (cast v i64) 0)
-					(printstr " ")
-					(printstr "#")
-					)
-				  ))
-			   (printstr newline))
-		))))))))
-;(test)
-;(exit 0)
+		(let ((s (get-text-size str 16
+				      100 baked))
+		      (s2 :type size))
+		  (setf (member s2 width) 0)
+		  (setf (member s2 height) 0)
+		  (tt:iterate str 16 100 baked rect-calc-callback (cast (addrof s2) (ptr void)))
+		  (print s2 newline)
+		  (print s newline)
+		  
+		  )))))))
+
+(defun defer-test (void (a (fcn void (userdata (ptr void)))) (userdata (ptr void)))
+  (a userdata))
+
+(defun printhi (void (a (ptr void)))
+    (print "Hi, im davey! " (cast a (ptr char)) newline))
+;(defer-test printhi (cast (+ " hello ddd-dd-davey? " 2) (ptr void)))
+(test)
+(exit 0)
