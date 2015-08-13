@@ -138,8 +138,8 @@ void print_value(c_value val){
     format(".%s)", get_c_name(val.member.name));;
     break;
   case C_DEREF:
-    format("*");
     format("(");
+    format("*");
     print_value(*val.deref.inner);
     format(")");
     break;
