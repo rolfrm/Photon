@@ -403,9 +403,11 @@ char * get_orig_dir(){
   return orig_dir;
 }
 
+char * _tcc_error = NULL;
+
 void tccerror(void * opaque, const char * msg){
   UNUSED(opaque);
-  loge("TCC error: %s\n",msg);
+  _tcc_error = clone((char *)msg, strlen(msg));
 }
 
 TCCState * mktccs(){ 
@@ -491,14 +493,24 @@ void * compile_as_c(c_root_code * codes, size_t code_cnt){
   }
   
   int fail = tcc_compile_string(tccs, data);
+  if(_tcc_error != NULL){
+    fail = true;
+    loge("TCC Error: '%s'\n", _tcc_error);
+    dealloc(_tcc_error);
+    _tcc_error = NULL;
+  }
   free(data);
   ASSERT(!fail);
+  if(fail) return NULL;
   data = NULL;
   int size = tcc_relocate(tccs, NULL);
   void * code_buffer = alloc(size);
   fail = tcc_relocate(tccs, code_buffer);
   ASSERT(!fail);
-  
+  if(fail) {
+    dealloc(code_buffer);
+    return NULL;
+  }
   for(size_t i = 0; i < code_cnt; i++){
     c_root_code r = codes[i];
     if(r.type == C_FUNCTION_DEF){
@@ -564,13 +576,14 @@ var_def * lisp_compile_expr(expr ex, compile_status * optout_status){
 	}
 	
 	void * codebuf = compile_as_c(&cl,1);
-	
+	if(codebuf == NULL)
+	  *optout_status = COMPILE_ERROR;
 	//print_current_mem(2);
 	c_root_code_delete(cl);	
 	
 	//print_current_mem(3);
-	
-	add_delete_soon(codebuf);
+	if(codebuf != NULL)
+	  add_delete_soon(codebuf);
 	//current_allocator = prev;
 	//logd("Delete soon count: %i\n", delete_soon_cnt);
       }));

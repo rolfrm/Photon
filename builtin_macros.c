@@ -118,15 +118,15 @@ type_def * var_atom_macro(type_def * expected_type, c_block * block, c_value * v
   push_symbols(&lisp_vars, &varcnt);
   c_expr set_expr;
   set_expr.type = C_VALUE;
-  type_def * ret_type = NULL;
-  ret_type = compile_expr(NULL, &sblk_expr.block, &set_expr.value, body);
+  
+  compile_expr(NULL, &sblk_expr.block, &set_expr.value, body);
   block_add(&sblk_expr.block, set_expr);
   block_add(block, sblk_expr);
   val->type = C_NOTHING;
   pop_symbols();
 
   dealloc(lisp_vars);
-  return ret_type;
+  return &void_def;
 }
 
 
