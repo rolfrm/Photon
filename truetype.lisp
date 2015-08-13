@@ -104,20 +104,20 @@
 	     (noop))
 	   (let ((out (cast first i32)))
 	     (setf out (<< out (* nchars 6)))
-	     ;(print "out:" out newline)
-	     (range _it 1 (.+ nchars 1)
+	     (print "out:" out newline)
+	     (range _it 1 (.+ (cast nchars i64) 1)
 		    (let ((it (cast _it i32)))
-		      (let ((chr (cast (deref (ptr+ ustr it)) i32)))
+		      (let ((chr (cast (deref (ptr+ ustr (cast it i64))) i32)))
 			(setf out
 			      (.+ out 
 				  (<< (bit-and chr 0b00111111)
 				      (.* (- nchars it 1) 6))
 				  ))))
-		    ;(print "out:" out newline)
+		    (print "out:" out newline)
 		    )
 	     
       	    (setf (deref out-pt) out)))
-      (+ string (+ nchars 1)))))
+      (+ string (cast (+ nchars 1) i64)))))
 
 (defun test-codepoint
   (let ((str "µ") (codepoint :type i32))
@@ -126,7 +126,7 @@
       (print-hex (cast codepoint i64))
       (print newline)))
 (test-codepoint)
-(exit 0)
+;(exit 0)
 
 (defstruct size
   (width i64)
@@ -316,5 +316,5 @@ vxyz|'.
 (defun printhi (void (a (ptr void)))
     (print "Hi, im davey! " (cast a (ptr char)) newline))
 ;(defer-test printhi (cast (+ " hello ddd-dd-davey? " 2) (ptr void)))
-(test)
-(exit 0)
+;(test)
+;(exit 0)
