@@ -1,18 +1,22 @@
 (defvar libgl (load-lib "libGL.so"))
+(type (alias u32 gl:enum))
+
 (defmacro gl-load (name cname type)
   (expr (load-symbol+ libgl (unexpr name) (unexpr cname) (unexpr type))))
+
+(defmacro glvar (name value)
+  (expr (defvar (unexpr name) (cast (unexpr value) gl:enum))))
+
 ;; misc
-(gl-load gl:clear glClear  (fcn void (mask i32)))
+(gl-load gl:clear glClear  (fcn void (mask gl:enum)))
 (gl-load gl:clear-color  glClearColor (fcn void (r f32) (g f32) (b f32) (a f32)))
 (gl-load gl:line-width glLineWidth (fcn void (width f32)))
-(write-line "create-shader")
-(defvar gl:fragment-shader (cast 0x8b30 u32))
-(defvar gl:vertex-shader (cast 0x8b31 u32))
-(defvar gl:color-buffer-bit (cast 0x4000 i32))
+(gl-load gl:enable glEnable (fcn void (glenum gl:enum)))
+(gl-load gl:disable glDisable (fcn void (glenum gl:enum)))
 ;; gl shader
 (gl-load gl:get-error glGetError (fcn u32))
 
-(gl-load gl:create-shader glCreateShader  (fcn u32 (type u32)))
+(gl-load gl:create-shader glCreateShader  (fcn u32 (type gl:enum)))
 (gl-load gl:shader-source glShaderSource 
 	      (fcn void 
 		   (shader u32) 
@@ -24,19 +28,19 @@
 (gl-load gl:get-shader-info-log glGetShaderInfoLog 
 	      (fcn void (shader u32) (maxlength u32) (length (ptr u32)) (buffer (ptr char))))
 (gl-load gl:attach-shader glAttachShader (fcn void (program u32) (shader u32)))
-(gl-load gl:get-shader-info glGetShaderiv (fcn void (shader u32) (pname u32) (params (ptr u32))))
+(gl-load gl:get-shader-info glGetShaderiv (fcn void (shader u32) (pname gl:enum) (params (ptr u32))))
 (gl-load gl:link-program glLinkProgram (fcn void (program u32)))
-(gl-load gl:get-program-info glGetProgramiv (fcn void (program u32) (enum u32) (params (ptr u32))))
+(gl-load gl:get-program-info glGetProgramiv (fcn void (program u32) (enum gl:enum) (params (ptr u32))))
 (gl-load gl:use-program glUseProgram (fcn void (program u32)))
 (gl-load gl:bind-attrib-location glBindAttribLocation (fcn void (program u32) (index u32) (name (ptr char))))
-(gl-load gl:draw-arrays glDrawArrays (fcn void (mode u32) (first u32) (count u32)))
+(gl-load gl:draw-arrays glDrawArrays (fcn void (mode gl:enum) (first u32) (count u32)))
 
 ;; gl vbo
 (gl-load gl:gen-buffers glGenBuffers (fcn void (count u32) (buffer-ptr (ptr u32))))
-(gl-load gl:bind-buffer glBindBuffer (fcn void (type u32) (buffer u32)))
-(gl-load gl:buffer-data glBufferData (fcn void (type u32) (byte-size u32) (data (ptr void)) (mode u32)))
+(gl-load gl:bind-buffer glBindBuffer (fcn void (type gl:enum) (buffer u32)))
+(gl-load gl:buffer-data glBufferData (fcn void (type gl:enum) (byte-size u32) (data (ptr void)) (mode gl:enum)))
 (gl-load gl:vertex-attrib-pointer glVertexAttribPointer 
-	 (fcn void (index u32) (size u32) (type u32)
+	 (fcn void (index u32) (size u32) (type gl:enum)
 	      (normalized u32) (stride u32) (ptr (ptr void))))
 (gl-load gl:enable-vertex-attrib-array glEnableVertexAttribArray
 	 (fcn void (index u32)))
@@ -66,36 +70,82 @@
 (overload gl:uniform gl:uniform-2i)
 (overload gl:uniform gl:uniform-3i)
 (overload gl:uniform gl:uniform-4i)
+(type (alias u32 gl:tex))
+;void glGenTextures(GLsizei n,GLuint * textures);
+(gl-load gl:gen-textures glGenTextures (fcn void (size i64) (textures (ptr gl:tex))))
+;void glTexImage2D(GLenum target​, GLint level​, GLint internalFormat​, GLsizei width​, 
+;                  GLsizei height​, GLint border​, GLenum format​, GLenum type​, const GLvoid * data​);
+(gl-load gl:tex-image-2d glTexImage2D (fcn void (target gl:enum) (level i32) (internal-format gl:enum)
+					    (width i64) (height i64) (border i32) (format gl:enum)
+					    (type gl:enum) (data (ptr void))))
+
+(gl-load gl:bind-textures glBindTextures (fcn void (first gl:enum) (count i64) (textures (ptr gl:tex))))
+(gl-load gl:bind-textures glBindTexture (fcn void (target gl:enum) (texture gl:tex)))
+(gl-load gl:tex-parameter glTexParameteri (fcn void (target gl:enum) (name gl:enum) (value gl:enum)))
+(gl-load gl:active-texture glActiveTexture (fcn void (active gl:enum)))
+
+(gl-load gl:blend-func glBlendFunc (fcn void (src gl:enum) (dst gl:enum)))
+
+;GL_TEXTURE_MIN_FILTER,GL_LINEAR, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T,GL_CLAMP_TO_BORDER
+
+
+
+
+;; #define GL_TEXTURE_MAG_FILTER			0x2800
+;; #define GL_TEXTURE_MIN_FILTER			0x2801
+;; #define GL_LINEAR				0x2601
+;; #define GL_NEAREST				0x2600
+;; #define GL_TEXTURE_WRAP_S			0x2802
+;; #define GL_TEXTURE_WRAP_T			0x2803
+;; #define GL_CLAMP_TO_BORDER			0x812D
+(glvar gl:texture-mag-filter 0x2800)
+(glvar gl:texture-min-filter 0x2801)
+(glvar gl:nearest 0x2600)
+(glvar gl:linear 0x2601)
+(glvar gl:texture-wrap-s 0x2802)
+(glvar gl:texture-wrap-t 0x2803)
+(glvar gl:clamp-to-border 0x812d)
 
 ;; defines
-;;GL_SHADER_TYPE, GL_DELETE_STATUS, GL_COMPILE_STATUS, GL_INFO_LOG_LENGTH, GL_SHADER_SOURCE_LENGTH.
-(defmacro glvar (name value)
-  (expr (defvar (unexpr name) (cast (unexpr value) u32))))
-(defvar gl:shader-type (cast 0x8B4F u32))
-(defvar gl:delete-status (cast 0x8B80 u32))
-(defvar gl:compile-status (cast 0x8B81 u32))
-(defvar gl:info-log-length (cast 0x8B84 u32))
-(defvar gl:shader-source-length (cast 0x8B88 u32))
 
-(defvar gl:link-status (cast 0x8B82 u32))
-
-;(defvar gl:array-buffer (cast 0x8892 u32))
+(glvar gl:texture-1d 0x0DE0)
+(glvar gl:texture-2d 0x0DE1)
+(glvar gl:depth-component 0x1902)
+(glvar gl:red 0x1903)
+(glvar gl:rgb 0x1907)
+(glvar gl:rgba 0x1908)
+(glvar gl:color-buffer-bit 0x4000)
+(glvar gl:fragment-shader 0x8b30)
+(glvar gl:vertex-shader 0x8b31)
+(glvar gl:texture-0 0x84C0)
+(glvar gl:shader-type 0x8B4F)
+(glvar gl:delete-status 0x8B80)
+(glvar gl:compile-status 0x8B81)
+(glvar gl:info-log-length 0x8B84)
+(glvar gl:shader-source-length 0x8B88)
+(glvar gl:link-status 0x8B82)
 (glvar gl:array-buffer 0x8892)
-
 (glvar gl:stream-draw 0x88E0)
 (glvar gl:static-draw 0x88E4)
 (glvar gl:dynamic-draw 0x88E8)
+(glvar gl:blend 0xbe2)
+;; #define GL_BLEND				0x0BE2
+;; #define GL_BLEND_SRC				0x0BE1
+;; #define GL_BLEND_DST				0x0BE0
+;; #define GL_ZERO					0
+;; #define GL_ONE					1
+;; #define GL_SRC_COLOR				0x0300
+;; #define GL_ONE_MINUS_SRC_COLOR			0x0301
+;; #define GL_SRC_ALPHA				0x0302
+;; #define GL_ONE_MINUS_SRC_ALPHA			0x0303
+;; #define GL_DST_ALPHA				0x0304
+;; #define GL_ONE_MINUS_DST_ALPHA			0x0305
+;; #define GL_DST_COLOR				0x0306
+;; #define GL_ONE_MINUS_DST_COLOR			0x0307
+;; #define GL_SRC_ALPHA_SATURATE			0x0308
 
-;; #define GL_STREAM_DRAW                    0x88E0
-;; #define GL_STREAM_READ                    0x88E1
-;; #define GL_STREAM_COPY                    0x88E2
-;; #define GL_STATIC_DRAW                    0x88E4
-;; #define GL_STATIC_READ                    0x88E5
-;; #define GL_STATIC_COPY                    0x88E6
-;; #define GL_DYNAMIC_DRAW                   0x88E8
-;; #define GL_DYNAMIC_READ                   0x88E9
-;; #define GL_DYNAMIC_COPY                   0x88EA
-
+(glvar gl:src-alpha 0x0302)
+(glvar gl:one-minus-src-alpha 0x0303)
 (defvar gl:true (cast 1 u32))
 (defvar gl:false (cast 0 u32))
 
@@ -147,3 +197,5 @@
 (glvar gl:quads 7)
 (glvar gl:quad-strip 8)
 (glvar gl:polygon 9)
+
+(glvar gl:depth-test 0x0B71)

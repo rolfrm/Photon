@@ -14,8 +14,12 @@
 
 (defvar frag-src "
 uniform vec4 color;
+uniform sampler2D tex;
 void main(){
-  gl_FragColor = color;
+  vec2 cord = gl_FragCoord.xy / 400;
+  
+  float i = texture(tex, vec2(cord.x,1 - cord.y)).r;
+  gl_FragColor = color + vec4(1,1,1,1) * i;
 }
 ")
 
@@ -68,6 +72,9 @@ length
 (defvar color-loc (gl:get-uniform-location prog "color"))
 (defvar cam-loc (gl:get-uniform-location prog "cam"))
 (defvar cam-size-loc (gl:get-uniform-location prog "cam_size"))
+(defvar tex-loc (gl:get-uniform-location prog "tex"))
+
+(gl:uniform tex-loc (cast 0 i32))
 
 (defvar points (cast null (ptr vec2)))
 (defvar points-cnt  0)
@@ -190,6 +197,51 @@ length
 	    (+ amount dead-zone)
 	    0.0))))
 
+(defvar font 
+  (let ((s :type u64))
+    (let ((baked (cast (alloc0 100) (ptr tt:fontinfo)))
+	  (data (read-all-data "/home/rolf/.atom/packages/asciidoc-preview/bundle/droid-sans/DroidSans-Bold.ttf" (addrof s))))
+      (tt:init-font baked data (tt:get-font-offset-for-index data 0))
+      baked)))
+
+(defvar text-tex :type gl:tex)
+(gl:active-texture gl:texture-0)
+(gl:gen-textures 1 (addrof text-tex))
+(gl:bind-textures gl:texture-2d text-tex)
+
+;
+(let ((s :type size)
+      (str "
+growgrowgrowgrowgrowgrowgrowgrow
+grow grow grow grow grow grow
+grow    grow grow     grow
+grow    grow        grow
+grow         groww        grow
+     grow               grow
+        grow          grow
+            grow
+")
+      (font-size (the 14 i32)))
+  (setf (member s width) 0)
+  (setf (member s height) 0)
+  (tt:iterate str font-size 200 font rect-calc-callback (cast (addrof s) (ptr void)))
+
+  (let ((item :type rect-draw-item))
+    (setf (member item buffer) (cast (alloc0 (cast (size-area s) u64)) (ptr char)))
+    (setf (member item font) font)
+    (setf (member item s) s)
+
+    (tt:iterate str font-size 200 font rect-draw-callback (cast (addrof item) (ptr void)))
+    (gl:tex-parameter gl:texture-2d gl:texture-min-filter gl:nearest)
+    (gl:tex-parameter gl:texture-2d gl:texture-mag-filter gl:nearest)
+    (gl:tex-parameter gl:texture-2d gl:texture-wrap-s gl:clamp-to-border)
+    (gl:tex-parameter gl:texture-2d gl:texture-wrap-t gl:clamp-to-border)
+    (gl:tex-image-2d gl:texture-2d 0 gl:rgb (member s width) (member s height) 0 gl:red gl:ubyte 
+		     (cast (member item buffer) (ptr void)))
+    ))
+
+;(exit 0)
+;
 (defun load-game(void)
   (progn
     (print "Reload!" newline)
@@ -224,10 +276,12 @@ length
 
 (load-game)
 
-
+;(gl:enable gl:blend)
+(gl:enable gl:texture-2d)
+(gl:disable gl:depth-test)
+(gl:blend-func gl:src-alpha gl:one-minus-src-alpha) 
 
 (let ((iteration 0)
-
       (height (cast 0.0 f64))
       (alive true)
       (dead-timer 0))
@@ -242,7 +296,6 @@ length
 	  (setf dead-timer 0))
 	(incr dead-timer 1)
 	)
-
       (when alive
 	(let ((lastpt (deref (+ points (- points-cnt 1)))))
 	  (add-to-list+ points points-cnt 
@@ -279,7 +332,7 @@ length
       (gl:uniform cam-size-loc cam-size)
       (gl:uniform cam-loc cam-pos)
 
-      (gl:uniform color-loc 0.0 0.0 0.0 1)      
+      (gl:uniform color-loc 0.0 0.0 0.0 0.0)      
       (gl:bind-buffer gl:array-buffer vbo-circle)
       (gl:vertex-attrib-pointer 0 2 gl:float gl:false 0 null) 
       (range it 0 (cast circle-cnt i64)

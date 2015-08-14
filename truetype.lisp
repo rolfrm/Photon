@@ -18,25 +18,37 @@
   (x1 f32) (y1 f32) (s1 f32) (t1 f32))
 
 
-(load-symbol+ libtt tt:bake-font-bitmap stbtt_BakeFontBitmap (fcn i32 (data (ptr char)) (offset i32) (pixel_height f32) (pixels (ptr char)) (pw i32) (ph i32) (first-char i32) (num-chars i32) (chardata (ptr tt:baked-char))))
+(load-symbol+ libtt tt:bake-font-bitmap stbtt_BakeFontBitmap 
+	      (fcn i32 (data (ptr char)) (offset i32) (pixel_height f32) 
+		   (pixels (ptr char)) (pw i32) (ph i32) 
+		   (first-char i32) (num-chars i32) (chardata (ptr tt:baked-char))))
 
 
 ;stbtt_GetBakedQuad(stbtt_bakedchar *chardata, int pw, int ph, int char_index, float *xpos, float *ypos, stbtt_aligned_quad *q, int opengl_fillrule)
 
-(load-symbol+ libtt tt:get-baked-quad stbtt_GetBakedQuad (fcn void (chardata (ptr tt:baked-char)) (pw i32) (ph i32) (char_index i32) (xpos (ptr f32)) (ypos (ptr f32)) (q (ptr tt:aligned-quad)) (opengl-fillrule i32)))
+(load-symbol+ libtt tt:get-baked-quad stbtt_GetBakedQuad 
+	      (fcn void (chardata (ptr tt:baked-char)) (pw i32) (ph i32) 
+		   (char_index i32) (xpos (ptr f32)) (ypos (ptr f32)) 
+		   (q (ptr tt:aligned-quad)) (opengl-fillrule i32)))
 
 (type (alias (opaque-struct tt:_fontinfo) tt:fontinfo))
 
-(load-symbol+ libtt tt:init-font stbtt_InitFont (fcn i32 (info (ptr tt:fontinfo)) (data (ptr char)) (offset i32))) 
-(load-symbol+ libtt tt:get-font-offset-for-index stbtt_GetFontOffsetForIndex (fcn i32 (data (ptr char)) (offset i32)))
-(load-symbol+ libtt tt:get-codepoint-bitmap stbtt_GetCodepointBitmap (fcn (ptr char) (info (ptr tt:fontinfo)) (scale-x f32) (scale-y f32) (codepoint i32) (width (ptr i32)) (height (ptr i32)) (xoff (ptr i32)) (yoff (ptr i32)))) 
+(load-symbol+ libtt tt:init-font stbtt_InitFont 
+	      (fcn i32 (info (ptr tt:fontinfo)) (data (ptr char)) (offset i32))) 
+(load-symbol+ libtt tt:get-font-offset-for-index stbtt_GetFontOffsetForIndex 
+	      (fcn i32 (data (ptr char)) (offset i32)))
+(load-symbol+ libtt tt:get-codepoint-bitmap stbtt_GetCodepointBitmap 
+	      (fcn (ptr char) (info (ptr tt:fontinfo)) (scale-x f32) 
+		   (scale-y f32) (codepoint i32) (width (ptr i32)) 
+		   (height (ptr i32)) (xoff (ptr i32)) (yoff (ptr i32)))) 
 
 ;float stbtt_ScaleForPixelHeight(const stbtt_fontinfo *info, float pixels);
 (load-symbol+ libtt tt:scale-for-pixel-height stbtt_ScaleForPixelHeight 
 	      (fcn f32 (info (ptr tt:fontinfo)) (pixels f32)))
 ;void stbtt_GetFontVMetrics(const stbtt_fontinfo *info, int *ascent, int *descent, int *lineGap);
 (load-symbol+ libtt tt:get-font-v-metrics stbtt_GetFontVMetrics
-	      (fcn void (info (ptr tt:fontinfo)) (ascent (ptr i32)) (descend (ptr i32)) (line-gap (ptr i32))))
+	      (fcn void (info (ptr tt:fontinfo)) (ascent (ptr i32)) 
+		   (descend (ptr i32)) (line-gap (ptr i32))))
 ;void stbtt_GetCodepointHMetrics(const stbtt_fontinfo *info, int codepoint, int *advanceWidth, int *leftSideBearing);
 (load-symbol+ libtt tt:get-codepoint-h-metrics stbtt_GetCodepointHMetrics 
 	      (fcn void (info (ptr tt:fontinfo)) (codepoint i32)
@@ -52,7 +64,8 @@
 ;STBTT_DEF void stbtt_MakeCodepointBitmapSubpixel(const stbtt_fontinfo *info, unsigned char *output, int out_w, int out_h, int out_stride, float scale_x, float scale_y, float shift_x, float shift_y, int codepoint);
 (load-symbol+ libtt tt:make-codepoint-bitmap-subpixel stbtt_MakeCodepointBitmapSubpixel
 	      (fcn void (info (ptr tt:fontinfo)) (output (ptr char)) (out-w i32) (out-h i32)
-		   (out-stride i32) (scale-x f32) (scale-y f32) (shift-x f32) (shift-y f32) (codepoint i32)))
+		   (out-stride i32) (scale-x f32) (scale-y f32) (shift-x f32) 
+		   (shift-y f32) (codepoint i32)))
 			      
 ;stbtt_MakeCodepointBitmapSubpixel
 ;stbtt_GetCodepointKernAdvance
@@ -119,7 +132,6 @@
     (assert (eq codepoint 0x1c2))
     ))
 (test-codepoint)
-;(exit 0)
 
 (defstruct size
   (width i64)
@@ -285,14 +297,14 @@ vxyz|'.
 		(let ((s2 :type size))
 		  (setf (member s2 width) 0)
 		  (setf (member s2 height) 0)
-		  (tt:iterate str 16 150 baked rect-calc-callback (cast (addrof s2) (ptr void)))
+		  (tt:iterate str 10 200 baked rect-calc-callback (cast (addrof s2) (ptr void)))
 		  (print s2 newline)
 		  (print s newline)
 		  (let ((item :type rect-draw-item))
 		    (setf (member item buffer) (cast (alloc0 (cast (size-area s2) u64)) (ptr char)))
 		    (setf (member item font) baked)
 		    (setf (member item s) s2)
-		    (tt:iterate str 16 150 baked rect-draw-callback (cast (addrof item) (ptr void)))
+		    (tt:iterate str 10 200 baked rect-draw-callback (cast (addrof item) (ptr void)))
 		    (range row 0 (member s2 height)
 			   (range col 0 (member s2 width)
 				  (let ((offset (+ (* row (member s2 width)) col)))
@@ -309,5 +321,5 @@ vxyz|'.
 (defun printhi (void (a (ptr void)))
     (print "Hi, im davey! " (cast a (ptr char)) newline))
 ;(defer-test printhi (cast (+ " hello ddd-dd-davey? " 2) (ptr void)))
-(test)
+;(test)
 ;(exit 0)
