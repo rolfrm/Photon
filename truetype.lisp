@@ -189,7 +189,6 @@
 		    )
 		  (progn
 		    (setf text (read-utf8-codepoint text (addrof (member status codepoint))))
-		    (print "codepoint: " (member status codepoint) newline)
 		    (tt:get-codepoint-h-metrics font 
 						(member status codepoint) 
 						(addrof (member status advance)) 

@@ -1,25 +1,37 @@
 (load "std2.lisp")
 (load "truetype.lisp")
 
+(defstruct rect
+  (upper-left vec2)
+  (size vec2))
+
+(defvar rect-default :type rect)
+
+(memset (cast (addrof rect-default) (ptr void)) 0 (size-of (type rect)))
+
 (load "glfw.lisp")
 (load "gl.lisp")
 (load "gl-ext.lisp")
-;(exit 0)
+(load "textbox-shader.lisp")
+
 (glfw:init)
 (defvar win (glfw:create-window 400 400 "Flowery!" null null))
 (glfw:make-current win)
+
+(defvar font (load-font "/home/rolf/.atom/packages/asciidoc-preview/bundle/droid-sans/DroidSans-Bold.ttf" ))
+
+(text-box:load)
+;(exit 0)
+
+
 (defvar prog (gl:create-program))
 (defvar frag (gl:create-shader gl:fragment-shader))
 (defvar vert (gl:create-shader gl:vertex-shader))
 
 (defvar frag-src "
 uniform vec4 color;
-uniform sampler2D tex;
 void main(){
-  vec2 cord = gl_FragCoord.xy / 400;
-  
-  float i = texture(tex, vec2(cord.x,1 - cord.y)).r;
-  gl_FragColor = color + vec4(1,1,1,1) * i;
+  gl_FragColor = color;
 }
 ")
 
@@ -72,9 +84,6 @@ length
 (defvar color-loc (gl:get-uniform-location prog "color"))
 (defvar cam-loc (gl:get-uniform-location prog "cam"))
 (defvar cam-size-loc (gl:get-uniform-location prog "cam_size"))
-(defvar tex-loc (gl:get-uniform-location prog "tex"))
-
-(gl:uniform tex-loc (cast 0 i32))
 
 (defvar points (cast null (ptr vec2)))
 (defvar points-cnt  0)
@@ -114,12 +123,6 @@ length
 
     (gl:buffer-data gl:array-buffer (cast s u32) (cast buf2 (ptr void)) gl:static-draw)
     (dealloc (cast buf2 (ptr void)))))
-
-(defstruct rect
-  (upper-left vec2)
-  (size vec2))
-(defvar rect-default :type rect)
-(memset (cast (addrof rect-default) (ptr void)) 0 (size-of (type rect)))
 
 (defvar vbo-grass-boxes (cast 0 u32))
 (gl:gen-buffers 1 (addrof vbo-grass-boxes))
@@ -197,51 +200,6 @@ length
 	    (+ amount dead-zone)
 	    0.0))))
 
-(defvar font 
-  (let ((s :type u64))
-    (let ((baked (cast (alloc0 100) (ptr tt:fontinfo)))
-	  (data (read-all-data "/home/rolf/.atom/packages/asciidoc-preview/bundle/droid-sans/DroidSans-Bold.ttf" (addrof s))))
-      (tt:init-font baked data (tt:get-font-offset-for-index data 0))
-      baked)))
-
-(defvar text-tex :type gl:tex)
-(gl:active-texture gl:texture-0)
-(gl:gen-textures 1 (addrof text-tex))
-(gl:bind-textures gl:texture-2d text-tex)
-
-;
-(let ((s :type size)
-      (str "
-growgrowgrowgrowgrowgrowgrowgrow
-grow grow grow grow grow grow
-grow    grow grow     grow
-grow    grow        grow
-grow         groww        grow
-     grow               grow
-        grow          grow
-            grow
-")
-      (font-size (the 14 i32)))
-  (setf (member s width) 0)
-  (setf (member s height) 0)
-  (tt:iterate str font-size 200 font rect-calc-callback (cast (addrof s) (ptr void)))
-
-  (let ((item :type rect-draw-item))
-    (setf (member item buffer) (cast (alloc0 (cast (size-area s) u64)) (ptr char)))
-    (setf (member item font) font)
-    (setf (member item s) s)
-
-    (tt:iterate str font-size 200 font rect-draw-callback (cast (addrof item) (ptr void)))
-    (gl:tex-parameter gl:texture-2d gl:texture-min-filter gl:nearest)
-    (gl:tex-parameter gl:texture-2d gl:texture-mag-filter gl:nearest)
-    (gl:tex-parameter gl:texture-2d gl:texture-wrap-s gl:clamp-to-border)
-    (gl:tex-parameter gl:texture-2d gl:texture-wrap-t gl:clamp-to-border)
-    (gl:tex-image-2d gl:texture-2d 0 gl:rgb (member s width) (member s height) 0 gl:red gl:ubyte 
-		     (cast (member item buffer) (ptr void)))
-    ))
-
-;(exit 0)
-;
 (defun load-game(void)
   (progn
     (print "Reload!" newline)
@@ -281,11 +239,17 @@ grow         groww        grow
 (gl:disable gl:depth-test)
 (gl:blend-func gl:src-alpha gl:one-minus-src-alpha) 
 
+
+(defvar font-t (text-box:create "ABC" 16 font))
+(print (member (member font-t bounds) size) newline)
+(setf (member (member font-t bounds) size) (vec 0.2 0.1))
+;(exit 0)
 (let ((iteration 0)
       (height (cast 0.0 f64))
       (alive true)
       (dead-timer 0))
   (while (< iteration 40000)
+    (gl:use-program prog)
     (let ((ts (timestamp)))
       (let ((cam-len (member cam-size x)))
 	(gl:line-width (cast (/ 100 cam-len) f32)))
@@ -324,7 +288,8 @@ grow         groww        grow
 	(let ((cheight (deref (+ points (cast (- points-cnt 1) i64)))))
 	  (when (> (member cheight y) height)
 	    (setf height (member cheight y))
-	    (print "height: " height newline))
+	    ;(print "height: " height newline)
+	    )
 	  ))
       
       ;(setf speed (* 0.9995 speed))
@@ -392,7 +357,11 @@ grow         groww        grow
       (gl:uniform size-loc 0.3 0.3)
       (gl:draw-arrays gl:polygon 0 (cast circ-pts u32))
       
-      (gl:uniform offset-loc (vec 0.0 0.0))      
+      (gl:uniform offset-loc (vec 0.0 0.0))  
+      (text-box:delete font-t)
+      (setf font-t (text-box:create "DSA" 19 font))
+      (setf (member (member font-t bounds) size) (vec 0.2 0.1))
+      (text-box:draw font-t (from-rgba 255 0 0 255) (from-rgba 0 255 0 255))
       (setf iteration (+ iteration 1))
 
       (glfw:swap-buffers win)

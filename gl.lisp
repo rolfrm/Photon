@@ -13,52 +13,60 @@
 (gl-load gl:line-width glLineWidth (fcn void (width f32)))
 (gl-load gl:enable glEnable (fcn void (glenum gl:enum)))
 (gl-load gl:disable glDisable (fcn void (glenum gl:enum)))
-;; gl shader
 (gl-load gl:get-error glGetError (fcn u32))
-
-(gl-load gl:create-shader glCreateShader  (fcn u32 (type gl:enum)))
+;; gl shader
+(type (alias u32 gl:shader-program))
+(type (alias u32 gl:shader))
+(type (alias u32 gl:uniform-loc))
+(gl-load gl:create-shader glCreateShader  (fcn gl:shader (type gl:enum)))
 (gl-load gl:shader-source glShaderSource 
 	      (fcn void 
-		   (shader u32) 
+		   (shader gl:shader) 
 		   (count u32) 
 		   (shader-string (ptr (ptr char)))
 		   (length (ptr u32))))
-(gl-load gl:create-program glCreateProgram (fcn u32))
-(gl-load gl:compile-shader glCompileShader (fcn void (shader u32)))
+(gl-load gl:create-program glCreateProgram (fcn gl:shader-program))
+(gl-load gl:compile-shader glCompileShader (fcn void (shader gl:shader)))
 (gl-load gl:get-shader-info-log glGetShaderInfoLog 
-	      (fcn void (shader u32) (maxlength u32) (length (ptr u32)) (buffer (ptr char))))
-(gl-load gl:attach-shader glAttachShader (fcn void (program u32) (shader u32)))
-(gl-load gl:get-shader-info glGetShaderiv (fcn void (shader u32) (pname gl:enum) (params (ptr u32))))
-(gl-load gl:link-program glLinkProgram (fcn void (program u32)))
-(gl-load gl:get-program-info glGetProgramiv (fcn void (program u32) (enum gl:enum) (params (ptr u32))))
-(gl-load gl:use-program glUseProgram (fcn void (program u32)))
-(gl-load gl:bind-attrib-location glBindAttribLocation (fcn void (program u32) (index u32) (name (ptr char))))
+	      (fcn void (shader gl:shader) (maxlength u32) (length (ptr u32)) (buffer (ptr char))))
+(gl-load gl:attach-shader glAttachShader (fcn void (program gl:shader-program) (shader gl:shader)))
+(gl-load gl:get-shader-info glGetShaderiv (fcn void (shader gl:shader) 
+					       (pname gl:enum) (params (ptr u32))))
+(gl-load gl:link-program glLinkProgram (fcn void (program gl:shader-program)))
+(gl-load gl:get-program-info glGetProgramiv (fcn void (program gl:shader-program) (enum gl:enum) 
+						 (params (ptr u32))))
+(gl-load gl:use-program glUseProgram (fcn void (program gl:shader-program)))
+(gl-load gl:bind-attrib-location glBindAttribLocation 
+	 (fcn void (program gl:shader-program) (index i32) (name (ptr char))))
 (gl-load gl:draw-arrays glDrawArrays (fcn void (mode gl:enum) (first u32) (count u32)))
 
 ;; gl vbo
 (gl-load gl:gen-buffers glGenBuffers (fcn void (count u32) (buffer-ptr (ptr u32))))
 (gl-load gl:bind-buffer glBindBuffer (fcn void (type gl:enum) (buffer u32)))
-(gl-load gl:buffer-data glBufferData (fcn void (type gl:enum) (byte-size u32) (data (ptr void)) (mode gl:enum)))
+(gl-load gl:buffer-data glBufferData 
+	 (fcn void (type gl:enum) (byte-size u32) (data (ptr void)) (mode gl:enum)))
 (gl-load gl:vertex-attrib-pointer glVertexAttribPointer 
 	 (fcn void (index u32) (size u32) (type gl:enum)
 	      (normalized u32) (stride u32) (ptr (ptr void))))
 (gl-load gl:enable-vertex-attrib-array glEnableVertexAttribArray
 	 (fcn void (index u32)))
 (gl-load gl:disable-vertex-attrib-array glDisableVertexAttribArray
-	 (fcn void (index u32)))							     
+	 (fcn void (index u32)))
 
 ;; GL Uniform
-(gl-load gl:get-uniform-location glGetUniformLocation (fcn i32 (program u32) (name (ptr char))))
-(gl-load gl:uniform-1f glUniform1f (fcn void (location i32) (v1 f32)));
-(gl-load gl:uniform-2f glUniform2f (fcn void (location i32) (v1 f32) (v2 f32)));
-(gl-load gl:uniform-3f glUniform3f (fcn void (location i32) (v1 f32) (v2 f32) (v3 f32)));
-(gl-load gl:uniform-4f glUniform4f (fcn void (location i32) (v1 f32) (v2 f32) (v3 f32) (v3 f32)));
+(gl-load gl:get-uniform-location glGetUniformLocation 
+	 (fcn gl:uniform-loc (program gl:shader-program) (name (ptr char))))
+(gl-load gl:uniform-1f glUniform1f (fcn void (location gl:uniform-loc) (v1 f32)));
+(gl-load gl:uniform-2f glUniform2f (fcn void (location gl:uniform-loc) (v1 f32) (v2 f32)));
+(gl-load gl:uniform-3f glUniform3f (fcn void (location gl:uniform-loc) (v1 f32) (v2 f32) (v3 f32)));
+(gl-load gl:uniform-4f glUniform4f 
+	 (fcn void (location gl:uniform-loc) (v1 f32) (v2 f32) (v3 f32) (v3 f32)));
 
-(gl-load gl:uniform-1i glUniform1i (fcn void (location i32) (v1 i32)));
-(gl-load gl:uniform-2i glUniform2i (fcn void (location i32) (v1 i32) (v2 i32)));
-(gl-load gl:uniform-3i glUniform3i (fcn void (location i32) (v1 i32) (v2 i32) (v3 i32)));
-(gl-load gl:uniform-4i glUniform4i (fcn void (location i32) (v1 i32) (v2 i32) (v3 i32) (v3 i32)));
-
+(gl-load gl:uniform-1i glUniform1i (fcn void (location gl:uniform-loc) (v1 i32)));
+(gl-load gl:uniform-2i glUniform2i (fcn void (location gl:uniform-loc) (v1 i32) (v2 i32)));
+(gl-load gl:uniform-3i glUniform3i (fcn void (location gl:uniform-loc) (v1 i32) (v2 i32) (v3 i32)));
+(gl-load gl:uniform-4i glUniform4i 
+	 (fcn void (location gl:uniform-loc) (v1 i32) (v2 i32) (v3 i32) (v3 i32)));
 
 (defoverloaded gl:uniform)
 (overload gl:uniform gl:uniform-1f)
@@ -80,9 +88,10 @@
 					    (type gl:enum) (data (ptr void))))
 
 (gl-load gl:bind-textures glBindTextures (fcn void (first gl:enum) (count i64) (textures (ptr gl:tex))))
-(gl-load gl:bind-textures glBindTexture (fcn void (target gl:enum) (texture gl:tex)))
+(gl-load gl:bind-texture glBindTexture (fcn void (target gl:enum) (texture gl:tex)))
 (gl-load gl:tex-parameter glTexParameteri (fcn void (target gl:enum) (name gl:enum) (value gl:enum)))
 (gl-load gl:active-texture glActiveTexture (fcn void (active gl:enum)))
+(gl-load gl:delete-textures glDeleteTextures (fcn void (count i64) (textures (ptr gl:tex))))
 
 (gl-load gl:blend-func glBlendFunc (fcn void (src gl:enum) (dst gl:enum)))
 

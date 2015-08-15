@@ -180,3 +180,11 @@
 
 (defmacro ptr-null? (_ptr)
   (expr (eq null (cast (unexpr _ptr) (ptr void)))))
+
+(defmacro zeroize (item)
+  (let ((item-type (type-of item)))
+    (let ((size (size-of item-type)))
+      (expr (memset 
+	     (cast (addrof (unexpr item)) (ptr void)) 
+	     0
+	     (unexpr (number2expr (cast size i64))) )))))
