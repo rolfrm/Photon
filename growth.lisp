@@ -18,7 +18,7 @@
 (defvar win (glfw:create-window 400 400 "Flowery!" null null))
 (glfw:make-current win)
 
-(defvar font (load-font "/home/rolf/.atom/packages/asciidoc-preview/bundle/droid-sans/DroidSans-Bold.ttf" ))
+(defvar font (load-font "/usr/share/fonts/truetype/freefont/FreeMono.ttf"))
 
 (text-box:load)
 ;(exit 0)

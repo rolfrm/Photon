@@ -65,12 +65,13 @@
 	    (frag (gl:create-shader gl:fragment-shader))
 	    (vert (gl:create-shader gl:vertex-shader))
 	    (frag-src "
+#version 130
 uniform vec4 bg_color;
 uniform vec4 fg_color;
 uniform sampler2D tex;
 in vec2 uv;
 void main(){
-  float i = texture(tex, vec2(uv.x, 1.0 - uv.y));
+  float i = texture(tex, vec2(uv.x, 1.0 - uv.y)).r;
   gl_FragColor = bg_color * (1 - i) + fg_color * i;
 }
 ")
