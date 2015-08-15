@@ -69,7 +69,7 @@ uniform vec4 fg_color;
 uniform sampler2D tex;
 in vec2 uv;
 void main(){
-  float i = texture(tex, uv);
+  float i = texture(tex, vec2(uv.x, 1.0 - uv.y));
   gl_FragColor = bg_color * (1 - i) + fg_color * i;
 }
 ")

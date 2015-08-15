@@ -234,7 +234,7 @@ length
 
 (load-game)
 
-;(gl:enable gl:blend)
+(gl:enable gl:blend)
 (gl:enable gl:texture-2d)
 (gl:disable gl:depth-test)
 (gl:blend-func gl:src-alpha gl:one-minus-src-alpha) 
@@ -297,7 +297,7 @@ length
       (gl:uniform cam-size-loc cam-size)
       (gl:uniform cam-loc cam-pos)
 
-      (gl:uniform color-loc 0.0 0.0 0.0 0.0)      
+      (gl:uniform color-loc 0.0 0.0 0.0 1.0)      
       (gl:bind-buffer gl:array-buffer vbo-circle)
       (gl:vertex-attrib-pointer 0 2 gl:float gl:false 0 null) 
       (range it 0 (cast circle-cnt i64)
@@ -359,9 +359,10 @@ length
       
       (gl:uniform offset-loc (vec 0.0 0.0))  
       (text-box:delete font-t)
-      (setf font-t (text-box:create "DSA" 19 font))
+      (setf font-t (text-box:create "DSA" 20 font))
       (setf (member (member font-t bounds) size) (vec 0.2 0.1))
-      (text-box:draw font-t (from-rgba 255 0 0 255) (from-rgba 0 255 0 255))
+      (setf (member (member font-t bounds) upper-left) (vec -1.0 -1.0))
+      (text-box:draw font-t (from-rgba 255 255 255 255) (from-rgba 255 255 255 50))
       (setf iteration (+ iteration 1))
 
       (glfw:swap-buffers win)
