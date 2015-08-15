@@ -293,13 +293,13 @@ length
 		  (old-std-file std:file))
 	      
 	      (setf std:file file)
-	      (print "Record: " (cast height i64) "  current height:" (cast (member cheight y) i64))
+	      (print "Record: " (cast height i64) newline "Current height:" (cast (member cheight y) i64))
 	      (fclose file)
-	      (setf font-t (text-box:create (cast fdata (ptr char)) 650 50 font))
+	      (setf font-t (text-box:create (cast fdata (ptr char)) 650 40 font))
 	      (setf std:file old-std-file)
 	      (dealloc fdata)
 	      (setf (member (member font-t bounds) size) (/ (member (member font-t bounds) size) (vec 400 400)))
-	      (setf (member (member font-t bounds) upper-left) (vec -1.0 0.8))
+	      (setf (member (member font-t bounds) upper-left) (vec -1.0 -1.0))
 	      ))
 	  (when (> (member cheight y) height)
 
