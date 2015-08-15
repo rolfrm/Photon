@@ -128,17 +128,20 @@
 
 (load-symbol+ libc +std:print-f64 fprintf (fcn i32 (file (ptr void)) (fmt (ptr char)) (x f64)))
 (load-symbol+ libc +std:print-i64 fprintf (fcn i32 (file (ptr void)) (fmt (ptr char)) (x i64)))
+(load-symbol+ libc +std:print-str fprintf (fcn i32 (file (ptr void)) (fmt (ptr char))))
 
 (load-symbol+ libc std:stdin stdin (ptr void))
 (load-symbol+ libc std:stdout stdout (ptr void))
 
-(defvar file std:stdout)
+(defvar std:file std:stdout)
 
 (defun std:print-f64 (i32 (fmt (ptr char)) (x f64))
-  (+std:print-f64 file "%f" x))
+  (+std:print-f64 std:file "%f" x))
 
 (defun std:print-i64 (i32 (fmt (ptr char)) (x i64))
-  (+std:print-i64 file "%lli" x))
+  (+std:print-i64 std:file "%lli" x))
+
+
 
 (defun printf64 (void (x f64))
   (std:print-f64 "%f" x))
@@ -174,7 +177,7 @@
   (std:print-i64 "%c" (cast x i64)))
 
 (defun printstr (void (x (ptr char)))
-  (std:print-f64 x 0.0))
+  (+std:print-str std:file x))
 
 (defun print-symbol (void (x (ptr symbol)))
   (printstr (symbol-name x)))

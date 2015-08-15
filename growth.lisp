@@ -286,7 +286,24 @@ length
 	
 	
 	(let ((cheight (deref (+ points (cast (- points-cnt 1) i64)))))
+	  (text-box:delete font-t)
+	  (let ((fdata null)
+		(fdata-cnt (cast 0 u64)))
+	    (let ((file (open_memstream (addrof fdata) (addrof fdata-cnt)))
+		  (old-std-file std:file))
+	      
+	      (setf std:file file)
+	      (print "Record: " (cast height i64) "  current height:" (cast (member cheight y) i64))
+	      (fclose file)
+	      (setf font-t (text-box:create (cast fdata (ptr char)) 650 50 font))
+	      (setf std:file old-std-file)
+	      (dealloc fdata)
+	      (setf (member (member font-t bounds) size) (/ (member (member font-t bounds) size) (vec 400 400)))
+	      (setf (member (member font-t bounds) upper-left) (vec -1.0 0.8))
+	      ))
 	  (when (> (member cheight y) height)
+
+	    
 	    (setf height (member cheight y))
 	    ;(print "height: " height newline)
 	    )
@@ -358,10 +375,8 @@ length
       (gl:draw-arrays gl:polygon 0 (cast circ-pts u32))
       
       (gl:uniform offset-loc (vec 0.0 0.0))  
-      (text-box:delete font-t)
-      (setf font-t (text-box:create "Hello dewd! What is going on?" 650 50 font))
-      (setf (member (member font-t bounds) size) (/ (member (member font-t bounds) size) (vec 400 400)))
-      (setf (member (member font-t bounds) upper-left) (vec -1.0 -1.0))
+      
+      
       (text-box:draw font-t (from-rgba 255 255 255 255) (from-rgba 255 255 255 50))
       (setf iteration (+ iteration 1))
 

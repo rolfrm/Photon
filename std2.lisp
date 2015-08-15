@@ -163,7 +163,7 @@
 (load-libc fseek (fcn i32 (file (ptr void)) (offset u64) (mode seek-mode)))
 (load-libc ftell (fcn u64 (file (ptr void))))
 (load-libc fread (fcn u64 (buffer (ptr void)) (count u64) (size u64) (file (ptr void))))
-(load-libc open_memstream (fcn (ptr void) (data (ptr void)) (cnt (ptr u64))))
+(load-libc open_memstream (fcn (ptr void) (data (ptr (ptr void))) (cnt (ptr u64))))
 
 (defun read-all-data ((ptr char) (path (ptr char)) (size (ptr u64)))
   (let ((file (fopen path "r"))
@@ -192,3 +192,4 @@
 	     (cast (addrof (unexpr item)) (ptr void)) 
 	     0
 	     (unexpr (number2expr (cast size i64))) )))))
+
