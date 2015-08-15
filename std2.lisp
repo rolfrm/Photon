@@ -27,6 +27,8 @@
 (load-symbol+ libm fabs fabs (fcn f64 (x f64)))
 (load-symbol+ libm ceilf ceilf (fcn f32 (x f32)))
 (load-symbol+ libm ceil ceil (fcn f64 (x f64)))
+(load-symbol+ libm floorf floorf (fcn f32 (x f32)))
+(load-symbol+ libm floor floor (fcn f64 (x f64)))
 
 (defvar pi 3.141592653)
 (defvar 2pi (* pi 2))
@@ -161,6 +163,8 @@
 (load-libc fseek (fcn i32 (file (ptr void)) (offset u64) (mode seek-mode)))
 (load-libc ftell (fcn u64 (file (ptr void))))
 (load-libc fread (fcn u64 (buffer (ptr void)) (count u64) (size u64) (file (ptr void))))
+(load-libc open_memstream (fcn (ptr void) (data (ptr void)) (cnt (ptr u64))))
+
 (defun read-all-data ((ptr char) (path (ptr char)) (size (ptr u64)))
   (let ((file (fopen path "r"))
 	(buffer (cast null (ptr char))))

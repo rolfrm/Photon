@@ -229,12 +229,14 @@
 
 (defun rect-calc-callback (void (userdata (ptr void)) (status tt:iterate-data))
   (var! ((rect (cast userdata (ptr size)))
-	(right (cast ;(ceilf 
-		(+  (cast  (member status x1) f32) 
-		    (member status xpos)
-		    ) i64))
+	 ;it seems to buffer needs to be 8-byte size.
+	(right (* (+ 1 (/ (cast ;(ceilf
+			   (+  (cast  (member status x1) f32) 
+			       (member status xpos))
+			   i64) 4)) 4))
 	 (bottom (cast (+ (member status y1) (member status baseline)) i64)))
 	(progn
+	  ;(print status newline)
 	  (setf (member (deref rect) width) (max (member (deref rect) width) right))
 	  (setf (member (deref rect) height) (max (member (deref rect) height) bottom)))
 	))
@@ -249,10 +251,14 @@
     (let ((s (member draw-item s)))
       (let ((buffer-pt 
 	     (ptr+ (member draw-item buffer)
-		   (cast (+ (cast (member status xpos) i32) 
-			    (member status x0)
-			    (* (+ (member status y0) (member status baseline)) (cast (member s width) i32))
-			    ) i64))))
+		   (+ (cast (ceilf
+			     (+ (member status xpos) 
+				(cast (member status x0) f32))) i64)
+		      (* (cast (+ (member status y0) 
+				  (member status baseline)
+				  ) i64) 
+			 (member s width)))))
+	    (x-shift (- (member status xpos) (floorf (member status xpos)))))
 	(tt:make-codepoint-bitmap-subpixel (member draw-item font) 
 					   buffer-pt 
 					   (- (member status x1) (member status x0)) 
@@ -260,7 +266,7 @@
 					   (cast (member s width) i32)
 					   (member status scale)
 					   (member status scale)
-					   (member status x-shift)
+					   x-shift
 					   0
 					   (member status codepoint))))))
 

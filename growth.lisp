@@ -240,7 +240,7 @@ length
 (gl:blend-func gl:src-alpha gl:one-minus-src-alpha) 
 
 
-(defvar font-t (text-box:create "ABC" 16 font))
+(defvar font-t (text-box:create "ABC" 16 400 font))
 (print (member (member font-t bounds) size) newline)
 (setf (member (member font-t bounds) size) (vec 0.2 0.1))
 ;(exit 0)
@@ -359,8 +359,8 @@ length
       
       (gl:uniform offset-loc (vec 0.0 0.0))  
       (text-box:delete font-t)
-      (setf font-t (text-box:create "DSA" 20 font))
-      (setf (member (member font-t bounds) size) (vec 0.2 0.1))
+      (setf font-t (text-box:create "Hello dewd! What is going on?" 650 50 font))
+      (setf (member (member font-t bounds) size) (/ (member (member font-t bounds) size) (vec 400 400)))
       (setf (member (member font-t bounds) upper-left) (vec -1.0 -1.0))
       (text-box:draw font-t (from-rgba 255 255 255 255) (from-rgba 255 255 255 50))
       (setf iteration (+ iteration 1))

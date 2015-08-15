@@ -31,7 +31,7 @@
 
 (declare-macro load-libc -load-libc)
 
-(load-libc printf (fcn void (fmt (ptr char)) (x i64)))
+(load-libc fprintf (fcn void (file (ptr void)) (fmt (ptr char)) (x i64)))
 
 (load-libc usleep (fcn void (time i32)))
 (load-symbol+ libc alloc malloc (fcn (ptr void) (bytes u64)))
@@ -126,8 +126,19 @@
 
 (declare-macro while *while :rest)
 
-(load-symbol+ libc std:print-f64 printf (fcn (ptr void) (fmt (ptr char)) (x f64)))
-(load-symbol+ libc std:print-i64 printf (fcn (ptr void) (fmt (ptr char)) (x i64)))
+(load-symbol+ libc +std:print-f64 fprintf (fcn i32 (file (ptr void)) (fmt (ptr char)) (x f64)))
+(load-symbol+ libc +std:print-i64 fprintf (fcn i32 (file (ptr void)) (fmt (ptr char)) (x i64)))
+
+(load-symbol+ libc std:stdin stdin (ptr void))
+(load-symbol+ libc std:stdout stdout (ptr void))
+
+(defvar file std:stdout)
+
+(defun std:print-f64 (i32 (fmt (ptr char)) (x f64))
+  (+std:print-f64 file "%f" x))
+
+(defun std:print-i64 (i32 (fmt (ptr char)) (x i64))
+  (+std:print-i64 file "%lli" x))
 
 (defun printf64 (void (x f64))
   (std:print-f64 "%f" x))
@@ -175,7 +186,7 @@
 ")
 
 (defun print-newline(void)
-  (std:print-i64 newline 0));
+  (std:print-i64 newline 0))
 
 (defun write-line (void (str (ptr char)))
   (progn (printstr str)
