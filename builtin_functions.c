@@ -66,6 +66,8 @@ void * load_symbol(void * lib, symbol * sym, symbol * name, type_def * t){
   return ptr;
 }
 
+// 3 different type_of's. one disables error handling, needed when doing type_of operations.
+
 type_def * type_of3(type_def * expected_type, expr * ex){
   c_block blk = c_block_empty;
   c_value val = {.type = C_NOTHING};
@@ -148,7 +150,7 @@ bool is_check_type_run(){
 bool start_read_eval_print_loop();
 
 void load_functions(){
-defun("print-type", str2type("(fcn void (a (ptr type_def)))"), print_type);
+  defun("print-type", str2type("(fcn void (a (ptr type_def)))"), print_type);
   defun("builtin-print-str", str2type("(fcn void (str (ptr char)))"), builtin_print_string);
   defun("get-symbol", str2type("(fcn (ptr symbol) (a (ptr char)))"), get_symbol2);
   defun("size-of",str2type("(fcn u64 (type (ptr type_def)))"), size_of);
@@ -179,10 +181,13 @@ defun("print-type", str2type("(fcn void (a (ptr type_def)))"), print_type);
   defun("set-printer", str2type("(fcn void (ptr (ptr symbol)))"), set_printer);
 
   str2type("(alias (opaque-struct _ccdispatch) ccdispatch)");
+
+  /*
   defun("ccstart", str2type("(fcn (ptr ccdispatch))"), ccstart);
   defun("ccyield", str2type("(fcn void)"), ccyield);
   defun("ccstep", str2type("(fcn void (cc (ptr ccdispatch)))"), ccstep);
   defun("ccthread", str2type("(fcn void (cc (ptr ccdispatch)) (fcn (fcn void (arg (ptr void)))) (userdata (ptr void)))"), ccthread);
-defun("timestamp", str2type("(fcn i64)"), timestamp);
-defun("repl", str2type("(fcn bool)"), start_read_eval_print_loop);
+  defun("repl", str2type("(fcn bool)"), start_read_eval_print_loop);
+  */
+  defun("timestamp", str2type("(fcn i64)"), timestamp);
 }

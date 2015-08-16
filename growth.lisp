@@ -246,8 +246,8 @@ length
 (defvar font-t (text-box:create "ABC" 16 400 font))
 (print (member (member font-t bounds) size) newline)
 (setf (member (member font-t bounds) size) (vec 0.2 0.1))
-(defun start-repl
-    (repl))
+;(defun start-repl
+;    (repl))
 
 (defun close-callback (void (win (ptr void)))
   (exit 0))
