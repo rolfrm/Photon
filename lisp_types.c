@@ -385,18 +385,17 @@ void make_dependency_graph(type_def ** defs, type_def * def){
   _make_dependency_graph(defs,def,false, false);
 }
 
-char * stdheader = "#include<stdint.h> \n\
-typedef char i8;				\n\
+char * stdheader = "typedef char i8;				\n\
 typedef i8 bool;				\n\
 typedef short i16;				\n\
 typedef int i32;				\n\
-typedef int64_t i64;				\n\
+typedef long long i64;				\n\
 ///typedef __int128 i128;			\n\
 						\n\
 typedef unsigned char u8;			\n\
 typedef unsigned short u16;			\n\
 typedef unsigned int u32;			\n\
-typedef uint64_t u64;				\n\
+typedef unsigned long long u64;				\n\
 ///typedef unsigned __int128 u128;		\n\
 						\n\
 typedef char * str;				\n\
