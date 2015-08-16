@@ -11,7 +11,8 @@ SYS := $(firstword $(shell uname -s))
 
 ifeq ($(SYS),Linux)
   rmcmd = rm
-  LDFLAGS = libtcc1.a $(LDFLAGS1)
+  LDFLAGS = $(LDFLAGS1)
+  LIBS += tcc/libtcc.a -ldl
 else
   rmcmd = remove
   LDFLAGS = $(LDFLAGS1) libtcc.dll

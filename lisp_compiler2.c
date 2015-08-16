@@ -483,11 +483,9 @@ void * compile_as_c(c_root_code * codes, size_t code_cnt){
   char * data = read_stream_to_string(f);
   size_t datasize = ftell(f);
 
-  logd("Datasize: %i %i", datasize, f);
   ASSERT(data != NULL);
-
   fclose(f);
-  remove((const char *) f);
+  remove((const char *) buf);
   char header[] = "//***********\n";
   char compile_out_path[1000];
   sprintf(compile_out_path,"%s/%s",get_orig_dir(), "compile_out.c");
@@ -504,7 +502,6 @@ void * compile_as_c(c_root_code * codes, size_t code_cnt){
       fail = tcc_add_symbol(tccs,get_c_name(var->name),&var->data);
     ASSERT(!fail);
   }
-  logd("Compiling: %s", data);
   int fail = tcc_compile_string(tccs, data);
   if(_tcc_error != NULL){
     fail = true;
