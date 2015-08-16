@@ -83,6 +83,7 @@ int main(int argc, char *argv[] ){
     log("%s ", argv[i]);
   }
   log("\n");
+  logd("Add the name of an existing file like this: './foton growth.lisp'\n");
 
   return 0;
 }
