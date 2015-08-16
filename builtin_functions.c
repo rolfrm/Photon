@@ -152,8 +152,10 @@ bool is_check_type_run(){
   return !lisp_print_errors;
 }
 
+bool start_read_eval_print_loop();
+
 void load_functions(){
-  defun("print-type", str2type("(fcn void (a (ptr type_def)))"), print_type);
+defun("print-type", str2type("(fcn void (a (ptr type_def)))"), print_type);
   defun("builtin-print-str", str2type("(fcn void (str (ptr char)))"), builtin_print_string);
   defun("get-symbol", str2type("(fcn (ptr symbol) (a (ptr char)))"), get_symbol2);
   defun("size-of",str2type("(fcn u64 (type (ptr type_def)))"), size_of);
@@ -190,5 +192,6 @@ void load_functions(){
   defun("ccyield", str2type("(fcn void)"), ccyield);
   defun("ccstep", str2type("(fcn void (cc (ptr ccdispatch)))"), ccstep);
   defun("ccthread", str2type("(fcn void (cc (ptr ccdispatch)) (fcn (fcn void (arg (ptr void)))) (userdata (ptr void)))"), ccthread);
-  defun("timestamp", str2type("(fcn i64)"), timestamp);
+defun("timestamp", str2type("(fcn i64)"), timestamp);
+defun("repl", str2type("(fcn bool)"), start_read_eval_print_loop);
 }

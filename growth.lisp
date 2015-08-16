@@ -164,7 +164,6 @@ length
 
 
 (gl:enable-vertex-attrib-array 0) 
-(defvar player-pos (vec 0 0))
 (defvar player-dir (vec 0 1))
 (defvar new-pos (vec 0 0))
 (defvar cam-pos (vec 0 50))
@@ -202,8 +201,6 @@ length
 
 (defun load-game(void)
   (progn
-    (print "Reload!" newline)
-    (setf player-pos (vec 0 0))
     (setf player-dir (vec 0 1))
     (setf new-pos (vec 0 0))
     (setf cam-pos (vec 0 50))
@@ -239,11 +236,13 @@ length
 (gl:disable gl:depth-test)
 (gl:blend-func gl:src-alpha gl:one-minus-src-alpha) 
 
-
 (defvar font-t (text-box:create "ABC" 16 400 font))
 (print (member (member font-t bounds) size) newline)
 (setf (member (member font-t bounds) size) (vec 0.2 0.1))
-;(exit 0)
+(defun start-repl
+    (repl))
+
+(defun run-game
 (let ((iteration 0)
       (height (cast 0.0 f64))
       (alive true)
@@ -338,7 +337,6 @@ length
 		 (when (pt-rect-collision r (deref (+ points (cast (- points-cnt 1) i64))))
 		   (gl:clear-color 1.0 0.0 0.0 0.0)
 		   (setf alive false)
-		   (print "dead." newline)
 		   ))))
 
       (gl:bind-buffer gl:array-buffer vbo)
@@ -386,4 +384,7 @@ length
     (glfw:poll-events)    
 
     (usleep 10000)
-    ))
+    )))
+(launch (addrof start-repl))
+(run-game)
+
