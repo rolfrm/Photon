@@ -49,9 +49,9 @@ expr * type2expr(type_def * ptr_def){
   return clone(&e, sizeof(e));
 }
 
+#ifdef _WIN32
 
 #undef ASSERT
-#ifdef _WIN32
 #include <windows.h>
 void * load_lib(char * path){
   void * handle =  GetModuleHandle(path);
@@ -69,7 +69,8 @@ void * load_symbol(void * lib, symbol * sym, symbol * name, type_def * t){
   }
   return ptr;
 }
-#elif
+#define ASSERT(x)
+#else
 #include <dlfcn.h>
 void * load_lib(char * path){
   void * handle =  dlopen(path, RTLD_LAZY);
@@ -89,7 +90,6 @@ void * load_symbol(void * lib, symbol * sym, symbol * name, type_def * t){
 }
 
 #endif
-#define ASSERT(x) 
 // 3 different type_of's. one disables error handling, needed when doing type_of operations.
 
 type_def * type_of3(type_def * expected_type, expr * ex){
