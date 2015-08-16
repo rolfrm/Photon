@@ -478,12 +478,13 @@ void * compile_as_c(c_root_code * codes, size_t code_cnt){
   pop_format_out();
 
   char * data = read_stream_to_string(f);
+  size_t datasize = ftell(f);
   fclose(f);  
   char header[] = "//***********\n";
   char compile_out_path[1000];
   sprintf(compile_out_path,"%s/%s",get_orig_dir(), "compile_out.c");
   append_buffer_to_file(header,sizeof(header) - 1, compile_out_path);
-  append_buffer_to_file(data,strlen(data),compile_out_path);
+  append_buffer_to_file(data, datasize,compile_out_path);
   TCCState * tccs = mktccs();
   for(size_t i = 0; i < array_count(vdeps) && vdeps[i].id != 0; i++){
     var_def * var = get_global(vdeps[i]);

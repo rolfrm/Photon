@@ -67,7 +67,7 @@ void * load_symbol(void * lib, symbol * sym, symbol * name, type_def * t){
   }
   return ptr;
 }
-#elif
+#else
 #include <windows.h>
 void * load_lib(char * path){
   void * handle =  GetModuleHandle(path);
