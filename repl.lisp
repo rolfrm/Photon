@@ -90,3 +90,5 @@ t
   (expr (.+ (unexpr a) (unexpr b))))
 (overload + anyadd)
 (print (+ 1 2) newline)
+(setf break-on-errors false)
+(repl)
