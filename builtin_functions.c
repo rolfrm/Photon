@@ -67,11 +67,8 @@ void * load_symbol(void * lib, symbol * sym, symbol * name, type_def * t){
 }
 
 type_def * type_of3(type_def * expected_type, expr * ex){
- c_block blk;
-  blk.exprs = NULL;
-  blk.expr_cnt = 0;
-  c_value val;
-  val.type = C_NOTHING;
+  c_block blk = c_block_empty;
+  c_value val = {.type = C_NOTHING};
   type_def * td = compile_expr(expected_type, &blk, &val, *ex);
   c_block_delete(blk);
   c_value_delete(val);
@@ -138,10 +135,6 @@ void * get_var(symbol * sym){
   return var->data;
 }
 
-void invoke (void (* fcn)()){
-  fcn();
-}
-
 #include <iron/coroutines.h>
 
 void builtin_print_string(char * str){
@@ -185,8 +178,6 @@ defun("print-type", str2type("(fcn void (a (ptr type_def)))"), print_type);
   defun("fcn-arg-cnt", str2type("(fcn u64 (t (ptr type_def)))"), fcn_arg_cnt);
   defun("set-printer", str2type("(fcn void (ptr (ptr symbol)))"), set_printer);
 
-  defun("invoke", str2type("(fcn void (func (fcn void )))"), invoke);
-  
   str2type("(alias (opaque-struct _ccdispatch) ccdispatch)");
   defun("ccstart", str2type("(fcn (ptr ccdispatch))"), ccstart);
   defun("ccyield", str2type("(fcn void)"), ccyield);

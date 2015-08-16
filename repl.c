@@ -77,7 +77,7 @@ bool start_read_eval_print_loop(){
     }
     if(!all_whitespace(code)){
       add_history(code);
-      size_t exprcnt;
+      size_t exprcnt = 0;
       expr * exprs = lisp_parse_all(code, &exprcnt);
       lisp_run_exprs( exprs, exprcnt);
     }
