@@ -4,7 +4,7 @@
 #include "c_ast.h"
 #include "lisp_compiler.h"
 #include "expr_utils.h"
-#include <dlfcn.h>
+
 #include "lisp_std_types.h"
 void defun(char * name, type_def * t, void * fcn){
   define_variable(get_symbol(name), t, fcn, true);
@@ -49,6 +49,8 @@ expr * type2expr(type_def * ptr_def){
   return clone(&e, sizeof(e));
 }
 
+#ifndef _WIN32
+#include <dlfcn.h>
 void * load_lib(char * path){
   void * handle =  dlopen(path, RTLD_LAZY);
   if(handle == NULL)
@@ -65,7 +67,27 @@ void * load_symbol(void * lib, symbol * sym, symbol * name, type_def * t){
   }
   return ptr;
 }
+#elif
+#include <windows.h>
+void * load_lib(char * path){
+  void * handle =  GetModuleHandle(path);
+  if(handle == NULL)
+    loge("Unable to load library '%s'\n", path);
+  return handle;
+}
 
+void * load_symbol(void * lib, symbol * sym, symbol * name, type_def * t){
+  void * ptr = GetProcHandle((HMODULE)lib, get_c_name(*name));
+  if(ptr == NULL) {
+    loge("Error no such symbol '%s'\n", symbol_name(*name));}
+  else {
+    define_variable(*sym, t, ptr, true);
+  }
+  return ptr;
+}
+
+
+#endif
 // 3 different type_of's. one disables error handling, needed when doing type_of operations.
 
 type_def * type_of3(type_def * expected_type, expr * ex){
