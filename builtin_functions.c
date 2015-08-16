@@ -15,7 +15,7 @@ void print_type(type_def * def){
 }
 
 type_def * ptr_inner(type_def * ptr_def){
-  
+
   if(ptr_def == error_def || ptr_def->type != POINTER){
     return error_def;
   }
@@ -49,7 +49,27 @@ expr * type2expr(type_def * ptr_def){
   return clone(&e, sizeof(e));
 }
 
-#ifndef _WIN32
+
+#undef ASSERT
+#ifdef _WIN32
+#include <windows.h>
+void * load_lib(char * path){
+  void * handle =  GetModuleHandle(path);
+  if(handle == NULL)
+    loge("Unable to load library '%s'\n", path);
+  return handle;
+}
+
+void * load_symbol(void * lib, symbol * sym, symbol * name, type_def * t){
+  void * ptr = GetProcAddress((HMODULE)lib, get_c_name(*name));
+  if(ptr == NULL) {
+    loge("Error no such symbol '%s'\n", symbol_name(*name));}
+  else {
+    define_variable(*sym, t, ptr, true);
+  }
+  return ptr;
+}
+#elif
 #include <dlfcn.h>
 void * load_lib(char * path){
   void * handle =  dlopen(path, RTLD_LAZY);
@@ -67,27 +87,9 @@ void * load_symbol(void * lib, symbol * sym, symbol * name, type_def * t){
   }
   return ptr;
 }
-#elif
-#include <windows.h>
-void * load_lib(char * path){
-  void * handle =  GetModuleHandle(path);
-  if(handle == NULL)
-    loge("Unable to load library '%s'\n", path);
-  return handle;
-}
-
-void * load_symbol(void * lib, symbol * sym, symbol * name, type_def * t){
-  void * ptr = GetProcHandle((HMODULE)lib, get_c_name(*name));
-  if(ptr == NULL) {
-    loge("Error no such symbol '%s'\n", symbol_name(*name));}
-  else {
-    define_variable(*sym, t, ptr, true);
-  }
-  return ptr;
-}
-
 
 #endif
+#define ASSERT(x) 
 // 3 different type_of's. one disables error handling, needed when doing type_of operations.
 
 type_def * type_of3(type_def * expected_type, expr * ex){
@@ -141,7 +143,7 @@ type_def * fcn_ret_type(type_def * td){
 
 extern symbol * printer;
 void set_printer(symbol * sym){
-  printer = sym;  
+  printer = sym;
 }
 
 type_def * var_type(symbol * sym){
@@ -181,9 +183,9 @@ void load_functions(){
   type_def * loadsymbol = str2type("(fcn (ptr void) (_lib lib) (sym (ptr symbol)) (name (ptr symbol)) (t (ptr type_def)))");
   defun("load-symbol", loadsymbol, load_symbol);
   defun("type-of",str2type("(fcn (ptr type_def) (expr (ptr expr)))"), type_of);
-  defun("type-of2",str2type("(fcn (ptr type_def) (expected_type (ptr type_def)) (expr (ptr expr)))"), 
+  defun("type-of2",str2type("(fcn (ptr type_def) (expected_type (ptr type_def)) (expr (ptr expr)))"),
 	type_of2);
-  defun("type-of3",str2type("(fcn (ptr type_def) (expected_type (ptr type_def)) (expr (ptr expr)))"), 
+  defun("type-of3",str2type("(fcn (ptr type_def) (expected_type (ptr type_def)) (expr (ptr expr)))"),
 	type_of3);
   defun("check-type-run?", str2type("(fcn bool)"), is_check_type_run);
   defun("print-expr", str2type("(fcn void (theexpr (ptr expr)))"), print_expr);
