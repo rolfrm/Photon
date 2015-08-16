@@ -13,3 +13,8 @@
 (overload gl:uniform gl-uniform-vec2)
 (overload gl:uniform gl-uniform-vec3)
 (overload gl:uniform gl-uniform-vec4)
+
+(defun gl:gen-buffer (u32)
+    (let (( vbo :type u32))
+      (gl:gen-buffers 1 (addrof vbo))
+      vbo))

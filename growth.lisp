@@ -107,26 +107,41 @@ length
     ))
 
 	  
-(defvar vbo-circle (cast 0 u32))
-(gl:gen-buffers 1 (addrof vbo-circle))
+(defvar vbo-circle (gl:gen-buffer))
 (gl:bind-buffer gl:array-buffer vbo-circle)
 
 (defvar circ-pts (cast 64 i64))
-(let ((buf2 (cast (alloc (* 2 (size-of (type f32)) (cast circ-pts u64))) (ptr f32))))
-  (range it 0 circ-pts
+(let ((s (* (size-of (type f32)) (cast circ-pts u64) 2)))
+  (let ((buf2 (cast (alloc s) (ptr f32))))
+    (range it 0 circ-pts
 	 (let ((phase (* (cast it f32) (/ (cast 2pi f32) (cast circ-pts f32))))
 	       (buf3 (+ buf2 (* it 2))))
-	   (print phase newline)
 	   (setf (deref buf3) (sin32 phase))
 	   (setf (deref (+ buf3 1)) (cos32 phase))))
-  (let ((s (* (size-of (type f32)) (cast circ-pts u64) (cast 2 u64))))
 
     (gl:buffer-data gl:array-buffer (cast s u32) (cast buf2 (ptr void)) gl:static-draw)
     (dealloc (cast buf2 (ptr void)))))
 
-(defvar vbo-grass-boxes (cast 0 u32))
-(gl:gen-buffers 1 (addrof vbo-grass-boxes))
-
+(defvar leaf-pts (cast 64 i64))
+(defvar leaf-vbo (gl:gen-buffer))
+(gl:bind-buffer gl:array-buffer leaf-vbo)
+(let ((s (* (size-of (type f32)) (cast leaf-pts u64) 2)))
+  (let ((buf2 (cast  (alloc s)(ptr f32))))
+    (range it 0 leaf-pts
+	   (let ((phase (* (cast it f32) (/ (cast 2pi f32) (cast circ-pts f32))))
+		 (ptr (+ buf2 (* it 2))))
+	     (setf (deref ptr) (* 0.5 (+ 1.0 (sin32 phase))))
+	     (setf (deref (+ ptr 1)) (cos32 phase))
+	     ))
+    (gl:buffer-data gl:array-buffer (cast s u32) (cast buf2 (ptr void)) gl:static-draw)
+    (print "Leaf pts:" newline)
+    (range it 0 leaf-pts
+	   (let ((ptr (+ buf2 (* it 2))))
+	     (print (deref ptr) " " (deref (+ ptr 1)) newline)))
+	   
+    (dealloc (cast buf2 (ptr void)))))
+	   
+(defvar vbo-grass-boxes (gl:gen-buffer))
 (defvar grass-rects (cast null (ptr rect)))
 (defvar grass-rect-cnt 0)
 
@@ -136,7 +151,7 @@ length
     (setf (member r size) size)
     r))
 
-(defun load-boxes(void)
+(defun load-boxes
   (let ((size (* (cast grass-rect-cnt u64) (size-of (type f32)) 4 2)))
     (let ((buf (cast (alloc size) (ptr f32))))
     ; n rects x 4 vertices x 2 dimensions
@@ -174,6 +189,21 @@ length
 (defvar booster-cnt 0)
 (defvar speed 1.0)
 (defvar boosters-eaten 0)
+(defvar leaves (cast null (ptr vec3)))
+(defvar leaf-cnt 0)
+(defvar time-since-last-leaf 0.0)
+
+(defun update-leaves (void (pos vec2))
+  (progn
+    (range it 0 leaf-cnt
+     (let ((buf (+ leaves it)))
+       (setf (member (deref buf) z) 
+	     (min (+ (member (deref buf) z) 0.05) 1.0))))
+    (incr time-since-last-leaf 0.1)
+    (when (> time-since-last-leaf 10.0)
+      (add-to-list+ leaves leaf-cnt (vec (member pos x) (member pos y) 0.0))
+      (setf time-since-last-leaf 0))))
+
 (defun pt-dist(f64 (a vec2) (b vec2))
   (vec2-length (- a b)))
 
@@ -201,7 +231,7 @@ length
 	    (+ amount dead-zone)
 	    0.0))))
 
-(defun load-game(void)
+(defun load-game
   (progn
     (setf player-dir (vec 0 1))
     (setf boosters-eaten 0)
@@ -210,7 +240,7 @@ length
     (setf circles (cast null (ptr vec3)))
     (setf circle-cnt 0)
     (setf speed 0.096)
-
+    (clear-list+ leaves leaf-cnt)
     (clear-list+ grass-rects grass-rect-cnt)
     (add-to-list+ grass-rects grass-rect-cnt (make-rect (vec -500 -500) (vec 1000 500)))
     (clear-list+ circles circle-cnt)
@@ -244,11 +274,6 @@ length
 (gl:blend-func gl:src-alpha gl:one-minus-src-alpha) 
 
 (defvar font-t (text-box:create "ABC" 16 400 font))
-(print (member (member font-t bounds) size) newline)
-(setf (member (member font-t bounds) size) (vec 0.2 0.1))
-;(defun start-repl
-;    (repl))
-
 (defun close-callback (void (win (ptr void)))
   (exit 0))
 
@@ -258,7 +283,6 @@ length
 (let ((iteration 0)
       (height (cast 0.0 f64))
       (alive true)
-
       (dead-timer 0))
   (while (< iteration 40000)
     (gl:use-program prog)
@@ -294,6 +318,7 @@ length
 		    )))
 	    (setf player-dir (vec2turn player-dir (* turn 0.1))))
 	  (setf cam-pos (deref (+ points (cast (- points-cnt 1) i64))))
+	  (update-leaves cam-pos)
 	  (load-points))
 	
 	
@@ -379,7 +404,17 @@ length
       (gl:uniform size-loc (vec 1 1))
       (gl:uniform color-loc 0.5 0.8 0.3 1)
       (gl:draw-arrays gl:line-strip 0 (cast points-cnt u32))
-      
+
+
+      (gl:bind-buffer gl:array-buffer leaf-vbo)
+      (gl:vertex-attrib-pointer 0 2 gl:float gl:false 0 null) 
+      (range it 0 leaf-cnt
+	     (let ((pt (deref (+ leaves it))))
+	       (gl:uniform offset-loc  (vec (member pt x) (member pt y)))
+	       (gl:uniform size-loc (vec (member pt z) (member pt z)))
+	       (gl:draw-arrays gl:polygon 0 (cast leaf-pts u32))
+	       ))
+
       (load-boxes)
       (gl:bind-buffer gl:array-buffer vbo-grass-boxes)
       (gl:vertex-attrib-pointer 0 2 gl:float gl:false 0 null) 
@@ -387,7 +422,7 @@ length
       (gl:uniform size-loc (vec 1 1))
       (gl:uniform color-loc 0.2 0.4 0.2 1)
       (gl:draw-arrays gl:quads 0 (cast (* 4 grass-rect-cnt) u32))
-
+      
       (gl:bind-buffer gl:array-buffer vbo-circle)
       (gl:vertex-attrib-pointer 0 2 gl:float gl:false 0 null) 
       
