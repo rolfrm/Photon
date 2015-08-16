@@ -170,8 +170,10 @@ length
 (defvar cam-size (vec 50 50))
 (defvar circles (cast null (ptr vec3)))
 (defvar circle-cnt 0)
+(defvar boosters (cast null (ptr vec3)))
+(defvar booster-cnt 0)
 (defvar speed 1.0)
-
+(defvar boosters-eaten 0)
 (defun pt-dist(f64 (a vec2) (b vec2))
   (vec2-length (- a b)))
 
@@ -202,17 +204,15 @@ length
 (defun load-game(void)
   (progn
     (setf player-dir (vec 0 1))
+    (setf boosters-eaten 0)
     (setf new-pos (vec 0 0))
     (setf cam-pos (vec 0 50))
-    ;(setf cam-size (vec 50 50))
     (setf circles (cast null (ptr vec3)))
     (setf circle-cnt 0)
-    (setf speed 0.10)
+    (setf speed 0.096)
 
     (clear-list+ grass-rects grass-rect-cnt)
     (add-to-list+ grass-rects grass-rect-cnt (make-rect (vec -500 -500) (vec 1000 500)))
-
-    
     (clear-list+ circles circle-cnt)
     (add-to-list+ circles circle-cnt (vec 8 60 18))
     (add-to-list+ circles circle-cnt (vec -10 95 10))
@@ -220,12 +220,19 @@ length
     (add-to-list+ circles circle-cnt (vec -10 30 10))
     (add-to-list+ circles circle-cnt (vec 20 30 10))
     (add-to-list+ circles circle-cnt (vec -10 40 8.5))
+    (clear-list+ boosters booster-cnt)
+    (add-to-list+ boosters booster-cnt (vec 10 20 0.5))
+    (add-to-list+ boosters booster-cnt (vec 10 25 0.6))
+    (add-to-list+ boosters booster-cnt (vec 10 35 0.6))
+    (add-to-list+ boosters booster-cnt (vec 10 40 0.5))
+    (add-to-list+ boosters booster-cnt (vec -10 50 0.5))
+    (add-to-list+ boosters booster-cnt (vec -11 60 0.5))
+    (add-to-list+ boosters booster-cnt (vec -11 70 0.5))
     (load-boxes)
     (gl:clear-color 0.8 0.8 1.0  1.0 )
     (clear-list+ points points-cnt)
     (add-to-list+ points points-cnt (vec 0 0))
     (add-to-list+ points points-cnt (vec 0 10.0))
-
     (load-points)
     ))
 
@@ -242,10 +249,16 @@ length
 (defun start-repl
     (repl))
 
+(defun close-callback (void (win (ptr void)))
+  (exit 0))
+
+(glfw:set-window-close-callback win close-callback)  
+
 (defun run-game
 (let ((iteration 0)
       (height (cast 0.0 f64))
       (alive true)
+
       (dead-timer 0))
   (while (< iteration 40000)
     (gl:use-program prog)
@@ -292,7 +305,9 @@ length
 		  (old-std-file std:file))
 	      
 	      (setf std:file file)
-	      (print "Record: " (cast height i64) newline "Current height:" (cast (member cheight y) i64))
+	      (print "Record: " (cast height i64) newline "Current height:" (cast (member cheight y) i64) newline "Speed: " speed)
+	      (when (> boosters-eaten 0)
+		(print newline "NOM: " boosters-eaten))
 	      (fclose file)
 	      (setf font-t (text-box:create (cast fdata (ptr char)) 650 40 font))
 	      (setf std:file old-std-file)
@@ -324,11 +339,28 @@ length
 	       (gl:uniform offset-loc (vec (member circle x) (member circle y)))
 	       (gl:uniform size-loc (vec (member circle z) (member circle z)))
 	       (gl:draw-arrays gl:polygon 0 (cast circ-pts u32))))
+      (gl:uniform color-loc 1.0 1.0 0.0 1.0)
+      
+      (range it 0 (cast booster-cnt i64)
+	     (let ((circle (deref (+ boosters it))))
+	       (let ((dist (pt-dist cam-pos (vec (member circle x) (member circle y)))))
+		 (when (< dist (member circle z))
+		   (incr speed 0.005)
+		   (incr boosters-eaten 1)
+		   (setf (deref (+ boosters it)) (vec 0 0 0))		   
+		   ))
+	       (gl:uniform offset-loc (vec (member circle x) (member circle y)))
+	       (gl:uniform size-loc (vec (member circle z) (member circle z)))
+	       (gl:draw-arrays gl:polygon 0 (cast circ-pts u32))
+	       
+	       ))
 
 
       (let ((r (deref grass-rects)))
-	(setf (member r upper-left)
-	    (+ (member r upper-left) (vec 0 0.1)))
+	
+	(when (< (member (+ (member r size) (member r upper-left)) y) 100)
+	  (setf (member r upper-left)
+		(+ (member r upper-left) (vec 0 0.1))))
 	(setf (deref grass-rects) r))
       
       (when alive
@@ -337,7 +369,9 @@ length
 		 (when (pt-rect-collision r (deref (+ points (cast (- points-cnt 1) i64))))
 		   (gl:clear-color 1.0 0.0 0.0 0.0)
 		   (setf alive false)
-		   ))))
+		   )))
+	
+	)
 
       (gl:bind-buffer gl:array-buffer vbo)
       (gl:vertex-attrib-pointer 0 2 gl:float gl:false 0 null) 
@@ -385,6 +419,6 @@ length
 
     (usleep 10000)
     )))
-(launch (addrof start-repl))
+;(launch (addrof start-repl))
 (run-game)
 
