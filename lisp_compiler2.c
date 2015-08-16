@@ -472,14 +472,18 @@ void * compile_as_c(c_root_code * codes, size_t code_cnt){
     c_root_code_dep(deps, vdeps, codes[i]);
   
   checkvdeps(vdeps);
-  FILE * f = tmpfile();//fopen(buf,"w");//open_memstream(&data, &cnt);
+  char buf[100];
+  static int tmp_idx = 0;
+  sprintf(buf, "__tmp_file%i", tmp_idx++);
+  FILE * f = fopen(buf,"wb+");//open_memstream(&data, &cnt);
   push_format_out(f);
   go_write(deps, vdeps, codes, code_cnt);
   pop_format_out();
-
+  
   char * data = read_stream_to_string(f);
   size_t datasize = ftell(f);
   fclose(f);  
+  remove((const char *) f);
   char header[] = "//***********\n";
   char compile_out_path[1000];
   sprintf(compile_out_path,"%s/%s",get_orig_dir(), "compile_out.c");
