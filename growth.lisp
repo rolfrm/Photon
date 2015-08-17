@@ -44,8 +44,11 @@ uniform vec2 cam;
 uniform vec2 cam_size;
 uniform vec2 dir;
 void main(){
-  vec2 v2 = vec(-dir.y, dir.x);
-  vec2 v = dir * vertex_position + v2 * vertex_position;
+  vec2 d = dir;
+  vec2 v2 = vec2(-d.y, d.x);
+  vec2 v = vec2(d.x * vertex_position.x + v2.x * vertex_position.y,
+                d.y * vertex_position.x + v2.y * vertex_position.y);
+
   gl_Position = vec4((v * size + offset - cam) / cam_size * 2.0,0.0,1.0);
 }
 ")
@@ -204,10 +207,11 @@ length
      (let ((buf (+ leaves it)))
        (setf (member (deref buf) z) 
 	     (min (+ (member (deref buf) z) 0.05) 1.0))))
-    (incr time-since-last-leaf 0.1)
-    (when (> time-since-last-leaf 10.0)
+    (incr time-since-last-leaf (* 0.1 (+ 1.0 (randf))))
+    (when (> time-since-last-leaf 5.0)
       (add-to-list+ leaves leaf-cnt (vec (member pos x) (member pos y) 0.0))
-      (add-to-list+ leaf-dir leaf-dir-cnt dir)
+      
+      (add-to-list+ leaf-dir leaf-dir-cnt (if (eq 0 (% leaf-cnt 2)) dir (vec2:rot90 (vec2:rot90 dir))))
       (setf time-since-last-leaf 0))))
 
 (defun pt-dist(f64 (a vec2) (b vec2))
@@ -323,9 +327,13 @@ length
 		    (setf turn (unjitter-axis (- 0.0 (cast (deref axes) f64))))
 		    (scroll-cb win 0.0 (unjitter-axis (cast (deref (+ axes 4)) f64)))
 		    )))
-	    (setf player-dir (vec2turn player-dir (* turn 0.1))))
+	    (setf player-dir (vec2turn player-dir (* turn 0.1)))
+
+	    )
 	  (setf cam-pos (deref (+ points (cast (- points-cnt 1) i64))))
-	  (update-leaves cam-pos (vec2:rot90 player-dir))
+	  (let ((v (vec2-normalize (vec2:rot90 player-dir))))
+	    (update-leaves cam-pos v)
+	    )
 	  (load-points))
 	
 	
@@ -356,7 +364,7 @@ length
 	  ))
       
       ;(setf speed (* 0.9995 speed))
-      (gl:uniform dir-loc (vec2 1 0))
+      (gl:uniform dir-loc (vec 1 0))
       (gl:clear gl:color-buffer-bit)
       (gl:uniform cam-size-loc cam-size)
       (gl:uniform cam-loc cam-pos)
