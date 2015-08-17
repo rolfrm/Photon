@@ -268,10 +268,10 @@ length
 			   (* player-dir speed)))
 	  (let ((turn (if (or (glfw:get-key win glfw:key-a)
 			      (glfw:get-key win glfw:key-left))
-			  1.0
+			  0.2
 			  (if (or (glfw:get-key win glfw:key-d)
 				  (glfw:get-key win glfw:key-right))
-			      -1.0
+			      -0.2
 			      0.0))))
 	    (when (and (glfw:joystick-present? 0)
 		     (eq turn 0.0))
