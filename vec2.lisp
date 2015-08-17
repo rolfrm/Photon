@@ -67,6 +67,9 @@
 (overload vec makevec3)
 (overload vec makevec4)
 
+(defun vec2:rot90 (vec2 (a vec2))
+  (vec (- 0 (member a y)) (member a x)))
+
 (defmacro vec2op (operator)
   (let ((name (symbol2expr (symbol-combine (quote vec2) (expr2symbol operator)))))
     (let ((r (expr
@@ -92,6 +95,13 @@
 	(y (member a y)))   
     (vec (- (* x cosr) (* y sinr))
 	 (+ (* y cosr) (* x sinr)))))
+
+(defun vec2:eq (bool (a vec2) (b vec2))
+  (and (eq (member a x) (member b x))
+       (eq (member a y) (member b y))))
+
+;(let (( a (vec2turn (vec2 1 1) pi)) (b (vec2:rot90 (vec2:rot90 (vec2 1 1)))))
+;  (assert (eq 
 
 (defun vec2scale (vec2 (a vec2) (b f64))
   (progn

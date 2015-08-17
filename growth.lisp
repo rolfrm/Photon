@@ -42,8 +42,11 @@ uniform vec2 offset;
 uniform vec2 size;
 uniform vec2 cam;
 uniform vec2 cam_size;
+uniform vec2 dir;
 void main(){
-  gl_Position = vec4((vertex_position * size + offset - cam) / cam_size * 2.0,0.0,1.0);
+  vec2 v2 = vec(-dir.y, dir.x);
+  vec2 v = dir * vertex_position + v2 * vertex_position;
+  gl_Position = vec4((v * size + offset - cam) / cam_size * 2.0,0.0,1.0);
 }
 ")
 
@@ -84,7 +87,7 @@ length
 (defvar color-loc (gl:get-uniform-location prog "color"))
 (defvar cam-loc (gl:get-uniform-location prog "cam"))
 (defvar cam-size-loc (gl:get-uniform-location prog "cam_size"))
-
+(defvar dir-loc (gl:get-uniform-location prog "dir"))
 (defvar points (cast null (ptr vec2)))
 (defvar points-cnt  0)
 
@@ -191,9 +194,11 @@ length
 (defvar boosters-eaten 0)
 (defvar leaves (cast null (ptr vec3)))
 (defvar leaf-cnt 0)
+(defvar leaf-dir (cast null (ptr vec2)))
+(defvar leaf-dir-cnt 0) ;same as leaf-cnt
 (defvar time-since-last-leaf 0.0)
 
-(defun update-leaves (void (pos vec2))
+(defun update-leaves (void (pos vec2) (dir vec2))
   (progn
     (range it 0 leaf-cnt
      (let ((buf (+ leaves it)))
@@ -202,6 +207,7 @@ length
     (incr time-since-last-leaf 0.1)
     (when (> time-since-last-leaf 10.0)
       (add-to-list+ leaves leaf-cnt (vec (member pos x) (member pos y) 0.0))
+      (add-to-list+ leaf-dir leaf-dir-cnt dir)
       (setf time-since-last-leaf 0))))
 
 (defun pt-dist(f64 (a vec2) (b vec2))
@@ -241,6 +247,7 @@ length
     (setf circle-cnt 0)
     (setf speed 0.096)
     (clear-list+ leaves leaf-cnt)
+    (clear-list+ leaf-dir leaf-dir-cnt)
     (clear-list+ grass-rects grass-rect-cnt)
     (add-to-list+ grass-rects grass-rect-cnt (make-rect (vec -500 -500) (vec 1000 500)))
     (clear-list+ circles circle-cnt)
@@ -318,7 +325,7 @@ length
 		    )))
 	    (setf player-dir (vec2turn player-dir (* turn 0.1))))
 	  (setf cam-pos (deref (+ points (cast (- points-cnt 1) i64))))
-	  (update-leaves cam-pos)
+	  (update-leaves cam-pos (vec2:rot90 player-dir))
 	  (load-points))
 	
 	
@@ -349,6 +356,7 @@ length
 	  ))
       
       ;(setf speed (* 0.9995 speed))
+      (gl:uniform dir-loc (vec2 1 0))
       (gl:clear gl:color-buffer-bit)
       (gl:uniform cam-size-loc cam-size)
       (gl:uniform cam-loc cam-pos)
@@ -409,12 +417,14 @@ length
       (gl:bind-buffer gl:array-buffer leaf-vbo)
       (gl:vertex-attrib-pointer 0 2 gl:float gl:false 0 null) 
       (range it 0 leaf-cnt
-	     (let ((pt (deref (+ leaves it))))
+	     (let ((pt (deref (+ leaves it)))
+		   (dir (deref (+ leaf-dir it))))
 	       (gl:uniform offset-loc  (vec (member pt x) (member pt y)))
 	       (gl:uniform size-loc (vec (member pt z) (member pt z)))
+	       (gl:uniform dir-loc dir)
 	       (gl:draw-arrays gl:polygon 0 (cast leaf-pts u32))
 	       ))
-
+      (gl:uniform dir-loc (vec 1 0))
       (load-boxes)
       (gl:bind-buffer gl:array-buffer vbo-grass-boxes)
       (gl:vertex-attrib-pointer 0 2 gl:float gl:false 0 null) 
