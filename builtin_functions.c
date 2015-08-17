@@ -4,7 +4,7 @@
 #include "c_ast.h"
 #include "lisp_compiler.h"
 #include "expr_utils.h"
-#include <dlfcn.h>
+
 #include "lisp_std_types.h"
 void defun(char * name, type_def * t, void * fcn){
   define_variable(get_symbol(name), t, fcn, true);
@@ -15,7 +15,7 @@ void print_type(type_def * def){
 }
 
 type_def * ptr_inner(type_def * ptr_def){
-  
+
   if(ptr_def == error_def || ptr_def->type != POINTER){
     return error_def;
   }
@@ -49,6 +49,29 @@ expr * type2expr(type_def * ptr_def){
   return clone(&e, sizeof(e));
 }
 
+#ifdef _WIN32
+
+#undef ASSERT
+#include <windows.h>
+void * load_lib(char * path){
+  void * handle =  GetModuleHandle(path);
+  if(handle == NULL)
+    loge("Unable to load library '%s'\n", path);
+  return handle;
+}
+
+void * load_symbol(void * lib, symbol * sym, symbol * name, type_def * t){
+  void * ptr = GetProcAddress((HMODULE)lib, get_c_name(*name));
+  if(ptr == NULL) {
+    loge("Error no such symbol '%s'\n", symbol_name(*name));}
+  else {
+    define_variable(*sym, t, ptr, true);
+  }
+  return ptr;
+}
+#define ASSERT(x)
+#else
+#include <dlfcn.h>
 void * load_lib(char * path){
   void * handle =  dlopen(path, RTLD_LAZY);
   if(handle == NULL)
@@ -66,12 +89,12 @@ void * load_symbol(void * lib, symbol * sym, symbol * name, type_def * t){
   return ptr;
 }
 
+#endif
+// 3 different type_of's. one disables error handling, needed when doing type_of operations.
+
 type_def * type_of3(type_def * expected_type, expr * ex){
- c_block blk;
-  blk.exprs = NULL;
-  blk.expr_cnt = 0;
-  c_value val;
-  val.type = C_NOTHING;
+  c_block blk = c_block_empty;
+  c_value val = {.type = C_NOTHING};
   type_def * td = compile_expr(expected_type, &blk, &val, *ex);
   c_block_delete(blk);
   c_value_delete(val);
@@ -120,7 +143,7 @@ type_def * fcn_ret_type(type_def * td){
 
 extern symbol * printer;
 void set_printer(symbol * sym){
-  printer = sym;  
+  printer = sym;
 }
 
 type_def * var_type(symbol * sym){
@@ -138,10 +161,6 @@ void * get_var(symbol * sym){
   return var->data;
 }
 
-void invoke (void (* fcn)()){
-  fcn();
-}
-
 #include <iron/coroutines.h>
 
 void builtin_print_string(char * str){
@@ -151,6 +170,8 @@ void builtin_print_string(char * str){
 bool is_check_type_run(){
   return !lisp_print_errors;
 }
+
+bool start_read_eval_print_loop();
 
 void load_functions(){
   defun("print-type", str2type("(fcn void (a (ptr type_def)))"), print_type);
@@ -162,9 +183,9 @@ void load_functions(){
   type_def * loadsymbol = str2type("(fcn (ptr void) (_lib lib) (sym (ptr symbol)) (name (ptr symbol)) (t (ptr type_def)))");
   defun("load-symbol", loadsymbol, load_symbol);
   defun("type-of",str2type("(fcn (ptr type_def) (expr (ptr expr)))"), type_of);
-  defun("type-of2",str2type("(fcn (ptr type_def) (expected_type (ptr type_def)) (expr (ptr expr)))"), 
+  defun("type-of2",str2type("(fcn (ptr type_def) (expected_type (ptr type_def)) (expr (ptr expr)))"),
 	type_of2);
-  defun("type-of3",str2type("(fcn (ptr type_def) (expected_type (ptr type_def)) (expr (ptr expr)))"), 
+  defun("type-of3",str2type("(fcn (ptr type_def) (expected_type (ptr type_def)) (expr (ptr expr)))"),
 	type_of3);
   defun("check-type-run?", str2type("(fcn bool)"), is_check_type_run);
   defun("print-expr", str2type("(fcn void (theexpr (ptr expr)))"), print_expr);
@@ -183,12 +204,14 @@ void load_functions(){
   defun("fcn-arg-cnt", str2type("(fcn u64 (t (ptr type_def)))"), fcn_arg_cnt);
   defun("set-printer", str2type("(fcn void (ptr (ptr symbol)))"), set_printer);
 
-  defun("invoke", str2type("(fcn void (func (fcn void )))"), invoke);
-  
   str2type("(alias (opaque-struct _ccdispatch) ccdispatch)");
+
+  /*
   defun("ccstart", str2type("(fcn (ptr ccdispatch))"), ccstart);
   defun("ccyield", str2type("(fcn void)"), ccyield);
   defun("ccstep", str2type("(fcn void (cc (ptr ccdispatch)))"), ccstep);
   defun("ccthread", str2type("(fcn void (cc (ptr ccdispatch)) (fcn (fcn void (arg (ptr void)))) (userdata (ptr void)))"), ccthread);
+  defun("repl", str2type("(fcn bool)"), start_read_eval_print_loop);
+  */
   defun("timestamp", str2type("(fcn i64)"), timestamp);
 }

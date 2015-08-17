@@ -77,7 +77,7 @@ bool start_read_eval_print_loop(){
     }
     if(!all_whitespace(code)){
       add_history(code);
-      size_t exprcnt;
+      size_t exprcnt = 0;
       expr * exprs = lisp_parse_all(code, &exprcnt);
       lisp_run_exprs( exprs, exprcnt);
     }
@@ -89,14 +89,4 @@ bool start_read_eval_print_loop(){
   return true;
 }
 
-
-void repl(char * preload_file){
-  if(lisp_current_compiler == NULL)
-    lisp_current_compiler = lisp_make_compiler();
-  lisp_load_base();
-  if(preload_file != NULL)
-    if(COMPILE_ERROR == lisp_run_script_file(preload_file))
-      return;
-  start_read_eval_print_loop();
-}
 

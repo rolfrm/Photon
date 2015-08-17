@@ -55,7 +55,7 @@ type_def * compile_value(type_def * expected_type, c_value * val, value_expr e){
 	break;
       }
     }
-    
+
     if(expected_type != NULL){
       if( !isfloat && is_integer_type(expected_type)){
 	val->raw.type = expected_type;
@@ -93,7 +93,7 @@ type_def * expr2type(expr typexpr){
       out.type = FUNCTION;
       COMPILE_ASSERT(sexp.cnt > 1);
       type_def * ret = expr2type(sexp.exprs[1]);
-    
+
       COMPILE_ASSERT(error_def != ret);
       type_def * args[sexp.cnt - 2];
       for(size_t i = 0; i < sexp.cnt - 2; i++){
@@ -101,7 +101,7 @@ type_def * expr2type(expr typexpr){
 	COMPILE_ASSERT(arg.type == EXPR && arg.sub_expr.cnt == 2 && is_symbol(arg.sub_expr.exprs[0]));
 	args[i] = expr2type(arg.sub_expr.exprs[1]);
 	COMPILE_ASSERT(args[i] != NULL && args[i] != error_def);
-      } 
+      }
       out.fcn.ret = ret;
       out.fcn.args = args;
       out.fcn.cnt = array_count(args);
@@ -185,8 +185,8 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
   if(name_expr.type != VALUE){
     // if the first expr is not the name of something
     c_value * tmpvar = alloc0(sizeof(c_value));
-    type_def * td = compile_expr(NULL, block, tmpvar, name_expr); 
-    
+    type_def * td = compile_expr(NULL, block, tmpvar, name_expr);
+
     if(td->type == FUNCTION || (td->type == POINTER && td->ptr.inner->type == FUNCTION)){
       // So the name expression returns a function pointer or function.
       // This can be called, by setting it to a temp variable and calling that in C.
@@ -237,7 +237,7 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
     logd("\n");
     return error_def;
   }
-  
+
   expr * args = se->exprs + 1;
   i64 argcnt = se->cnt - 1;
 
@@ -251,7 +251,7 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
     var_data = fvar->data;
     var_type = fvar->type;
   }
-  
+
   if(var_type == type_pool_get(&cmacro_def_def)){
     cmacro_def * macro = var_data;
 
@@ -261,7 +261,7 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
     type_def * td = NULL;
     switch(macro->arg_cnt){
     case 0:
-      td =  macro_fcn(expected_type, block, value); 
+      td =  macro_fcn(expected_type, block, value);
       break;
     case 1:
       td =  macro_fcn(expected_type, block, value, args[0]);
@@ -273,15 +273,15 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
       td =  macro_fcn(expected_type, block, value, args[0], args[1], args[2]);
       break;
     case 4:
-      td =  macro_fcn(expected_type, block, value, args[0], args[1], args[2], 
+      td =  macro_fcn(expected_type, block, value, args[0], args[1], args[2],
 		      args[3]);
       break;
     case 5:
-      td =  macro_fcn(expected_type, block, value, args[0], args[1], args[2], 
+      td =  macro_fcn(expected_type, block, value, args[0], args[1], args[2],
 		      args[3], args[4]);
       break;
     case 6:
-      td =  macro_fcn(expected_type, block, value, args[0], args[1], args[2], 
+      td =  macro_fcn(expected_type, block, value, args[0], args[1], args[2],
 		      args[3], args[4], args[5]);
       break;
     case -1:
@@ -297,10 +297,10 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
       e.sub_expr = *se;
       print_expr(&e); loge("\n");
     }
-      
+
     return td;
-      
-  }else if(var_type->type == FUNCTION || 
+
+  }else if(var_type->type == FUNCTION ||
 	   (var_type->type == POINTER && var_type->ptr.inner->type == FUNCTION)){
     type_def * td = var_type->type == POINTER ? var_type->ptr.inner : var_type;
 
@@ -330,7 +330,7 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
 
     if(err_arg >= 0)
       COMPILE_ERROR("Non matching types for function '%s' arg %i\n", symbol_name(name), err_arg);
-    
+
     c_function_call call;
     call.type = td;
     call.name = name;
@@ -338,7 +338,7 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
     call.arg_cnt = argcnt;
 
     value->type = C_FUNCTION_CALL;
-    value->call = call;   
+    value->call = call;
     return td->fcn.ret;
   }else if(var_type == macro_store_type()){
     return expand_macro(expected_type, block, value, se->exprs, se->cnt);
@@ -358,7 +358,7 @@ type_def * compile_expr(type_def * expected_type, c_block * block, c_value * val
     break;
   case ERROR:
     return error_def;
-  }	  
+  }
   return error_def;
 }
 
@@ -368,7 +368,7 @@ c_root_code compile_lisp_to_eval(expr exp, compile_status * status){
   r.type = C_FUNCTION_DEF;
   r.fcndef.block = c_block_empty;
   r.fcndef.name = get_symbol("eval");
-  
+
   c_expr expr = {.type = C_VALUE};
   type_def * t = compile_expr(NULL, &r.fcndef.block, &expr.value, exp);
   if(t == error_def){
@@ -414,7 +414,7 @@ void tccerror(void * opaque, const char * msg){
   _tcc_error = clone((char *)msg, strlen(msg));
 }
 
-TCCState * mktccs(){ 
+TCCState * mktccs(){
   TCCState * tccs = tcc_new();
   tcc_set_lib_path(tccs, get_orig_dir());
   tcc_set_error_func(tccs, NULL, tccerror);
@@ -424,7 +424,7 @@ TCCState * mktccs(){
 
 
 void go_write(type_def ** deps, symbol * vdeps, c_root_code * codes, size_t code_cnt){
-  
+
   write_dependencies(deps);
   for(size_t i = 0; vdeps[i].id != 0; i++){
     var_def * var = get_global(vdeps[i]);
@@ -437,17 +437,17 @@ void go_write(type_def ** deps, symbol * vdeps, c_root_code * codes, size_t code
     while(t->type == POINTER){
       t = t->ptr.inner;
     }
-   
+
     decl dcl;
     dcl.name = var->name;
     dcl.type = var->type;
     format("extern ");
     print_cdecl(dcl);format(";\n");
   }
-  
+
   for(size_t i = 0; i < code_cnt; i++)
     print_c_code(codes[i]);
-  
+
 }
 
 void checkvdeps(symbol * vdep){
@@ -470,20 +470,27 @@ void * compile_as_c(c_root_code * codes, size_t code_cnt){
   memset(vdeps, 0, sizeof(vdeps));
   for(size_t i = 0; i < code_cnt; i++)
     c_root_code_dep(deps, vdeps, codes[i]);
-  
+
   checkvdeps(vdeps);
-  char * data = NULL;
-  size_t cnt = 0;
-  FILE * f = open_memstream(&data, &cnt);
+  char buf[100];
+  static int tmp_idx = 0;
+  sprintf(buf, "__tmp_file%i", tmp_idx++);
+  FILE * f = fopen(buf,"wb+");//open_memstream(&data, &cnt);
   push_format_out(f);
   go_write(deps, vdeps, codes, code_cnt);
   pop_format_out();
+
+  char * data = read_stream_to_string(f);
+  size_t datasize = ftell(f);
+
+  ASSERT(data != NULL);
   fclose(f);
+  remove((const char *) buf);
   char header[] = "//***********\n";
   char compile_out_path[1000];
   sprintf(compile_out_path,"%s/%s",get_orig_dir(), "compile_out.c");
   append_buffer_to_file(header,sizeof(header) - 1, compile_out_path);
-  append_buffer_to_file(data,cnt,compile_out_path);
+  append_buffer_to_file(data, datasize,compile_out_path);
   TCCState * tccs = mktccs();
   for(size_t i = 0; i < array_count(vdeps) && vdeps[i].id != 0; i++){
     var_def * var = get_global(vdeps[i]);
@@ -495,7 +502,6 @@ void * compile_as_c(c_root_code * codes, size_t code_cnt){
       fail = tcc_add_symbol(tccs,get_c_name(var->name),&var->data);
     ASSERT(!fail);
   }
-  
   int fail = tcc_compile_string(tccs, data);
   if(_tcc_error != NULL){
     fail = true;
@@ -578,13 +584,13 @@ var_def * lisp_compile_expr(expr ex, compile_status * optout_status){
 	  if(optout_status != NULL)*optout_status = COMPILE_ERROR;
 	  return;
 	}
-	
+
 	void * codebuf = compile_as_c(&cl,1);
 	if(codebuf == NULL)
 	  *optout_status = COMPILE_ERROR;
 	//print_current_mem(2);
-	c_root_code_delete(cl);	
-	
+	c_root_code_delete(cl);
+
 	//print_current_mem(3);
 	if(codebuf != NULL)
 	  add_delete_soon(codebuf);
@@ -599,7 +605,7 @@ var_def * lisp_compile_expr(expr ex, compile_status * optout_status){
 void * lisp_compile_and_run_expr(expr ex, compile_status * optout_status){
   compile_status _status;
   if(optout_status == NULL) optout_status = &_status;
-       
+
   var_def * var = lisp_compile_expr(ex, optout_status);
   if(COMPILE_ERROR == *optout_status)
     return NULL;
@@ -622,12 +628,12 @@ compile_status lisp_run_expr(expr ex){
     _ex.sub_expr.exprs = exes;
     ex = _ex;
   }
-  
+
   compile_status status = COMPILE_OK;
   var_def * evaldef = lisp_compile_expr(ex, &status);
-  if(COMPILE_ERROR == status || evaldef == NULL) 
+  if(COMPILE_ERROR == status || evaldef == NULL)
     return COMPILE_ERROR;
-  
+
   ASSERT(evaldef != NULL);
   type_def * ret = evaldef->type->fcn.ret;
   size_t ret_size = size_of(ret);
@@ -636,10 +642,10 @@ compile_status lisp_run_expr(expr ex){
     if(ret != &void_def)
       log("Printer should return &void def");
   }else{
-    print_def(evaldef->type->fcn.ret); 
-    logd(" :: ");  
+    print_def(evaldef->type->fcn.ret);
+    logd(" :: ");
   }
-  
+
   if(ret == &void_def){
     if(printer == NULL)
       logd("()\n");
@@ -658,7 +664,7 @@ compile_status lisp_run_expr(expr ex){
     symbol * (* fcn)() = evaldef->data;
     symbol * s = fcn();
     logd("'%s\n", symbol_name(*s));
-    
+
   }else if(ret->type == POINTER || ret->type == FUNCTION){
     void * (* fcn)() = evaldef->data;
     void * ptr = fcn();
@@ -666,11 +672,11 @@ compile_status lisp_run_expr(expr ex){
   }else if(ret == &f32_def){
     f32 (* fcn)() = evaldef->data;
     f32 v = fcn();
-    logd("%f\n",v);  
+    logd("%f\n",v);
   }else if(ret == &f64_def){
     f64 (* fcn)() = evaldef->data;
     f64 v = fcn();
-    logd("%f\n",v);  
+    logd("%f\n",v);
   }else if(ret == &bool_def){
     bool (* fcn)() = evaldef->data;
     bool  v = fcn();
@@ -695,9 +701,9 @@ compile_status lisp_run_expr(expr ex){
 compile_status lisp_run_exprs(expr * exprs, size_t exprcnt){
   for(u32 i = 0; i < exprcnt; i++){
     expr e = exprs[i];
-    compile_status s = lisp_run_expr(e);    
+    compile_status s = lisp_run_expr(e);
     if(COMPILE_ERROR == s){
-      
+
       loge("Error at: ");
       print_expr(&e);
       logd("\n");
@@ -728,7 +734,7 @@ compile_status lisp_run_script_string(char * code){
     dealloc(exprs);
   return s;
 }
-	  
+
 bool test_tcc();
 bool test_lisp2c(){
   TEST(test_tcc);
@@ -745,13 +751,13 @@ bool test_lisp2c(){
   type_def * type2 = str2type("(fcn void (a (ptr type_def)))");
   type_def * type3 = str2type("(fcn void (a (ptr void)))");
   ASSERT(type == type2 && type != type3);
-  
+
   type_def * d = str2type("(alias (ptr type_def) td)");
   print_def(d);
   type_def * d2 = str2type("(alias (struct _s1 (x i16) (y i8) (z i16) (x2 i16)) s1)");
   print_def(d2);
   type_def * d3 = str2type("(ptr s1)");
-  print_def(d3);	
+  print_def(d3);
   type_def * d4 = str2type("(alias (struct _a) a)");
   print_def(d4);
 
@@ -769,7 +775,7 @@ bool test_lisp2c(){
   logd("sizes: %i %i\n",sizeof(struct _s1), size_of(d2));
   TEST_ASSERT(sizeof(struct _s1) == size_of(d2));
   TEST_ASSERT(sizeof(struct _s1 *) == size_of(d3));
-  
+
   return ret;
 }
 

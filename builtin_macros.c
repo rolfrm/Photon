@@ -1071,7 +1071,8 @@ type_def * member_macro(type_def * expected_type, c_block * blk, c_value * val, 
   while(obj_type->type == TYPEDEF) obj_type = obj_type->ctypedef.inner;
   if(obj_type->type != STRUCT && obj_type->type != UNION){
     loge("Error: Expected objects of type struct or union. got %i\n", obj_type->type);
-    ERROR("Unsupported type");
+    print_decl(obj_type, get_symbol("tmp"));loge("\n");
+    ERROR("Unsupported type for member macro.");
   }
   type_def * memtype = NULL;
   for(int i = 0; i < obj_type->cstruct.cnt; i++){
@@ -1210,18 +1211,14 @@ void builtin_macros_load(){
   defun("expr2number",str2type("(fcn i64 (a (ptr expr)))"), expr2number);
   defun("expr2symbol", str2type("(fcn (ptr symbol) (a (ptr expr)))"), expr2symbol);
   defun("symbol2expr", str2type("(fcn (ptr expr) (a (ptr symbol)))"), symbol2expr);
-  
   defun("is-sub-expr", str2type("(fcn bool (expr (ptr expr)))"), is_sub_expr);
   defun("sub-expr.cnt", str2type("(fcn u64 (expr (ptr expr)))"), get_sub_expr_cnt);
   defun("sub-expr.expr", str2type("(fcn (ptr expr) (expr (ptr expr)) (idx u64))"), get_sub_expr);
   defun("sub-expr.skip", str2type("(fcn (ptr expr) (expr (ptr expr)) (idx u64))"), sub_expr_skip);
-//expr * sub_expr_skip(expr * e)
   defun("make-sub-expr", str2type("(fcn (ptr expr) (exprs (ptr (ptr expr))) (cnt u64))"), make_sub_expr);
   defun("expr-symbol?", str2type("(fcn bool (expr (ptr expr)))"), is_expr_symbol);
-    
   defun("expand-macro", str2type("(fcn (ptr expr) (ms (ptr macro_store)) (expr2 (ptr expr)))"), &expand_macro_store2);
   defun("print-macro-store", str2type("(fcn void (ms (ptr macro_store)))"), print_macro_store);
-  
   defun("macro-store-args", str2type("(fcn i64 (ms (ptr macro_store)))"), macro_store_args);
   defun("gensym",str2type("(fcn (ptr expr))"), gensym);
   defun("free-expr", str2type("(fcn void (e (ptr expr)))"), free_expr);

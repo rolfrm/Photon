@@ -1,8 +1,12 @@
 # Photon
 ---------
-A C based Lisp compiler / language. The design goal is to be fast and lightweight as C, while as powerful and flexible as Lisp. The language very closely maps to the c type system and compiles into c. The c code is then compiled by a compiler to produce efficient(-ish) code. Currently the compiler used is TCC, which generates relatively slow assembly code.
+Photon is a language and compiler. It is statically typed with a type system that is closely related to that of C. It is also dynamically executed in a way that is similar to most Lisp implementations. It aims to provide the performance and simplicity of C while having the flexibility and power of Lisp. 
+
+The compiler compiles the Photon code into C code. The C code is then compiled by a compiler to produce efficient(-ish) native code. Currently the compiler used is TCC, which generates relatively slow assembly code.
 
 This compiler is in a very early stage of development, please dont expect anything to work yet.
+
+To test the compiler I am trying to build some games examples of these are 'growth.lisp' and 'simple_game.lisp'.
 
 Check out the file [test.lisp](test.lisp) to see the current functionality.
 
@@ -16,8 +20,8 @@ To test the compiler.
 4. git clone git@github.com:rolfrm/iron.git
 5. cd Photon
 6. make
-7. ./foton growth.lisp
-8. ./foton 
+7. ./foton growth.lisp ;; run the 'growth' game.
+8. ./foton repl.lisp ;; run the REPL.
 
 V1 Release Checklist (Aiming at August 21 release)
 --------
@@ -54,14 +58,15 @@ V1 Release Checklist (Aiming at August 21 release)
 * [x] Call function pointers
 * [x] proper interned literal strings (checkout tries. no probably to hash tables instead.)
 * [ ] Fix massive memory leaks
-* [ ] Bugs / Stability
+* [x] Bugs / Stability	 	 
 * [ ] better error handling
 * [ ] line number of exprs.
 * [ ] lvalue checking (setf 1 10) is invalid for instance. (setf a 10) might be ok.
-* [ ] Linux 32 bit / Windows 64/32 bit support
+* [ ] Windows 64bit support.
 
 Future Features
 ---------
+* [ ] Windows/Linux 32 bit support
 * [ ] Recursion support
 * [ ] Packages / Modules
 * [ ] libgccjit backend.

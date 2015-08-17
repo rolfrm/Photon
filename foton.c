@@ -12,7 +12,6 @@
 #include "lisp_types.h"
 #include "c_ast.h"
 #include "lisp_compiler.h"
-#include "repl.h"
 
 const char * allowed_errors[] ={
   "Unknown touch device",
@@ -52,12 +51,6 @@ bool test_symbols();
 bool test_type_pool();
 
 int main(int argc, char *argv[] ){
-
-  if(argc == 1 || (argc >= 2 && strcmp(argv[1],"--repl") == 0)){
-    break_on_errors = false;
-    repl(argc > 2 ? argv[2] : NULL);
-    return 0;
-  }
   
   if(argc == 2 && strcmp(argv[1],"--test") == 0){
     log("Running tests...\n");
@@ -77,7 +70,7 @@ int main(int argc, char *argv[] ){
     }
     lisp_current_compiler = lisp_make_compiler();
     lisp_load_base();
-
+    define_variable(get_symbol("break-on-errors"),str2type("bool"),&break_on_errors, true);
     compile_status status = lisp_run_script_file(argv[1]);
     if(status == COMPILE_ERROR){
       return -1;
@@ -90,6 +83,7 @@ int main(int argc, char *argv[] ){
     log("%s ", argv[i]);
   }
   log("\n");
+  logd("Add the name of an existing file like this: './foton growth.lisp'\n");
 
   return 0;
 }
