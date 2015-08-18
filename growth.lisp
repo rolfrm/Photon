@@ -128,23 +128,18 @@ length
     (gl:buffer-data gl:array-buffer (cast s u32) (cast buf2 (ptr void)) gl:static-draw)
     (dealloc (cast buf2 (ptr void)))))
 
-(defvar leaf-pts (cast 64 i64))
+(defvar leaf-pts (cast 5 i64))
 (defvar leaf-vbo (gl:gen-buffer))
 (gl:bind-buffer gl:array-buffer leaf-vbo)
 (let ((s (* (size-of (type f32)) (cast leaf-pts u64) 2)))
   (let ((buf2 (cast  (alloc s)(ptr f32))))
     (range it 0 leaf-pts
-	   (let ((phase (* (cast it f32) (/ (cast 2pi f32) (cast circ-pts f32))))
+	   (let ((phase (* (cast it f32) (/ (cast 2pi f32) (cast leaf-pts f32))))
 		 (ptr (+ buf2 (* it 2))))
-	     (setf (deref ptr) (* 0.5 (+ 1.0 (sin32 phase))))
-	     (setf (deref (+ ptr 1)) (cos32 phase))
+	     (setf (deref ptr) (+ 1.0 (sin32 phase)))
+	     (setf (deref (+ ptr 1)) (* 0.5 (cos32 phase)))
 	     ))
     (gl:buffer-data gl:array-buffer (cast s u32) (cast buf2 (ptr void)) gl:static-draw)
-    (print "Leaf pts:" newline)
-    (range it 0 leaf-pts
-	   (let ((ptr (+ buf2 (* it 2))))
-	     (print (deref ptr) " " (deref (+ ptr 1)) newline)))
-	   
     (dealloc (cast buf2 (ptr void)))))
 	   
 (defvar vbo-grass-boxes (gl:gen-buffer))
@@ -206,12 +201,16 @@ length
     (range it 0 leaf-cnt
      (let ((buf (+ leaves it)))
        (setf (member (deref buf) z) 
-	     (min (+ (member (deref buf) z) 0.05) 1.0))))
+	     (min (+ (member (deref buf) z) 0.025) 1.0))))
     (incr time-since-last-leaf (* 0.1 (+ 1.0 (randf))))
     (when (> time-since-last-leaf 5.0)
-      (add-to-list+ leaves leaf-cnt (vec (member pos x) (member pos y) 0.0))
       
-      (add-to-list+ leaf-dir leaf-dir-cnt (if (eq 0 (% leaf-cnt 2)) dir (vec2:rot90 (vec2:rot90 dir))))
+      (when (eq (% (rand) 3) 0)
+	(add-to-list+ leaves leaf-cnt (vec (member pos x) (member pos y) 0.0))
+	(add-to-list+ leaf-dir leaf-dir-cnt (vec2:rot90 (vec2:rot90 dir))))
+      (when (eq (% (rand) 3) 0)
+	(add-to-list+ leaves leaf-cnt (vec (member pos x) (member pos y) 0.0))
+	(add-to-list+ leaf-dir leaf-dir-cnt dir))
       (setf time-since-last-leaf 0))))
 
 (defun pt-dist(f64 (a vec2) (b vec2))
