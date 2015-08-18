@@ -10,7 +10,7 @@
 (defvar null (cast 0 (ptr void)))
 (defvar null-expr (cast null (ptr expr)))
 (defvar error-type (cast null (ptr type_def)))
-(defvar libc (load-lib "/lib/x86_64-linux-gnu/libc.so.6"))
+(defvar libc (load-lib "libc.so"))
 
 (defun +quote ((ptr expr) (sstr (ptr expr)))
   (expr (get-symbol (stringify (unexpr sstr)))))
