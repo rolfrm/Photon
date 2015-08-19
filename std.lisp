@@ -10,7 +10,10 @@
 (defvar null (cast 0 (ptr void)))
 (defvar null-expr (cast null (ptr expr)))
 (defvar error-type (cast null (ptr type_def)))
-(defvar libc (load-lib "libc.so"))
+(defvar libc :type lib)
+(if! (is-linux?)
+     (setf libc (load-lib "libc.so"))
+     (setf libc (load-lib "msvcrt.dll")))
 
 (defun +quote ((ptr expr) (sstr (ptr expr)))
   (expr (get-symbol (stringify (unexpr sstr)))))

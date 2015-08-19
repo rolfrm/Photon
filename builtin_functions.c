@@ -49,6 +49,14 @@ expr * type2expr(type_def * ptr_def){
   return clone(&e, sizeof(e));
 }
 
+bool is_linux(){
+  #ifdef _WIN32
+  return false;
+  #else
+  return true;
+  #endif
+}
+
 #ifdef _WIN32
 
 #undef ASSERT
@@ -179,6 +187,7 @@ void load_functions(){
   defun("get-symbol", str2type("(fcn (ptr symbol) (a (ptr char)))"), get_symbol2);
   defun("size-of",str2type("(fcn u64 (type (ptr type_def)))"), size_of);
   str2type("(alias (ptr (opaque-struct _lib)) lib)"); // declare the lib tyoedef
+  defun("is-linux?",str2type("(fcn bool)"), &is_linux);
   defun("load-lib",str2type("(fcn lib (libname (ptr char)))"), load_lib);
   type_def * loadsymbol = str2type("(fcn (ptr void) (_lib lib) (sym (ptr symbol)) (name (ptr symbol)) (t (ptr type_def)))");
   defun("load-symbol", loadsymbol, load_symbol);
