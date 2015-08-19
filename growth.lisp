@@ -284,8 +284,8 @@ length
 (gl:blend-func gl:src-alpha gl:one-minus-src-alpha) 
 
 (defvar font-t (text-box:create "ABC" 16 400 font))
-(defun close-callback (void (win (ptr void)))
-  (exit 0))
+ (defun close-callback (void (win (ptr void)))
+   (exit 0))
 
 (glfw:set-window-close-callback win close-callback)  
 
@@ -338,22 +338,29 @@ length
 	
 	(let ((cheight (deref (+ points (cast (- points-cnt 1) i64)))))
 	  (text-box:delete font-t)
-	  (let ((fdata null)
-		(fdata-cnt (cast 0 u64)))
-	    (let ((file (open_memstream (addrof fdata) (addrof fdata-cnt)))
-		  (old-std-file std:file))
-	      
-	      (setf std:file file)
-	      (print "Record: " (cast height i64) newline "Current height:" (cast (member cheight y) i64) newline "Speed: " speed)
-	      (when (> boosters-eaten 0)
-		(print newline "NOM: " boosters-eaten))
-	      (fclose file)
+	  
+	  (let ((file (fopen "tmp-text-buffer" "wb+"))
+		(old-std-file std:file)
+		(size :type u64))
+	    (setf std:file file)
+
+	    (print "Record: " (cast height i64) newline "Current height:" (cast (member cheight y) i64) newline "Speed: " speed)
+	    (when (> boosters-eaten 0)
+	      (print newline "NOM: " boosters-eaten))
+	    (print newline)
+	    (setf std:file old-std-file)
+	    (fseek file 0 seek-set)
+	    
+	    (let ((fdata (file:read-all-data file (addrof size))))
 	      (setf font-t (text-box:create (cast fdata (ptr char)) 650 40 font))
-	      (setf std:file old-std-file)
-	      (dealloc fdata)
-	      (setf (member (member font-t bounds) size) (/ (member (member font-t bounds) size) (vec 400 400)))
-	      (setf (member (member font-t bounds) upper-left) (vec -1.0 -1.0))
-	      ))
+	      (dealloc (cast fdata (ptr void)))
+	    (fclose file)
+	    (remove "tmp-text-buffer")
+
+
+	    (setf (member (member font-t bounds) size) (/ (member (member font-t bounds) size) (vec 400 400)))
+	    (setf (member (member font-t bounds) upper-left) (vec -1.0 -1.0))
+	    )
 	  (when (> (member cheight y) height)
 
 	    
@@ -361,6 +368,7 @@ length
 	    ;(print "height: " height newline)
 	    )
 	  ))
+	)
       
       ;(setf speed (* 0.9995 speed))
       (gl:uniform dir-loc (vec 1 0))
@@ -472,5 +480,6 @@ length
     (usleep 10000)
     )))
 ;(launch (addrof start-repl))
+
 (run-game)
 

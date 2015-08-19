@@ -153,7 +153,7 @@
 (load-libc fclose (fcn i32 (file (ptr void))))
 (load-libc fseek (fcn i32 (file (ptr void)) (offset u64) (mode seek-mode)))
 (load-libc ftell (fcn u64 (file (ptr void))))
-(load-libc fread (fcn u64 (buffer (ptr void)) (count u64) (size u64) (file (ptr void))))
+(load-libc fread (fcn u64 (buffer (ptr void))  (size u64) (count u64) (file (ptr void))))
 (load-libc fwrite (fcn u64 (data (ptr void)) (size u64) (count u64) (file (ptr void))))
 (load-libc remove (fcn void (file (ptr char))))
 
@@ -173,17 +173,24 @@
 
 (load-libc open_memstream (fcn (ptr void) (data (ptr (ptr void))) (cnt (ptr u64))))
 
+(defun file:read-all-data ((ptr char) (file (ptr void)) (size (ptr u64)))
+  (let ((out-buffer :type (ptr void)))
+    (let ((pos (ftell file)))
+      (fseek file 0 seek-end)
+      (setf (deref size) (- (ftell file) pos))
+      (fseek file pos seek-set)
+      (setf out-buffer (alloc0 (+ (deref size) 1) ))) ;+1 for EOF. Alternative?
+    (fread out-buffer (deref size) 1 file)
+    (cast out-buffer (ptr char))))
+
 (defun read-all-data ((ptr char) (path (ptr char)) (size (ptr u64)))
   (let ((file (fopen path "r"))
 	(buffer (cast null (ptr char))))
     (when (not (eq file null))
-      (fseek file 0 seek-end)
-      (setf (deref size) (ftell file))
-      (fseek file 0 seek-set)
-      (setf buffer (cast (alloc0 (deref size)) (ptr char)))
-      (fread (cast buffer (ptr void)) 1 (deref size) file)
+      (setf buffer (file:read-all-data file size))
       (fclose file))
     buffer))
+
 (let ((s (cast 0 u64)))
   (let ((alldata (read-all-data "/usr/include/stdio.h" (addrof s))))
     ;(print "Read: " s newline)
