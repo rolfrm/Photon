@@ -144,13 +144,23 @@
     (expr 
      (clear-list (cast (addrof (unexpr lst)) (ptr (ptr void)))
 		 (addrof (unexpr cnt))))))
-
-(load-libc fopen (fcn (ptr void) (filename (ptr char)) (mode (ptr char))))
-(load-libc fclose (fcn i32 (file (ptr void))))
 (type (alias i32 seek-mode))
 (defvar seek-set (cast 0 seek-mode)) ; Seek from beginning of file.
 (defvar seek-cur (cast 1 seek-mode)) ; Seek from current position.
 (defvar seek-end (cast 2 seek-mode)) ; Seek from end of file.
+
+(load-libc fopen (fcn (ptr void) (filename (ptr char)) (mode (ptr char))))
+(load-libc fclose (fcn i32 (file (ptr void))))
+(load-libc fseek (fcn i32 (file (ptr void)) (offset u64) (mode seek-mode)))
+(load-libc ftell (fcn u64 (file (ptr void))))
+(load-libc fread (fcn u64 (buffer (ptr void)) (count u64) (size u64) (file (ptr void))))
+(load-libc fwrite (fcn u64 (data (ptr void)) (size u64) (count u64) (file (ptr void))))
+(load-libc remove (fcn void (file (ptr char))))
+
+(remove "test.txt")
+(let ((f (fopen "test.txt" "a")))
+  (fwrite (cast "hello?" (ptr void)) 1 6 f)
+  (fclose f))
 
 (defun print-seek (void (mode seek-mode))
   (if (eq mode seek-set)
@@ -160,9 +170,7 @@
 	  (printstr "seek end"))))
 (overload print print-seek)
 
-(load-libc fseek (fcn i32 (file (ptr void)) (offset u64) (mode seek-mode)))
-(load-libc ftell (fcn u64 (file (ptr void))))
-(load-libc fread (fcn u64 (buffer (ptr void)) (count u64) (size u64) (file (ptr void))))
+
 (load-libc open_memstream (fcn (ptr void) (data (ptr (ptr void))) (cnt (ptr u64))))
 
 (defun read-all-data ((ptr char) (path (ptr char)) (size (ptr u64)))
