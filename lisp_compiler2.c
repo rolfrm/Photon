@@ -363,11 +363,10 @@ type_def * compile_expr(type_def * expected_type, c_block * block, c_value * val
 }
 
 c_root_code compile_lisp_to_eval(expr exp, compile_status * status){
-
   c_root_code r;
   r.type = C_FUNCTION_DEF;
   r.fcndef.block = c_block_empty;
-  r.fcndef.name = get_symbol("eval");
+  r.fcndef.name = get_symbol_fmt("__eval");
 
   c_expr expr = {.type = C_VALUE};
   type_def * t = compile_expr(NULL, &r.fcndef.block, &expr.value, exp);
@@ -573,6 +572,7 @@ void print_current_mem(int id){
 }
 var_def * lisp_compile_expr(expr ex, compile_status * optout_status){
   //allocator * trace_alloc = trace_allocator_make();
+  symbol name = {0};
   with_allocator(/*trace_alloc*/ NULL, lambda(void,(){
 	//allocator * prev = current_allocator;
 	//current_allocator = trace_alloc;
@@ -589,6 +589,7 @@ var_def * lisp_compile_expr(expr ex, compile_status * optout_status){
 	if(codebuf == NULL)
 	  *optout_status = COMPILE_ERROR;
 	//print_current_mem(2);
+	name = cl.fcndef.name;
 	c_root_code_delete(cl);
 
 	//print_current_mem(3);
@@ -599,19 +600,7 @@ var_def * lisp_compile_expr(expr ex, compile_status * optout_status){
       }));
   if(*optout_status == COMPILE_ERROR)
     return NULL;
-  return get_global(get_symbol("eval"));
-}
-
-void * lisp_compile_and_run_expr(expr ex, compile_status * optout_status){
-  compile_status _status;
-  if(optout_status == NULL) optout_status = &_status;
-
-  var_def * var = lisp_compile_expr(ex, optout_status);
-  if(COMPILE_ERROR == *optout_status)
-    return NULL;
-  void * (*fcn)() = var->data;
-  ASSERT(fcn != NULL);
-  return fcn();
+  return get_global(name);
 }
 
 symbol * printer = NULL;
@@ -645,10 +634,11 @@ compile_status lisp_run_expr(expr ex){
     print_def(evaldef->type->fcn.ret);
     logd(" :: ");
   }
-
+  //get_symbol("e");
   if(ret == &void_def){
     if(printer == NULL)
       logd("()\n");
+
     void (* fcn)() = evaldef->data;
     fcn();
     if(printer != NULL) return COMPILE_OK;

@@ -26,7 +26,9 @@ type_def * no_op(type_def * expected_type, c_block * block, c_value * val){
   val->type = C_NOTHING;
   return &void_def;
 }
-	  
+
+
+
 type_def * type_macro(type_def * expected_type, c_block * block, c_value * value, expr e){
   CHECK_TYPE(expected_type, &type_def_ptr_def);
   static int typevarid = 0;
@@ -1160,6 +1162,7 @@ i64 macro_store_args(macro_store * ms){
   ASSERT(v->type->type == FUNCTION);
   return ms->rest ? -1 : v->type->fcn.cnt;
 }
+
 
 void builtin_macros_load(){
   // Macros

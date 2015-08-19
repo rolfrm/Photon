@@ -453,3 +453,19 @@
 	(range i 0 (cast (sub-expr.cnt args) i64)
 	       (setf (deref (ptr+ sexprs (.+ offset i))) (sub-expr.expr args (cast i u64)))))
       (make-sub-expr sexprs (.+ (sub-expr.cnt header) (sub-expr.cnt args)))))
+
+;; (defmacro if!! (cond then else)
+;;   (if (eval cond)
+;;       then
+;;       else))
+
+(progn
+  ;(eval! (expr (.+ 1 3333)) (quote wtf))
+  ;(eval! (expr (.+ 1 3333)) (quote wtf))
+  ;(eval! (expr (.+ 1 3333)) (quote wtf))
+  ;(noop)  (noop)  (noop)
+ ; )
+
+(printstr "done..
+")
+;(exit 0)     

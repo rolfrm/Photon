@@ -48,7 +48,7 @@ extern compiler_state * lisp_current_compiler;
 var_def * lisp_compile_expr(expr ex, compile_status * opt_outstatus);
 
 // same as above except it returns the result
-void * lisp_compile_and_run_expr(expr ex, compile_status * opt_outstatus);
+compile_status lisp_run_expr(expr ex);
 
 // loads lisp base
 void lisp_load_base();
