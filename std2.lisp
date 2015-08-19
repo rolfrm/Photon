@@ -170,9 +170,6 @@
 	  (printstr "seek end"))))
 (overload print print-seek)
 
-
-(load-libc open_memstream (fcn (ptr void) (data (ptr (ptr void))) (cnt (ptr u64))))
-
 (defun file:read-all-data ((ptr char) (file (ptr void)) (size (ptr u64)))
   (let ((out-buffer :type (ptr void)))
     (let ((pos (ftell file)))
