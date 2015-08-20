@@ -30,6 +30,8 @@
 (load-symbol+ libm floorf floorf (fcn f32 (x f32)))
 (load-symbol+ libm floor floor (fcn f64 (x f64)))
 
+
+
 (defvar pi 3.141592653)
 (defvar 2pi (* pi 2))
 (load "vec2.lisp")
@@ -107,6 +109,9 @@
 (overload print print-rest)
 (print 1 " " 2 " " 3 newline)
 (print "hello" " " "world!" newline)
+
+(load-symbol+ libc std:rand rand (fcn i32))
+(load-libc usleep (fcn void (time i32)))
 
 (defun randf(f64)
   (let ((rand-var (std:rand)))

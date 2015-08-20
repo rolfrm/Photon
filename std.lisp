@@ -36,7 +36,7 @@
 
 (load-libc fprintf (fcn void (file (ptr void)) (fmt (ptr char)) (x i64)))
 
-(load-libc usleep (fcn void (time i32)))
+
 (load-symbol+ libc alloc malloc (fcn (ptr void) (bytes u64)))
 (load-symbol+ libc dealloc free (fcn void (ptr (ptr void))))
 (load-libc realloc (fcn (ptr void) (ptr (ptr void)) (bytes u64)))
@@ -46,7 +46,7 @@
 (load-libc strlen (fcn i64 (str (ptr char))))
 (load-libc chdir (fcn i32 (path (ptr char))))
 (load-libc getcwd (fcn (ptr char) (buf (ptr char)) (buflen u64)))
-(load-symbol+ libc std:rand rand (fcn i32))
+
 
 (defun alloc0 ((ptr void) (size u64))
   (var ((buffer (alloc size)))
@@ -454,18 +454,15 @@
 	       (setf (deref (ptr+ sexprs (.+ offset i))) (sub-expr.expr args (cast i u64)))))
       (make-sub-expr sexprs (.+ (sub-expr.cnt header) (sub-expr.cnt args)))))
 
-;; (defmacro if!! (cond then else)
-;;   (if (eval cond)
-;;       then
-;;       else))
+;; compile-time-if
+(defmacro if!!(cond _then _else)
+  (progn
+    (eval! (expr (defvar if!!-result (unexpr cond))))
+    (var ((cond-r (deref (cast (get-var (quote if!!-result)) (ptr bool)))))
+      (if cond-r
+	  _then
+	  _else))))
 
-(progn
-  (eval! (expr (defvar wtf (.+ 1 3333))))
-  (eval! (expr (.+ 1 3333)))
-  (eval! (expr (.+ 1 3333)))
- )
-(printi64 wtf)
-(printstr newline)
- "done..
-")
-;(exit 0)     
+(if!! (is-linux?)
+      (defun 2iflinux (i64) 2)
+      (defun 2iflinux (i64) 1))
