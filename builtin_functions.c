@@ -169,34 +169,8 @@ void * get_var(symbol * sym){
   return var->data;
 }
 
-void * eval(expr * e, symbol * s){
-  logd("Ok... \n");
-  expr sup;
-  expr vardef[3];
-  type_def * t = type_of(e);
-  if( t == &void_def){
-    sup = *e;
-  }else{
-    vardef[0] = symbol_expr("defvar");
-    vardef[1] = symbol_expr(symbol_name(*s));
-    vardef[2] = *e;
-    sup.type = EXPR;
-    sup.sub_expr.exprs = vardef;
-    sup.sub_expr.cnt = array_count(vardef);
-  }
-  logd("running ");
-  print_expr(&sup);
-  logd("\n");
-  lisp_run_expr(sup);
-  logd("Ok... gets here \n");
-  symbol s2 = *s;
-  
-  if(t != &void_def){
-  var_def * var = get_global(s2);
-  logd("VAR: %i\n", var->data);
-  return var->data;
-  }
-  return NULL;
+void eval(expr * e){
+  lisp_run_expr(*e);
 }
 
 #include <iron/coroutines.h>
@@ -213,7 +187,7 @@ bool start_read_eval_print_loop();
 
 void load_functions(){
   defun("print-type", str2type("(fcn void (a (ptr type_def)))"), print_type);
-  defun("eval!", str2type("(fcn (ptr void) (expr (ptr expr)) (s (ptr symbol)))"), eval);
+  defun("eval!", str2type("(fcn void (expr (ptr expr)))"), eval);
   defun("builtin-print-str", str2type("(fcn void (str (ptr char)))"), builtin_print_string);
   defun("get-symbol", str2type("(fcn (ptr symbol) (a (ptr char)))"), get_symbol2);
   defun("size-of",str2type("(fcn u64 (type (ptr type_def)))"), size_of);

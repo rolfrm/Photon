@@ -363,15 +363,18 @@ type_def * compile_expr(type_def * expected_type, c_block * block, c_value * val
 }
 
 c_root_code compile_lisp_to_eval(expr exp, compile_status * status){
+  static int eval_id = 0;
+  eval_id++;
   c_root_code r;
   r.type = C_FUNCTION_DEF;
   r.fcndef.block = c_block_empty;
-  r.fcndef.name = get_symbol_fmt("__eval");
+  r.fcndef.name = get_symbol_fmt("__eval%i", eval_id);
 
   c_expr expr = {.type = C_VALUE};
   type_def * t = compile_expr(NULL, &r.fcndef.block, &expr.value, exp);
   if(t == error_def){
     *status = COMPILE_ERROR;
+    eval_id--;
     return r;
   }
   type_def td = {.type = FUNCTION, .fcn = {.ret = t, .args = NULL, .cnt = 0}};
@@ -380,6 +383,7 @@ c_root_code compile_lisp_to_eval(expr exp, compile_status * status){
   if(t != type_pool_get(&void_def)) expr.type = C_RETURN;
   block_add(&r.fcndef.block, expr);
   *status = COMPILE_OK;
+  eval_id--;
   return r;
 }
 
@@ -418,6 +422,7 @@ TCCState * mktccs(){
   tcc_set_lib_path(tccs, get_orig_dir());
   tcc_set_error_func(tccs, NULL, tccerror);
   tcc_set_output_type(tccs, TCC_OUTPUT_MEMORY);
+  //tcc_set_options(tccs, "-g");
   return tccs;
 }
 
@@ -606,7 +611,8 @@ var_def * lisp_compile_expr(expr ex, compile_status * optout_status){
 symbol * printer = NULL;
 
 compile_status lisp_run_expr(expr ex){
-  run_delete();
+  static int run_level = 0;
+  run_level++;
   expr exes[3];
   expr _ex;
   if(printer != NULL){
@@ -634,14 +640,13 @@ compile_status lisp_run_expr(expr ex){
     print_def(evaldef->type->fcn.ret);
     logd(" :: ");
   }
-  //get_symbol("e");
+
   if(ret == &void_def){
     if(printer == NULL)
       logd("()\n");
 
     void (* fcn)() = evaldef->data;
     fcn();
-    if(printer != NULL) return COMPILE_OK;
   }else if(ret == str2type("(ptr type_def)")){
     type_def * (* fcn)() = evaldef->data;
     fcn();
@@ -685,6 +690,9 @@ compile_status lisp_run_expr(expr ex){
     ERROR("Cannot execute function");
   }
   checktypepool();
+  run_level--;
+  if(run_level == 0)
+    run_delete();
   return COMPILE_OK;
 }
 

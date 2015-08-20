@@ -460,12 +460,12 @@
 ;;       else))
 
 (progn
-  ;(eval! (expr (.+ 1 3333)) (quote wtf))
-  ;(eval! (expr (.+ 1 3333)) (quote wtf))
-  ;(eval! (expr (.+ 1 3333)) (quote wtf))
-  ;(noop)  (noop)  (noop)
- ; )
-
-(printstr "done..
+  (eval! (expr (defvar wtf (.+ 1 3333))))
+  (eval! (expr (.+ 1 3333)))
+  (eval! (expr (.+ 1 3333)))
+ )
+(printi64 wtf)
+(printstr newline)
+ "done..
 ")
 ;(exit 0)     
