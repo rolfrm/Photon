@@ -219,30 +219,6 @@
 (overload % any%)
 
 
-;(printi64 (+ 1.0 2.5))
-;(print (+ 1 2))
-;(printstr newline)
-;(+ (* 1 3) 2)
-;(exit 0)
-;; (defmacro .-2 (arg1 arg2)
-;;   (expr (.- (unexpr arg1) (unexpr arg2))))
-
-;; (defmacro +2 (arg1 arg2)
-;;   (expr (.+ (unexpr arg1) (unexpr arg2))))
-
-;; (defmacro *2  (arg1 arg2)
-;;   (expr (.* (unexpr arg1) (unexpr arg2))))
- 
-;; (defmacro /2 (arg1 arg2)
-;;   (expr (.* (unexpr arg1) (unexpr arg2))))
-
-
-;; (overload - .-2)
-;; (overload + +2)
-;; (overload * *2)
-;; (overload / /2)
-
-
 ;; (* 1 2 3 4 5) -> (* (* 1 2) (* 3 (* 4 5)))
 ;;               -> (* (* (* (* 1 2) 3 ) 4 ) 5)
 ;;               -> (* 1 (* 2 (* 3 (* 4 5))))
@@ -311,7 +287,7 @@
 (overload print printstr)
 (overload print print-symbol)
 (overload print print-type)
-
+(overload print print-expr)
 
 (defun print-bool (void (x bool))
   (if x

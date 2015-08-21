@@ -17,7 +17,7 @@
 	       (incr (unexpr var) 1)
 	       )))))
 
-(defvar libm (load-lib "libm.so"))
+(defvar libm (load-lib (if (is-linux?) "libm.so" "msvcrt.dll")))
 (load-symbol+ libm cos cos (fcn f64 (x f64)))
 (load-symbol+ libm cos32 cosf (fcn f32 (x f32)))
 (load-symbol+ libm sin sin (fcn f64 (x f64)))
@@ -35,40 +35,42 @@
 (defvar pi 3.141592653)
 (defvar 2pi (* pi 2))
 (load "vec2.lisp")
+;; (if!! (is-linux?)
+;;  (progn
+;; (type (alias (ptr i32) thread-handle))
+;; (type (alias i32 pthread-attr-t))
+;; (defun new-thread-handle (thread-handle) 
+;;   (let ((nthread (cast (alloc (size-of (type i32))) (ptr i32))))
+;;     (setf (deref nthread) 0)
+;;     (cast nthread thread-handle)))
 
-(type (alias (ptr i32) thread-handle))
-(type (alias i32 pthread-attr-t))
-(defun new-thread-handle (thread-handle) 
-  (let ((nthread (cast (alloc (size-of (type i32))) (ptr i32))))
-    (setf (deref nthread) 0)
-    (cast nthread thread-handle)))
+;; (defvar pthread-lib (load-lib "libpthread.so"))
+;; (load-symbol pthread-lib (quote pthread-attr-init) (quote pthread_attr_init) (type (fcn i32 (attr (ptr i32)))))
+;; (load-symbol pthread-lib (quote pthread-create) (quote pthread_create) 
+;; 	     (type (fcn i32 
+;; 			(id thread-handle) 
+;; 			(attr i32) 
+;; 			(go-fcn (fcn (ptr void) (arg (ptr void))))
+;; 			(arg (ptr void)))))
 
-(defvar pthread-lib (load-lib "/lib/x86_64-linux-gnu/libpthread.so.0"))
-(load-symbol pthread-lib (quote pthread-attr-init) (quote pthread_attr_init) (type (fcn i32 (attr (ptr i32)))))
-(load-symbol pthread-lib (quote pthread-create) (quote pthread_create) 
-	     (type (fcn i32 
-			(id thread-handle) 
-			(attr i32) 
-			(go-fcn (fcn (ptr void) (arg (ptr void))))
-			(arg (ptr void)))))
+;; (defun thread-launcher ((ptr void) (arg (ptr void)))
+;;   (progn
+;;     (print (cast arg i64))
+;;     (print-newline)
+;;     (let ((f (cast arg (ptr (fcn void))))) 
+;;       (f)
+;;       )
+;;     null))
 
-(defun thread-launcher ((ptr void) (arg (ptr void)))
-  (progn
-    (print (cast arg i64))
-    (print-newline)
-    (let ((f (cast arg (ptr (fcn void))))) 
-      (f)
-      )
-    null))
-
-(defun launch (void (function (ptr (fcn void))))
-  (let ((attr (cast (alloc0 64) (ptr i32)))
-	(threadid (new-thread-handle)))
-    (pthread-attr-init attr)
-    (pthread-create threadid (deref attr) thread-launcher (cast function (ptr void)))
-    threadid
-    (noop)))
-
+;; (defun launch (void (function (ptr (fcn void))))
+;;   (let ((attr (cast (alloc0 64) (ptr i32)))
+;; 	(threadid (new-thread-handle)))
+;;     (pthread-attr-init attr)
+;;     (pthread-create threadid (deref attr) thread-launcher (cast function (ptr void)))
+;;     threadid
+;;     (noop)))
+;; )
+;; (noop))
 
 (defvar last-type :type (ptr type_def))
 (defmacro show-type (exp)
@@ -154,13 +156,13 @@
 (defvar seek-cur (cast 1 seek-mode)) ; Seek from current position.
 (defvar seek-end (cast 2 seek-mode)) ; Seek from end of file.
 
-(load-libc fopen (fcn (ptr void) (filename (ptr char)) (mode (ptr char))))
+
 (load-libc fclose (fcn i32 (file (ptr void))))
 (load-libc fseek (fcn i32 (file (ptr void)) (offset u64) (mode seek-mode)))
 (load-libc ftell (fcn u64 (file (ptr void))))
 (load-libc fread (fcn u64 (buffer (ptr void))  (size u64) (count u64) (file (ptr void))))
 (load-libc fwrite (fcn u64 (data (ptr void)) (size u64) (count u64) (file (ptr void))))
-(load-libc remove (fcn void (file (ptr char))))
+
 
 (remove "test.txt")
 (let ((f (fopen "test.txt" "a")))

@@ -399,7 +399,7 @@ typedef unsigned long long u64;				\n\
 ///typedef unsigned __int128 u128;		\n\
 						\n\
 typedef char * str;				\n\
-						\n\
+void dummything(){}				\n\
 typedef float f32;				\n\
 typedef double f64;\n";
 

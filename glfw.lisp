@@ -1,14 +1,20 @@
-(defvar libglfw (load-lib "libglfw.so"))
+(defvar libglfw (load-lib (if (is-linux?) "libglfw.so" "glfw3.dll")))
 
+(defun **glfw:load-sym ((ptr expr) (2lisp-name (ptr expr)) (2c-name (ptr expr)) (2type (ptr expr)))
+  (progn
+  (print "Defining") (print-expr 2lisp-name) (print newline)
+  (expr (load-symbol+ libglfw (unexpr 2lisp-name) (unexpr 2c-name) (unexpr 2type) ))))
+(declare-macro glfw:load-sym **glfw:load-sym)
+(glfw:load-sym glfw:init glfwInit (fcn void))
 
-(defmacro glfw:load-sym (lisp-name c-name type)
-  (expr (load-symbol libglfw (quote (unexpr lisp-name)) (quote (unexpr c-name)) (type (unexpr type)))))
+;(defmacro glfw:load-sym (lisp-name c-name type)
+;  (expr (load-symbol libglfw (quote (unexpr lisp-name)) (quote (unexpr c-name)) (type (unexpr type)))))
 
 (glfw:load-sym glfw:init glfwInit (fcn void))
 (glfw:load-sym glfw:terminate glfwTerminate (fcn void))
 (glfw:load-sym glfw:get-version glfwGetVersion (fcn void (major (ptr i32)) (minor (ptr i32)) (rev (ptr i32))))
 (glfw:load-sym glfw:get-version-string glfwGetVersionString (fcn (ptr char)))
-
+(glfw:load-sym glfw:get-proc-address glfwGetProcAddress (fcn (ptr void) (name (ptr char))))
 (glfw:load-sym glfw:create-window glfwCreateWindow
 	       (fcn (ptr void) (width i32) (height i32) 
 		    (title (ptr char)) (a (ptr void)) (b (ptr void))))

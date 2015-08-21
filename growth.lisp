@@ -10,13 +10,14 @@
 (memset (cast (addrof rect-default) (ptr void)) 0 (size-of (type rect)))
 
 (load "glfw.lisp")
+(glfw:init)
+(defvar win (glfw:create-window 400 400 "Flowery!" null null))
+(glfw:make-current win)
 (load "gl.lisp")
 (load "gl-ext.lisp")
 (load "textbox-shader.lisp")
 
-(glfw:init)
-(defvar win (glfw:create-window 400 400 "Flowery!" null null))
-(glfw:make-current win)
+
 
 (defvar font (load-font "/usr/share/fonts/truetype/freefont/FreeMono.ttf"))
 

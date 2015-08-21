@@ -1,4 +1,4 @@
-(defvar libtt (load-lib "./truetype.so"))
+(defvar libtt (load-lib (if (is-linux?) "./truetype.so" "./truetype.dll")))
 ;stbtt_BakeFontBitmap(ttf_buffer,0, 32.0, temp_bitmap,512,512, 32,96, cdata); // no guarantee this fits!
 ;fread(ttf_buffer, 1, 1<<20, fopen("c:/windows/fonts/times.ttf", "rb"));
 ;stbtt_GetBakedQuad(cdata, 512,512, *text-32, &x,&y,&q,1);//1=opengl & d3d10+,0=d3d9

@@ -62,20 +62,14 @@ bool is_linux(){
 #undef ASSERT
 #include <windows.h>
 void * load_lib(char * path){
-  void * handle =  GetModuleHandle(path);
+  void * handle =  LoadLibrary(path);
   if(handle == NULL)
     loge("Unable to load library '%s'\n", path);
   return handle;
 }
 
-void * load_symbol(void * lib, symbol * sym, symbol * name, type_def * t){
-  void * ptr = GetProcAddress((HMODULE)lib, get_c_name(*name));
-  if(ptr == NULL) {
-    loge("Error no such symbol '%s'\n", symbol_name(*name));}
-  else {
-    define_variable(*sym, t, ptr, true);
-  }
-  return ptr;
+void * load_symbol(void * lib, symbol * name){
+  return GetProcAddress((HMODULE)lib, get_c_name(*name));
 }
 #define ASSERT(x)
 #else
@@ -87,14 +81,8 @@ void * load_lib(char * path){
   return handle;
 }
 
-void * load_symbol(void * lib, symbol * sym, symbol * name, type_def * t){
-  void * ptr = dlsym(lib, get_c_name(*name));
-  if(ptr == NULL) {
-    loge("Error no such symbol '%s'\n", symbol_name(*name));}
-  else {
-    define_variable(*sym, t, ptr, true);
-  }
-  return ptr;
+void * load_symbol(void * lib, symbol * name){
+  return dlsym(lib, get_c_name(*name));
 }
 
 #endif
@@ -191,10 +179,11 @@ void load_functions(){
   defun("builtin-print-str", str2type("(fcn void (str (ptr char)))"), builtin_print_string);
   defun("get-symbol", str2type("(fcn (ptr symbol) (a (ptr char)))"), get_symbol2);
   defun("size-of",str2type("(fcn u64 (type (ptr type_def)))"), size_of);
+  defun("defun!", str2type("(fcn void (name (ptr char)) (t (ptr type_def)) (p (ptr void)))"), defun);
   str2type("(alias (ptr (opaque-struct _lib)) lib)"); // declare the lib tyoedef
   defun("is-linux?",str2type("(fcn bool)"), &is_linux);
   defun("load-lib",str2type("(fcn lib (libname (ptr char)))"), load_lib);
-  type_def * loadsymbol = str2type("(fcn (ptr void) (_lib lib) (sym (ptr symbol)) (name (ptr symbol)) (t (ptr type_def)))");
+  type_def * loadsymbol = str2type("(fcn (ptr void) (_lib lib) (name (ptr symbol)))");
   defun("load-symbol", loadsymbol, load_symbol);
   defun("type-of",str2type("(fcn (ptr type_def) (expr (ptr expr)))"), type_of);
   defun("type-of2",str2type("(fcn (ptr type_def) (expected_type (ptr type_def)) (expr (ptr expr)))"),

@@ -1,8 +1,17 @@
-(defvar libgl (load-lib "libGL.so"))
+(defvar libgl (load-lib (if (is-linux?) "libGL.so" "glew32.dll")))
 (type (alias u32 gl:enum))
-
+(defmacro gl:load-symbol ( name cname _type)
+  (progn
+    (print "defining " name newline)
+    (expr (defun! (stringify (unexpr name))
+	      (type (unexpr _type))
+	    
+	    (let ((symb (glfw:get-proc-address (stringify (unexpr cname))) ))
+	      (when (eq symb null)
+		(setf symb (load-symbol libgl (quote (unexpr cname)))))
+	      symb)))))
 (defmacro gl-load (name cname type)
-  (expr (load-symbol+ libgl (unexpr name) (unexpr cname) (unexpr type))))
+  (expr (gl:load-symbol (unexpr name) (unexpr cname) (unexpr type))))
 
 (defmacro glvar (name value)
   (expr (defvar (unexpr name) (cast (unexpr value) gl:enum))))

@@ -21,10 +21,9 @@
 
 ;; Loading a library
 (defun +load-symbol+ ((ptr expr) (_lib (ptr expr)) (name (ptr expr)) (cname (ptr expr)) (_type (ptr expr)))
-  (expr (load-symbol (unexpr _lib) 
-		     (quote (unexpr name))
-		     (quote (unexpr cname))
-		     (type (unexpr _type)))))
+  (expr (defun! (stringify (unexpr name))
+                              (type (unexpr _type)) (load-symbol (unexpr _lib) (quote (unexpr cname))))))
+
 
 (declare-macro load-symbol+ +load-symbol+)
 
@@ -46,7 +45,10 @@
 (load-libc strlen (fcn i64 (str (ptr char))))
 (load-libc chdir (fcn i32 (path (ptr char))))
 (load-libc getcwd (fcn (ptr char) (buf (ptr char)) (buflen u64)))
-
+(load-libc fopen (fcn (ptr void) (filename (ptr char)) (mode (ptr char))))
+(load-libc fflush (fcn i32 (file (ptr void))))
+(load-libc remove (fcn void (file (ptr char))))
+(load-libc setbuf  (fcn void (file (ptr void)) (buffer (ptr void))))
 
 (defun alloc0 ((ptr void) (size u64))
   (var ((buffer (alloc size)))
@@ -133,11 +135,24 @@
 (load-symbol+ libc +std:print-i64 fprintf (fcn i32 (file (ptr void)) (fmt (ptr char)) (x i64)))
 (load-symbol+ libc +std:print-str fprintf (fcn i32 (file (ptr void)) (fmt (ptr char))))
 
-(load-symbol+ libc std:stdin stdin (ptr void))
-(load-symbol+ libc std:stdout stdout (ptr void))
+(if! (is-linux?)
+     (eval! (expr 
+	     (progn
+	       (load-symbol+ libc std:stdin stdin (ptr void))
+	       (load-symbol+ libc std:stdout stdout (ptr void))
+	       (noop))))
+     (eval! (expr
+	    (progn
+	      (defvar std:stdout (fopen "std-out.txt" "a"))
+	      (setbuf std:stdout null)
+	      (noop)))))
 
+;(remove "std-out.txt")
 (defvar std:file std:stdout)
-
+;(cast std:file i64)
+(+std:print-f64 std:file "asdasdasd
+" 2)
+;(exit 0)
 (defun std:print-f64 (i32 (fmt (ptr char)) (x f64))
   (+std:print-f64 std:file "%f" x))
 
@@ -453,7 +468,6 @@
 	(range i 0 (cast (sub-expr.cnt args) i64)
 	       (setf (deref (ptr+ sexprs (.+ offset i))) (sub-expr.expr args (cast i u64)))))
       (make-sub-expr sexprs (.+ (sub-expr.cnt header) (sub-expr.cnt args)))))
-
 ;; compile-time-if
 (defmacro if!!(cond _then _else)
   (progn
@@ -462,6 +476,7 @@
       (if cond-r
 	  _then
 	  _else))))
+
 
 (if!! (is-linux?)
       (defun 2iflinux (i64) 2)
