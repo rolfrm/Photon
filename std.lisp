@@ -479,5 +479,9 @@
 
 
 (if!! (is-linux?)
-      (defun 2iflinux (i64) 2)
-      (defun 2iflinux (i64) 1))
+      (load-libc usleep (fcn void (us i64)))
+      (progn
+	(eval! (expr (load-libc Sleep (fcn void (ms i32)))))
+	(eval! (expr (defun usleep (void (microseconds i64))
+		       (Sleep (cast (./ microseconds 1000) i32)))))))
+(usleep 100)
