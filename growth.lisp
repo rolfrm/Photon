@@ -19,7 +19,7 @@
 
 
 
-(defvar font (load-font "/usr/share/fonts/truetype/freefont/FreeMono.ttf"))
+(defvar font (load-font "FreeMono.ttf"))
 
 (text-box:load)
 ;(exit 0)
