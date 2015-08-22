@@ -67,8 +67,7 @@
 (overload vec makevec3)
 (overload vec makevec4)
 
-(defun vec2:rot90 (vec2 (a vec2))
-  (vec (- 0 (member a y)) (member a x)))
+
 
 (defmacro vec2op (operator)
   (let ((name (symbol2expr (symbol-combine (quote vec2) (expr2symbol operator)))))
@@ -283,4 +282,10 @@
     (if (eq len 0.0)
 	a
 	(* a (/ 1.0 len)))))
+
+(defun vec2:rot90 (vec2 (a vec2))
+  (vec (- 0 (member a y)) (member a x)))
+
+(defun vec2:rot-90 (vec2 (a vec2))
+  (vec (member a y) (- 0 (member a x))))
 
