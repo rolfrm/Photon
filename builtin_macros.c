@@ -661,7 +661,7 @@ type_def * the_macro(type_def * expected_type, c_block * block, c_value * value,
 }
 
 type_def * stringify_macro(type_def * expected_type, c_block * block, c_value * value, expr str){
-  TEST_ASSERT(is_symbol(str));
+  TEST_ASSERT(is_keyword(str) || is_symbol(str));
   str.value.type = STRING;
   return compile_expr(expected_type, block, value, str);
 }
