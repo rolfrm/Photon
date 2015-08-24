@@ -7,6 +7,11 @@
   (expr
    (setf (unexpr var) (+ (unexpr var) (unexpr amount)))))
 
+(defmacro decr (var amount)
+  (expr
+   (setf (unexpr var) (- (unexpr var) (unexpr amount)))))
+
+
 (defmacro range (var from to &rest body)
   (expr
    (var! (((unexpr var) (unexpr from)))

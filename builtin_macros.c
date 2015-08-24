@@ -865,7 +865,15 @@ type_def * comparison_macro(char * operator, type_def * expected_type, c_block *
     t1 = type_of2(t2, &item1);
   }
   COMPILE_ASSERT(t1 != error_def && t1 != &void_def);
-  COMPILE_ASSERT(t1 == t2);
+  if(t1 != t2){
+
+    if(is_check_type_run() == false){
+      logd("t1: ") print_decl(t1, get_symbol("t1"));logd("\n");
+      logd("t2: ") print_decl(t2, get_symbol("t2"));logd("\n");
+    }
+    COMPILE_ERROR("t1 != t2");
+
+  }
   COMPILE_ASSERT(t1 == compile_expr(t1, block, val1, item1));
   COMPILE_ASSERT(t2 == compile_expr(t2, block, val2, item2));
   val->type = C_CAST;
@@ -1177,7 +1185,6 @@ void builtin_macros_load(){
   define_macro("cast", 2, cast_macro);
   define_macro("the", 2, the_macro);
   define_macro("defvar", -1, defvar_macro);
-  //define_macro("load", 1, load_macro);
   define_macro("stringify", 1, stringify_macro);
   define_macro("setf", 2, setf_macro);
 
