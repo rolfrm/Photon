@@ -34,3 +34,12 @@
   (im:free (member image data)))
 	     
 		     
+(defun im:make (im:image (width i32) (height i32) (bpp i32))
+  (let ((data (cast (alloc (cast (* width height bpp) u64)) (ptr u8)))
+	(out :type im:image))
+    (setf (member out width) width)
+    (setf (member out height) height)
+    (setf (member out bpp) bpp)
+    (setf (member out data) data)
+    out))
+    

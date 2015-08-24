@@ -289,3 +289,5 @@
 (defun vec2:rot-90 (vec2 (a vec2))
   (vec (member a y) (- 0 (member a x))))
 
+(defun vec2:floor (vec2 (a vec2))
+  (vec (floor (member a x)) (floor (member a y))))

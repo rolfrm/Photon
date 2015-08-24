@@ -2,8 +2,7 @@
 (load "truetype.lisp")
 (load "stb_image.lisp")
 
-(im:example-of-use "level1.png")
-(exit 0)
+
 (defstruct rect
   (upper-left vec2)
   (size vec2))
