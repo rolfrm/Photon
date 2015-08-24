@@ -398,15 +398,22 @@ type_def * str2type(char * str){
 #include <stdlib.h>
 
 char *getcwd(char *buf, size_t size);
+i32 chdir(char * path);
 
 char * orig_dir = NULL;
+void load_orig_dir(char * photon_path){
+  static char dirbuf2[100];
+  char dirbuf[100];
+  // Use OS to figure out orig directory.
+  getcwd(dirbuf,array_count(dirbuf));
+  enter_dir_of(photon_path);
+  getcwd(dirbuf2,array_count(dirbuf2));
+  chdir(dirbuf);
+  orig_dir = dirbuf2;
+}
 
 char * get_orig_dir(){
-  if(orig_dir == NULL){
-    static char dirbuf[100];
-    getcwd(dirbuf,array_count(dirbuf));
-    orig_dir = dirbuf;
-  }
+  ASSERT(orig_dir != NULL);
   return orig_dir;
 }
 
@@ -419,7 +426,8 @@ void tccerror(void * opaque, const char * msg){
 
 TCCState * mktccs(){
   TCCState * tccs = tcc_new();
-  tcc_set_lib_path(tccs, get_orig_dir());
+  char * dir = get_orig_dir();
+  tcc_set_lib_path(tccs, dir);
   tcc_set_error_func(tccs, NULL, tccerror);
   tcc_set_output_type(tccs, TCC_OUTPUT_MEMORY);
   //tcc_set_options(tccs, "-g");
@@ -479,7 +487,7 @@ void * compile_as_c(c_root_code * codes, size_t code_cnt){
   char buf[100];
   static int tmp_idx = 0;
   sprintf(buf, "__tmp_file%i", tmp_idx++);
-  FILE * f = fopen(buf,"wb+");//open_memstream(&data, &cnt);
+  FILE * f = fopen(buf,"wb+");
   push_format_out(f);
   go_write(deps, vdeps, codes, code_cnt);
   pop_format_out();
@@ -491,10 +499,11 @@ void * compile_as_c(c_root_code * codes, size_t code_cnt){
   fclose(f);
   remove((const char *) buf);
   char header[] = "//***********\n";
-  char compile_out_path[1000];
-  sprintf(compile_out_path,"%s/%s",get_orig_dir(), "compile_out.c");
-  append_buffer_to_file(header,sizeof(header) - 1, compile_out_path);
-  append_buffer_to_file(data, datasize,compile_out_path);
+  char * compile_out_path = get_compile_out(lisp_current_compiler);
+  if(compile_out_path != NULL){
+    append_buffer_to_file(header,sizeof(header) - 1, compile_out_path);
+    append_buffer_to_file(data, datasize,compile_out_path);
+  }
   TCCState * tccs = mktccs();
   for(size_t i = 0; i < array_count(vdeps) && vdeps[i].id != 0; i++){
     var_def * var = get_global(vdeps[i]);
@@ -544,7 +553,10 @@ void * compile_as_c(c_root_code * codes, size_t code_cnt){
   return code_buffer;
 }
 
-void lisp_load_base(){
+void lisp_load_base(char * photon_directory){
+  // Make sure the initial path is loaded.
+  load_orig_dir(photon_directory);
+
   // Types
   load_defs();
 
@@ -743,7 +755,7 @@ bool test_lisp2c(){
   str2type("(fcn (ptr expr) (a (ptr expr)))");
   logd("(fcn (ptr expr) (a (ptr expr)))");
 
-  lisp_load_base();
+  lisp_load_base(".");
   bool ret = TEST_SUCCESS;
   type_def * type = str2type("(fcn void (a (ptr type_def)))");
   type_def * type2 = str2type("(fcn void (a (ptr type_def)))");

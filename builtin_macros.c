@@ -27,8 +27,6 @@ type_def * no_op(type_def * expected_type, c_block * block, c_value * val){
   return &void_def;
 }
 
-
-
 type_def * type_macro(type_def * expected_type, c_block * block, c_value * value, expr e){
   CHECK_TYPE(expected_type, &type_def_ptr_def);
   static int typevarid = 0;
@@ -1179,7 +1177,7 @@ void builtin_macros_load(){
   define_macro("cast", 2, cast_macro);
   define_macro("the", 2, the_macro);
   define_macro("defvar", -1, defvar_macro);
-  define_macro("load", 1, load_macro);
+  //define_macro("load", 1, load_macro);
   define_macro("stringify", 1, stringify_macro);
   define_macro("setf", 2, setf_macro);
 

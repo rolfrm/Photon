@@ -13,12 +13,21 @@ struct _compiler_state{
   var_def ** vars; 
   size_t cnt;
   size_t used;
+  char * compile_out_file;
 };
 
 compiler_state * lisp_current_compiler = NULL;
 
 compiler_state * lisp_make_compiler(){
   return alloc0(sizeof(compiler_state));
+}
+
+void set_compile_out(compiler_state * compiler, char * path){
+  compiler->compile_out_file = path;
+}
+
+char * get_compile_out(compiler_state * compiler){
+  return compiler->compile_out_file;
 }
 
 var_def * get_global(symbol name){

@@ -161,8 +161,6 @@ void eval(expr * e){
   lisp_run_expr(*e);
 }
 
-#include <iron/coroutines.h>
-
 void builtin_print_string(char * str){
   logd("%s\n", str);
 }
@@ -171,11 +169,30 @@ bool is_check_type_run(){
   return !lisp_print_errors;
 }
 
+char * current_dir = ".";
+char *getcwd(char *buf, size_t size);
+void chdir(char * path);
+
+void load_builtin(char * path){
+
+  char dirbuf[100];
+  getcwd(dirbuf,array_count(dirbuf));
+  enter_dir_of(path);
+  char filename[30];
+  get_filename(filename, path);
+  compile_status s = lisp_run_script_file(filename);
+  if(s == COMPILE_ERROR){
+    loge("Unable to compile and run '%s'.\n", path);
+  }
+  chdir(dirbuf);
+}
+
 bool start_read_eval_print_loop();
 
 void load_functions(){
   defun("print-type", str2type("(fcn void (a (ptr type_def)))"), print_type);
   defun("eval!", str2type("(fcn void (expr (ptr expr)))"), eval);
+  defun("load", str2type("(fcn void (file (ptr char)))"), load_builtin);
   defun("builtin-print-str", str2type("(fcn void (str (ptr char)))"), builtin_print_string);
   defun("get-symbol", str2type("(fcn (ptr symbol) (a (ptr char)))"), get_symbol2);
   defun("size-of",str2type("(fcn u64 (type (ptr type_def)))"), size_of);
@@ -183,8 +200,7 @@ void load_functions(){
   str2type("(alias (ptr (opaque-struct _lib)) lib)"); // declare the lib tyoedef
   defun("is-linux?",str2type("(fcn bool)"), &is_linux);
   defun("load-lib",str2type("(fcn lib (libname (ptr char)))"), load_lib);
-  type_def * loadsymbol = str2type("(fcn (ptr void) (_lib lib) (name (ptr symbol)))");
-  defun("load-symbol", loadsymbol, load_symbol);
+  defun("load-symbol", str2type("(fcn (ptr void) (_lib lib) (name (ptr symbol)))"), load_symbol);
   defun("type-of",str2type("(fcn (ptr type_def) (expr (ptr expr)))"), type_of);
   defun("type-of2",str2type("(fcn (ptr type_def) (expected_type (ptr type_def)) (expr (ptr expr)))"),
 	type_of2);
@@ -201,20 +217,10 @@ void load_functions(){
   defun("is-ptr-type?", str2type("(fcn bool (type (ptr type_def)))"), is_ptr_type);
   defun("is-integer-type?", str2type("(fcn bool (type (ptr type_def)))"), is_integer_type);
   defun("is-float-type?", str2type("(fcn bool (type (ptr type_def)))"), is_float_type);
-
   defun("fcn-arg-types", str2type("(fcn (ptr (ptr type_def)) (t (ptr type_def)))"), fcn_arg_types);
   defun("fcn-ret-type", str2type("(fcn (ptr type_def) (t (ptr type_def)))"), fcn_ret_type);
   defun("fcn-arg-cnt", str2type("(fcn u64 (t (ptr type_def)))"), fcn_arg_cnt);
   defun("set-printer", str2type("(fcn void (ptr (ptr symbol)))"), set_printer);
-
   str2type("(alias (opaque-struct _ccdispatch) ccdispatch)");
-
-  /*
-  defun("ccstart", str2type("(fcn (ptr ccdispatch))"), ccstart);
-  defun("ccyield", str2type("(fcn void)"), ccyield);
-  defun("ccstep", str2type("(fcn void (cc (ptr ccdispatch)))"), ccstep);
-  defun("ccthread", str2type("(fcn void (cc (ptr ccdispatch)) (fcn (fcn void (arg (ptr void)))) (userdata (ptr void)))"), ccthread);
-  defun("repl", str2type("(fcn bool)"), start_read_eval_print_loop);
-  */
   defun("timestamp", str2type("(fcn i64)"), timestamp);
 }

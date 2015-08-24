@@ -44,6 +44,12 @@ compiler_state * lisp_make_compiler();
 // Used for setting the current compiler.
 extern compiler_state * lisp_current_compiler;
 
+// *DEBUG* Sets the output file for the C compiler. set path=NULL to disable.
+void set_compile_out(compiler_state * compiler, char * path);
+
+// *DEBUG* Gets current compile out.
+char * get_compile_out(compiler_state * compiler);
+
 // Compile expression return the new variable (result).
 var_def * lisp_compile_expr(expr ex, compile_status * opt_outstatus);
 
@@ -51,7 +57,7 @@ var_def * lisp_compile_expr(expr ex, compile_status * opt_outstatus);
 compile_status lisp_run_expr(expr ex);
 
 // loads lisp base
-void lisp_load_base();
+void lisp_load_base(char * init_directory);
 
 // Runs a number of Lisp expressions.
 compile_status lisp_run_exprs(expr * exprs, size_t exprcnt);

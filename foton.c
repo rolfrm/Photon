@@ -7,7 +7,7 @@
 #include <iron/types.h>
 #include <iron/log.h>
 #include <iron/test.h>
-
+#include <iron/mem.h>
 #include "lisp_parser.h"
 #include "lisp_types.h"
 #include "c_ast.h"
@@ -50,11 +50,37 @@ bool test_get_cname();
 bool test_symbols();
 bool test_type_pool();
 
+static bool run_test = false;
+static char * c_compile_out = NULL;
+static char * file_to_run = NULL;
+static char * exec_path = NULL;
+
+void parse_args(char * argv[], int cnt){
+  exec_path = argv[0];
+  for(int i = 1; i < cnt; i++){
+    char * arg = argv[i];
+    bool is_test = strcmp(arg,"--test") == 0;
+    if(is_test){
+      run_test = true;
+      continue;
+    }
+    bool compile_out = strcmp(arg,"--compile-out") == 0;
+    if(compile_out){
+      i++;
+      c_compile_out = fmtstr("%s",argv[i]);
+      continue;
+    }
+    file_to_run = argv[i];
+  }
+}
 int main(int argc, char *argv[] ){
-  
-  if(argc == 2 && strcmp(argv[1],"--test") == 0){
+  logd("Running from %s\n", argv[0]);
+  parse_args(argv, argc);
+
+  if(run_test){
     log("Running tests...\n");
     lisp_current_compiler = lisp_make_compiler();
+    set_compile_out(lisp_current_compiler, c_compile_out);
     TEST(test_symbols);
     TEST(test_lisp_parser);
     TEST(test_type_pool);
@@ -62,14 +88,15 @@ int main(int argc, char *argv[] ){
     return 0;
   }
 
-  if(argc == 2){
+  if(file_to_run != NULL){
     char * filename = argv[1];
     if(access(filename, F_OK) == -1){
       loge("Error: File '%s' does not exist\n", filename);
       return 1;
     }
     lisp_current_compiler = lisp_make_compiler();
-    lisp_load_base();
+    set_compile_out(lisp_current_compiler, c_compile_out);
+    lisp_load_base(argv[0]);
     define_variable(get_symbol("break-on-errors"),str2type("bool"),&break_on_errors, true);
     compile_status status = lisp_run_script_file(argv[1]);
     if(status == COMPILE_ERROR){
