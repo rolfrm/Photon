@@ -50,13 +50,34 @@ bool test_get_cname();
 bool test_symbols();
 bool test_type_pool();
 
+#ifdef _WIN32
+#undef ASSERT
+#include <windows.h>
+char * get_exe_path(){
+
+  char pBuf[100];
+  int bytes = GetModuleFileName(NULL, pBuf, array_count(pBuf)));
+  ASSERT(bytes > 0);
+ return fmtstr("%s",pBuf);
+#else
+char * get_exe_path(){
+  char szTmp[32];
+  char pBuf[100];
+  memset(pBuf,0,sizeof(pBuf));
+  sprintf(szTmp, "/proc/%d/exe", getpid());
+  int bytes = readlink(szTmp, pBuf, 100);
+  ASSERT(bytes > 0);
+  return fmtstr("%s", pBuf);
+#endif
+}
+
 static bool run_test = false;
 static char * c_compile_out = NULL;
 static char * file_to_run = NULL;
 static char * exec_path = NULL;
 
 void parse_args(char * argv[], int cnt){
-  exec_path = argv[0];
+  exec_path = get_exe_path();
   for(int i = 1; i < cnt; i++){
     char * arg = argv[i];
     bool is_test = strcmp(arg,"--test") == 0;
@@ -74,9 +95,9 @@ void parse_args(char * argv[], int cnt){
   }
 }
 int main(int argc, char *argv[] ){
-  logd("Running from %s\n", argv[0]);
-  parse_args(argv, argc);
 
+  parse_args(argv, argc);
+  logd("Running from %s\n", exec_path);
   if(run_test){
     log("Running tests...\n");
     lisp_current_compiler = lisp_make_compiler();
@@ -96,7 +117,7 @@ int main(int argc, char *argv[] ){
     }
     lisp_current_compiler = lisp_make_compiler();
     set_compile_out(lisp_current_compiler, c_compile_out);
-    lisp_load_base(argv[0]);
+    lisp_load_base(exec_path);
     define_variable(get_symbol("break-on-errors"),str2type("bool"),&break_on_errors, true);
     compile_status status = lisp_run_script_file(argv[1]);
     if(status == COMPILE_ERROR){
