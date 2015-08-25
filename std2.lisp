@@ -129,7 +129,7 @@
 	  (<< (cast (std:rand) i64) 32)))
 
 (defmacro defstruct (name &rest fields)
-  (let ((inner-name (symbol2expr (symbol-combine (quote ___) (expr2symbol name)))))
+  (let ((inner-name (expr (_inner (unexpr name)))))
     (let ((structdef
     	   (unfold-body2 
     	    (expr (struct (unexpr inner-name)))

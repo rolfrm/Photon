@@ -145,7 +145,6 @@ type_def * expr2type(expr typexpr){
       return type_pool_get(&out);
     }else if (strncmp(vkind.value, "alias", vkind.strln) == 0){
       COMPILE_ASSERT(sexp.cnt == 3);
-      //COMPILE_ASSERT(is_symbol(sexp.exprs[2]));
       type_def out;
       out.type = TYPEDEF;
       char * namebuf = expr_to_string(sexp.exprs[2]);
@@ -153,6 +152,12 @@ type_def * expr2type(expr typexpr){
       dealloc(namebuf);
       out.ctypedef.inner = expr2type(sexp.exprs[1]);
       return type_pool_get(&out);
+    }
+    else{
+      char * namebuf = expr_to_string(typexpr);
+      type_def * td = type_pool_simple(get_symbol(namebuf));
+      dealloc(namebuf);
+      return td;
     }
   }else{
     type_def * td = type_pool_simple(expr_symbol(typexpr));
