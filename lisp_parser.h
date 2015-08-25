@@ -66,6 +66,6 @@ expr * lisp_parse_all(char * code, size_t * out_cnt);
 expr lisp_parse1(char * code);
 expr * clone_expr(expr * e);
 expr clone_expr2(expr tree);
-
+char * expr_to_string(expr e);
 // test
 bool test_lisp_parser();

@@ -93,7 +93,7 @@ type_def * expr2type(expr typexpr){
       out.type = FUNCTION;
       COMPILE_ASSERT(sexp.cnt > 1);
       type_def * ret = expr2type(sexp.exprs[1]);
-
+      
       COMPILE_ASSERT(error_def != ret);
       type_def * args[sexp.cnt - 2];
       for(size_t i = 0; i < sexp.cnt - 2; i++){
@@ -115,14 +115,11 @@ type_def * expr2type(expr typexpr){
       return type_pool_get(&out);
     }else if (strncmp(vkind.value, "struct",vkind.strln) == 0){
       COMPILE_ASSERT(sexp.cnt >= 2);
-      symbol name = symbol_empty;
-      bool is_anon = sexp.exprs[1].type == EXPR;
-      if(!is_anon){
-	COMPILE_ASSERT(sexp.exprs[1].value.type == SYMBOL);
-	name = vexpr_symbol(sexp.exprs[1].value);
-      }
-      size_t memcnt = sexp.cnt - 1 - (is_anon ? 0 : 1);
-      expr * sub = sexp.exprs + 1 + (is_anon ? 0 : 1);
+      char * namebuf = expr_to_string(sexp.exprs[1]);
+      symbol name = get_symbol(namebuf);
+      dealloc(namebuf);
+      size_t memcnt = sexp.cnt - 1 - 1;//(is_anon ? 0 : 1);
+      expr * sub = sexp.exprs + 1 + 1;//(is_anon ? 0 : 1);
       decl members[memcnt];
       for(size_t i = 0 ; i < memcnt; i++){
 	COMPILE_ASSERT(sub->type == EXPR && sub->sub_expr.cnt == 2);
@@ -148,10 +145,12 @@ type_def * expr2type(expr typexpr){
       return type_pool_get(&out);
     }else if (strncmp(vkind.value, "alias", vkind.strln) == 0){
       COMPILE_ASSERT(sexp.cnt == 3);
-      COMPILE_ASSERT(is_symbol(sexp.exprs[2]));
+      //COMPILE_ASSERT(is_symbol(sexp.exprs[2]));
       type_def out;
       out.type = TYPEDEF;
-      out.ctypedef.name = vexpr_symbol(sexp.exprs[2].value);
+      char * namebuf = expr_to_string(sexp.exprs[2]);
+      out.ctypedef.name = get_symbol(namebuf);
+      dealloc(namebuf);
       out.ctypedef.inner = expr2type(sexp.exprs[1]);
       return type_pool_get(&out);
     }

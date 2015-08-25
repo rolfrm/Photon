@@ -4,12 +4,8 @@
 #include <stdint.h>
 #include <stdarg.h>
 #include "lisp_parser.h"
-#include <iron/types.h>
-#include <iron/log.h>
-#include <iron/test.h>
-#include <iron/mem.h>
-#include <iron/array.h>
-#include <iron/utils.h>
+#include <stdio.h>
+#include <iron/full.h>
 char * take_while(char * data, bool (* fcn)(char char_code)){
   while(fcn(data[0])) data++;
   return data;
@@ -292,16 +288,16 @@ void print_expr(expr * expr1){
     
     switch(expr2->type){
     case EXPR:
-      logd("(");
+      format("(");
       for(size_t i = 0 ; i < subexpr.cnt; i++){
 	iprint(subexpr.exprs + i,indent + 1);
 	if(i != (subexpr.cnt - 1)) logd(" ");
       }
-      logd(")");
+      format(")");
       break;
     case VALUE:
       if(value.type == STRING) logd("\"");
-      logd("%.*s",value.strln ,value.value);
+      format("%.*s",value.strln ,value.value);
       if(value.type == STRING) logd("\"");
       break;
     case ERROR:
@@ -359,6 +355,20 @@ expr lisp_parse1(char * code){
     ERROR("Unable to parse '%s'", code);
   }
   return expr;  
+}
+
+char * expr_to_string(expr e){
+  char buf[100];
+  static int tmp_idx = 0;
+  sprintf(buf, "__tmp_expr_file%i", tmp_idx++);
+  FILE * f = fopen(buf,"wb+");
+  push_format_out(f);
+  print_expr(&e);
+  pop_format_out();
+  char * data = read_stream_to_string(f);
+  fclose(f);
+  remove(buf);
+  return data;
 }
 
 expr clone_expr2(expr body){
