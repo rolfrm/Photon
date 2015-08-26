@@ -24,6 +24,15 @@
 // Then i think the problem could be solved recursively
 
 
+
+expr intern_expr(expr e){
+  if(e.type == EXPR){
+    e.sub_expr.exprs
+  }else{
+    
+  }
+}
+
 typedef struct{
   char * key;
   u64 value;
