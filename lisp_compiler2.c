@@ -24,7 +24,7 @@ type_def * compile_value(type_def * expected_type, c_value * val, value_expr e){
   switch(e.type){
   case STRING:
     {
-      //CHECK_TYPE(expected_type, char_ptr_def);
+      CHECK_TYPE(expected_type, char_ptr_def);
       char * chr = fmtstr("%.*s",e.strln,e.value);
       symbol s = get_symbol(chr);
       dealloc(chr);

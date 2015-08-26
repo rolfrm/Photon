@@ -10,6 +10,20 @@
 
 #include "uthash.h"
 #include <stdarg.h>
+
+// if everything was exprs instead, then I would not have to intern exprs as strings.
+// Could an efficient algorithm be developed that did not require hashing?
+// a
+// (a)
+// ((a) (b) ((c))) 
+// (intern 'a)
+// in this case i need to figure out if 'a has already been interned.
+// (intern '(a))
+// Now i need to figure out if there exists a list containing an a
+// a could create an index of everything pointing to a. then it would be quick to find this list.
+// Then i think the problem could be solved recursively
+
+
 typedef struct{
   char * key;
   u64 value;

@@ -18,10 +18,6 @@ typedef enum{
   SYMBOL = 5
 }value_type;
 
-typedef struct{
-  
-}number_expr;
-
 typedef enum _number_kind_enum{
   LISP_INTEGER,
   LISP_FLOAT,
