@@ -24,7 +24,7 @@ type_def * compile_value(type_def * expected_type, c_value * val, value_expr e){
   switch(e.type){
   case STRING:
     {
-      //CHECK_TYPE(expected_type, char_ptr_def);
+      CHECK_TYPE(expected_type, char_ptr_def);
       char * chr = fmtstr("%.*s",e.strln,e.value);
       symbol s = get_symbol(chr);
       dealloc(chr);
@@ -62,9 +62,11 @@ type_def * compile_value(type_def * expected_type, c_value * val, value_expr e){
       }else if(is_float_type(expected_type)){
 	val->raw.type = expected_type;
       }else{
-	//loge("Unable to convert %s literal to", isfloat? "float" : "integer");
-	//print_decl(expected_type, get_symbol("b"));
-	//COMPILE_ERROR("");
+	if(!is_check_type_run()){
+	  loge("Unable to convert %s literal '%.*s' to '", isfloat? "float" : "integer", e.strln,e.value);
+	  print_decl(expected_type, get_symbol("b")); logd("'.\n");
+	}
+	COMPILE_ERROR("Unable to convert literal.");
 	val->raw.type = isfloat ? &f64_def: &i64_def;
       }
     }else{
@@ -76,8 +78,8 @@ type_def * compile_value(type_def * expected_type, c_value * val, value_expr e){
   case COMMENT:
     break;
   }
-  logd("type: %i\n", e.type);
-  COMPILE_ERROR(false);
+  ASSERT("Should never happen");
+  return error_def;
 }
 
 type_def * expr2type(expr typexpr){
@@ -118,8 +120,8 @@ type_def * expr2type(expr typexpr){
       char * namebuf = expr_to_string(sexp.exprs[1]);
       symbol name = get_symbol(namebuf);
       dealloc(namebuf);
-      size_t memcnt = sexp.cnt - 1 - 1;//(is_anon ? 0 : 1);
-      expr * sub = sexp.exprs + 1 + 1;//(is_anon ? 0 : 1);
+      size_t memcnt = sexp.cnt - 2;
+      expr * sub = sexp.exprs + 2;
       decl members[memcnt];
       for(size_t i = 0 ; i < memcnt; i++){
 	COMPILE_ASSERT(sub->type == EXPR && sub->sub_expr.cnt == 2);

@@ -6,8 +6,15 @@
 #include "expr_utils.h"
 
 #include "lisp_std_types.h"
-void defun(char * name, type_def * t, void * fcn){
+
+void defun2(char * name, type_def * t, void * fcn){
+
   define_variable(get_symbol(name), t, fcn, true);
+}
+
+void defun(char * name, char * ttype, void * fcn){
+
+  defun2(name, str2type(ttype), fcn);
 }
 
 void print_type(type_def * def){
@@ -189,38 +196,39 @@ void load_builtin(char * path){
 
 bool start_read_eval_print_loop();
 
+
 void load_functions(){
-  defun("print-type", str2type("(fcn void (a (ptr type_def)))"), print_type);
-  defun("eval!", str2type("(fcn void (expr (ptr expr)))"), eval);
-  defun("load", str2type("(fcn void (file (ptr char)))"), load_builtin);
-  defun("builtin-print-str", str2type("(fcn void (str (ptr char)))"), builtin_print_string);
-  defun("get-symbol", str2type("(fcn (ptr symbol) (a (ptr char)))"), get_symbol2);
-  defun("size-of",str2type("(fcn u64 (type (ptr type_def)))"), size_of);
-  defun("defun!", str2type("(fcn void (name (ptr char)) (t (ptr type_def)) (p (ptr void)))"), defun);
+  defun("print-type", ("(fcn void (a (ptr type_def)))"), print_type);
+  defun("eval!", ("(fcn void (expr (ptr expr)))"), eval);
+  defun("load", ("(fcn void (file (ptr char)))"), load_builtin);
+  defun("builtin-print-str", ("(fcn void (str (ptr char)))"), builtin_print_string);
+  defun("get-symbol", ("(fcn (ptr symbol) (a (ptr char)))"), get_symbol2);
+  defun("size-of",("(fcn u64 (type (ptr type_def)))"), size_of);
+  defun("defun!", ("(fcn void (name (ptr char)) (t (ptr type_def)) (p (ptr void)))"), defun2);
   str2type("(alias (ptr (opaque-struct _lib)) lib)"); // declare the lib tyoedef
-  defun("is-linux?",str2type("(fcn bool)"), &is_linux);
-  defun("load-lib",str2type("(fcn lib (libname (ptr char)))"), load_lib);
-  defun("load-symbol", str2type("(fcn (ptr void) (_lib lib) (name (ptr symbol)))"), load_symbol);
-  defun("type-of",str2type("(fcn (ptr type_def) (expr (ptr expr)))"), type_of);
-  defun("type-of2",str2type("(fcn (ptr type_def) (expected_type (ptr type_def)) (expr (ptr expr)))"),
+  defun("is-linux?",("(fcn bool)"), &is_linux);
+  defun("load-lib",("(fcn lib (libname (ptr char)))"), load_lib);
+  defun("load-symbol", ("(fcn (ptr void) (_lib lib) (name (ptr symbol)))"), load_symbol);
+  defun("type-of",("(fcn (ptr type_def) (expr (ptr expr)))"), type_of);
+  defun("type-of2",("(fcn (ptr type_def) (expected_type (ptr type_def)) (expr (ptr expr)))"),
 	type_of2);
-  defun("type-of3",str2type("(fcn (ptr type_def) (expected_type (ptr type_def)) (expr (ptr expr)))"),
+  defun("type-of3",("(fcn (ptr type_def) (expected_type (ptr type_def)) (expr (ptr expr)))"),
 	type_of3);
-  defun("check-type-run?", str2type("(fcn bool)"), is_check_type_run);
-  defun("print-expr", str2type("(fcn void (theexpr (ptr expr)))"), print_expr);
-  defun("ptr-inner", str2type("(fcn (ptr type_def) (ptr (ptr type_def)))"),  ptr_inner);
-  defun("type2expr", str2type("(fcn (ptr expr) (t (ptr type_def)))"), type2expr);
-  defun("symbol-name", str2type("(fcn (ptr char) (sym (ptr symbol)))"), symbol_name2);
-  defun("var-type", str2type("(fcn (ptr type_def) (variable (ptr symbol)))"), var_type);
-  defun("get-var", str2type("(fcn (ptr void) (sym (ptr symbol)))"), get_var);
-  defun("is-fcn-type?", str2type("(fcn bool (type (ptr type_def)))"), is_fcn_type);
-  defun("is-ptr-type?", str2type("(fcn bool (type (ptr type_def)))"), is_ptr_type);
-  defun("is-integer-type?", str2type("(fcn bool (type (ptr type_def)))"), is_integer_type);
-  defun("is-float-type?", str2type("(fcn bool (type (ptr type_def)))"), is_float_type);
-  defun("fcn-arg-types", str2type("(fcn (ptr (ptr type_def)) (t (ptr type_def)))"), fcn_arg_types);
-  defun("fcn-ret-type", str2type("(fcn (ptr type_def) (t (ptr type_def)))"), fcn_ret_type);
-  defun("fcn-arg-cnt", str2type("(fcn u64 (t (ptr type_def)))"), fcn_arg_cnt);
-  defun("set-printer", str2type("(fcn void (ptr (ptr symbol)))"), set_printer);
+  defun("check-type-run?", ("(fcn bool)"), is_check_type_run);
+  defun("print-expr", ("(fcn void (theexpr (ptr expr)))"), print_expr);
+  defun("ptr-inner", ("(fcn (ptr type_def) (ptr (ptr type_def)))"),  ptr_inner);
+  defun("type2expr", ("(fcn (ptr expr) (t (ptr type_def)))"), type2expr);
+  defun("symbol-name", ("(fcn (ptr char) (sym (ptr symbol)))"), symbol_name2);
+  defun("var-type", ("(fcn (ptr type_def) (variable (ptr symbol)))"), var_type);
+  defun("get-var", ("(fcn (ptr void) (sym (ptr symbol)))"), get_var);
+  defun("is-fcn-type?", ("(fcn bool (type (ptr type_def)))"), is_fcn_type);
+  defun("is-ptr-type?", ("(fcn bool (type (ptr type_def)))"), is_ptr_type);
+  defun("is-integer-type?", ("(fcn bool (type (ptr type_def)))"), is_integer_type);
+  defun("is-float-type?", ("(fcn bool (type (ptr type_def)))"), is_float_type);
+  defun("fcn-arg-types", ("(fcn (ptr (ptr type_def)) (t (ptr type_def)))"), fcn_arg_types);
+  defun("fcn-ret-type", ("(fcn (ptr type_def) (t (ptr type_def)))"), fcn_ret_type);
+  defun("fcn-arg-cnt", ("(fcn u64 (t (ptr type_def)))"), fcn_arg_cnt);
+  defun("set-printer", ("(fcn void (ptr (ptr symbol)))"), set_printer);
   str2type("(alias (opaque-struct _ccdispatch) ccdispatch)");
-  defun("timestamp", str2type("(fcn i64)"), timestamp);
+  defun("timestamp", ("(fcn i64)"), timestamp);
 }
