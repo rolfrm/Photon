@@ -18,11 +18,13 @@ var_def * get_any_variable(symbol s){
   return stackvar;
 }
 
+#include <stdbool.h>
+#include <ctype.h>
+
 type_def * compile_value(type_def * expected_type, c_value * val, value_expr e){
   val->type = C_INLINE_VALUE;
   var_def * vdef = NULL;
-  switch(e.type){
-  case STRING:
+  if(e.strln > 0 && e.value[0] == '\"')
     {
       CHECK_TYPE(expected_type, char_ptr_def);
       char * chr = fmtstr("%.*s",e.strln,e.value);
@@ -37,49 +39,59 @@ type_def * compile_value(type_def * expected_type, c_value * val, value_expr e){
       val->symbol = bufsym;
       return type_pool_get(char_ptr_def);
     }
-  case KEYWORD:
-  case SYMBOL:
-    val->type = C_SYMBOL;
-    val->symbol = vexpr_symbol(e);
-    vdef = get_any_variable(val->symbol);
-    if(vdef == NULL){
-      COMPILE_ERROR("Unknown variable '%s'", symbol_name(val->symbol));
-    }
-    return type_pool_get(vdef->type);
-  case NUMBER:
-    val->raw.value = fmtstr("%.*s",e.strln,e.value);
-    bool isfloat = false;
-    for(u32 i = 0; i < e.strln;i++){
-      if(e.value[i] == '.'){
-	isfloat = true;
-	break;
-      }
-    }
-
-    if(expected_type != NULL){
-      if( !isfloat && is_integer_type(expected_type)){
-	val->raw.type = expected_type;
-      }else if(is_float_type(expected_type)){
-	val->raw.type = expected_type;
+  bool all_alphanum = true;
+  for(u64 i = 0; i < e.strln; i++)
+    all_alphanum &= is_alphanum(e.value[i]);
+  
+  if(all_alphanum){
+    if(e.strln > 2){
+      bool fits_hex = true;
+      bool fits_alphas = true;
+      int dots = 0;
+      if(e.value[0] == '0' && (e.value[1] == 'x' || e.value[1] == 'X')){
+	for(u64 i = 2; i<e.strln; i++)
+	  fits_hex &= is_hex(e.value[i]);
+	
       }else{
-	if(!is_check_type_run()){
-	  loge("Unable to convert %s literal '%.*s' to '", isfloat? "float" : "integer", e.strln,e.value);
-	  print_decl(expected_type, get_symbol("b")); logd("'.\n");
+	for(u64 i = 0; i<e.strln; i++){
+	  fits_alphas &= isdigit(e.value[i]) || e.value[i] == '.';
+	  if(e.value[i] == '.')
+	    dots++;
+	  if(dots > 1)
+	    fits_alphas = false;
 	}
-	COMPILE_ERROR("Unable to convert literal.");
-	val->raw.type = isfloat ? &f64_def: &i64_def;
       }
-    }else{
-      val->raw.type = isfloat ? &f64_def: &i64_def;
+      bool isfloat = dots == 1;
+      if(fits_hex || fits_alphas){
+	val->raw.value = fmtstr("%.*s",e.strln,e.value);
+	if(expected_type != NULL){
+	  if( !isfloat && is_integer_type(expected_type)){
+	    val->raw.type = expected_type;
+	  }else if(is_float_type(expected_type)){
+	    val->raw.type = expected_type;
+	  }else{
+	    if(!is_check_type_run()){
+	      loge("Unable to convert %s literal '%.*s' to '", isfloat? "float" : "integer", e.strln,e.value);
+	      print_decl(expected_type, get_symbol("b")); logd("'.\n");
+	    }
+	    COMPILE_ERROR("Unable to convert literal.");
+	    val->raw.type = isfloat ? &f64_def: &i64_def;
+	  }
+	}else{
+	  val->raw.type = isfloat ? &f64_def: &i64_def;
+	}
+	
+	return val->raw.type;
+      }
     }
-
-    return val->raw.type;
-    break;
-  case COMMENT:
-    break;
   }
-  ASSERT("Should never happen");
-  return error_def;
+  val->type = C_SYMBOL;
+  val->symbol = vexpr_symbol(e);
+  vdef = get_any_variable(val->symbol);
+  if(vdef == NULL){
+    COMPILE_ERROR("Unknown variable '%s'", symbol_name(val->symbol));
+  }
+  return type_pool_get(vdef->type);
 }
 
 type_def * expr2type(expr typexpr){
@@ -87,7 +99,7 @@ type_def * expr2type(expr typexpr){
     sub_expr sexp = typexpr.sub_expr;
     COMPILE_ASSERT(sexp.cnt > 0);
     expr kind = sexp.exprs[0];
-    COMPILE_ASSERT(kind.type == VALUE && kind.value.type == SYMBOL);
+    COMPILE_ASSERT(kind.type == VALUE);
     value_expr vkind = kind.value;
 
     if(strncmp(vkind.value,"fcn",vkind.strln) == 0){
@@ -171,20 +183,6 @@ type_def * expr2type(expr typexpr){
   return error_def;
 }
 
-bool is_number_literal(expr ex){
-  return ex.type == VALUE && ex.value.type == NUMBER;
-}
-bool is_float_literal(expr ex){
-  if(is_number_literal(ex)){
-    for(size_t i = 0; i < ex.value.strln; i++){
-      if(ex.value.value[i] == '.'){
-	return true;
-      }
-    }
-  }
-  return false;
-}
-
 type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * value, sub_expr * se){
   COMPILE_ASSERT(se->cnt > 0);
   expr name_expr = se->exprs[0];  
@@ -192,7 +190,7 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
   i64 argcnt = se->cnt - 1;
   
   symbol name;
-  if(name_expr.value.type != SYMBOL){
+  if(name_expr.type == VALUE){
     char * namebuf =  expr_to_string(name_expr);
     name = get_symbol(namebuf);
     dealloc(namebuf);

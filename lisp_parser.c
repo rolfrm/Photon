@@ -35,7 +35,6 @@ char * parse_keyword(char * code, value_expr * kw){
   if(!is_endexpr(*end)){
     return NULL;
   }
-  kw->type = KEYWORD;
   kw->value = code;
   kw->strln = (int) (end - code);
   return end;
@@ -49,7 +48,6 @@ char * parse_symbol(char * code, value_expr * sym){
     return NULL;
   sym->value = code;
   sym->strln = (int) (end - code);
-  sym->type = SYMBOL;
   return end;
 }
 
@@ -71,9 +69,8 @@ char * read_to_end_of_string(char * code){
 char * parse_string(char * code, value_expr * string){
   if(*code != '"') return NULL;
   char * end = read_to_end_of_string(code);
-  string->value = code + 1;
-  string->strln = (int) (end - code - 2);
-  string->type = STRING;
+  string->value = code;
+  string->strln = (int) (end - code);
   return end;
 }
 
@@ -126,7 +123,6 @@ int is_digit(char chr){
 char * parse_number(char * code, value_expr * string){
   int decimal_reached = 0;
   char * it = code;
-  number_kind_enum kind = LISP_INTEGER;
   bool is_negative = false;
   if(*it == '-') {
     is_negative = true;
@@ -136,12 +132,10 @@ char * parse_number(char * code, value_expr * string){
   int (* val_chr)(char chr) = is_digit;
 
   if(*it == '0' && (it[1] == 'x' || it[1] == 'X')) {
-    kind = LISP_HEX;
     decimal_reached = 1;
     it += 2;
     val_chr = is_hex;
   }else if(*it == '0' && ( it[1] == 'b' || it[1] == 'B')){
-    kind = LISP_BINARY;
     decimal_reached = 1;
     it += 2;
     val_chr = is_hex;
@@ -161,29 +155,22 @@ char * parse_number(char * code, value_expr * string){
     return NULL;
   if(l == 0) return NULL;
   string->value = code;
-  string->type = NUMBER;
   string->strln = l;
   string->number_kind = kind;
   return it;
 }
 
-char * parse_single_line_comment(char * code, value_expr * val){
+char * parse_single_line_comment(char * code){
   bool is_comment(char c){
     return c != '\n';
   }
-  
   if(*code != ';')
     return NULL;
-  char * r = take_while(code, is_comment);
-  val->type = COMMENT;
-  val->value = code + 1;
-  val->strln = (size_t)(r - val->value);
-  return r + 1;
+  return take_while(code, is_comment) + 1;
 }
 
 char * parse_value(char * code, value_expr * val){
   char * next;
-  next = parse_single_line_comment(code, val);
   if(next != NULL) return next;
   next = parse_string(code, val);
   if(next != NULL) return next;
@@ -210,6 +197,12 @@ char * parse_subexpr(char * code, sub_expr * subexpr){
 
  next_part:
   code = take_while(code,is_whitespace);
+  
+  char * commentskip = parse_single_line_comment(code);
+  if(commentskip != NULL){
+    code = commentskip;
+    goto next_part;
+  }
 
   if(*code == ')') {
     subexpr->exprs = clone(exprs,sizeof(expr) * len);
@@ -219,6 +212,8 @@ char * parse_subexpr(char * code, sub_expr * subexpr){
   }  
   
   expr e;
+  
+    
   code = parse_expr(code, &e);
   
   if(code == NULL){
@@ -269,18 +264,6 @@ void delete_expr(expr * expr){
   }
 }
 
-char * value_type2str(value_type vt){
-  switch(vt){
-  case NUMBER: return "number";
-  case KEYWORD: return "keyword";
-  case STRING: return "string";
-  case COMMENT: return "comment";
-  case SYMBOL: return "symbol";
-  }
-  UNREACHABLE();
-  return NULL;
-}
-
 void print_expr(expr * expr1){
   void iprint(expr * expr2, int indent){
     value_expr value = expr2->value;
@@ -315,10 +298,16 @@ char * lisp_parse(char * code, expr * out_exprs, int * out_exprs_count){
   while(*code != 0 && expr_cnt != outexprcnt){
     code = take_while(code, is_whitespace);
     expr out_expr;
+    
+    char * commentskip = parse_single_line_comment(code);
+    if(commentskip != NULL){
+      code = commentskip;
+      continue;
+    }
     char * cn = parse_expr(code, &out_expr);
     if(cn == NULL) goto end;
     code = cn;
-
+    
     if(out_expr.type == VALUE && out_expr.value.type == COMMENT){
       // skip comment
     }else{
@@ -432,7 +421,7 @@ bool test_lisp_parser(){
 
   lisp_parse("(hej (hej2 1.0312))(add (sub 1 :a 5  \"hello\") 2) -1\n",exprs,&exprs_count);
   TEST_ASSERT(exprs_count == 3);
-  TEST_ASSERT(exprs[2].type == VALUE && exprs[2].value.type == NUMBER && exprs[2].value.value[0] == '-');
+  //TEST_ASSERT(exprs[2].type == VALUE && exprs[2].value.type == NUMBER && exprs[2].value.value[0] == '-');
   for(int i = 0; i < exprs_count; i++)
     delete_expr(exprs + i);
   TEST(test_infinite_bug);

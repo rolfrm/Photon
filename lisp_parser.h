@@ -5,31 +5,9 @@ typedef enum{
   ERROR
 }expr_type;
 
-typedef enum{
-  // All numbers.
-  NUMBER = 1,
-  // things starting with ':'
-  KEYWORD = 2,
-  // "-delimited strings
-  STRING = 3,
-  // Comments are ignored by the compiler
-  COMMENT = 4,
-  // Symbols are used first in functions.
-  SYMBOL = 5
-}value_type;
-
-typedef enum _number_kind_enum{
-  LISP_INTEGER,
-  LISP_FLOAT,
-  LISP_HEX,
-  LISP_BINARY
-}number_kind_enum;
-
 typedef struct{
-  value_type type;
   char * value;
   size_t strln;
-  number_kind_enum number_kind;
 }value_expr;
 
 typedef struct _expr expr;
@@ -65,3 +43,6 @@ expr clone_expr2(expr tree);
 char * expr_to_string(expr e);
 // test
 bool test_lisp_parser();
+
+// parsing
+bool is_alphanum(char c);
