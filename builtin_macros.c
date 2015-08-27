@@ -366,7 +366,7 @@ expr * expand_macro_store(type_def * expected_type, macro_store * ms, expr * exp
   }
 
   if(!(t->fcn.cnt == (i32)cnt || (ms->rest && t->fcn.cnt <= (i32)cnt))){
-    ERROR("Unvalid number of arguments %i for macro function '%s' expected %i.", t->fcn.cnt, symbol_name(ms->fcn), cnt);
+    ERROR("invalid number of arguments %i for macro function '%s' expected %i.", t->fcn.cnt, symbol_name(ms->fcn), cnt);
     return NULL;
   }
   
@@ -690,10 +690,6 @@ type_def * defun_macro(type_def * expected_type, c_block * block, c_value * valu
     logd("\n");
     COMPILE_ERROR("Invalid number of arguments for defun %i, expected 2 or 3", expr_cnt);
   }
-  
-  expr name = sub_exprs[0];
-  
-  COMPILE_ASSERT(is_symbol(name));
 
   static expr subargs[1] = {{.type = VALUE, .value = {.type = SYMBOL, .value = "void", .strln = 4}}};
   static expr args2 = {.type = EXPR, .sub_expr.cnt = 1, .sub_expr.exprs = subargs};
@@ -708,7 +704,9 @@ type_def * defun_macro(type_def * expected_type, c_block * block, c_value * valu
     body = sub_exprs[2];
   }
   COMPILE_ASSERT(args.type == EXPR || args.sub_expr.cnt > 0);
-  symbol fcnname = expr_symbol(name);
+  char * namebuf = expr_to_string(sub_exprs[0]);
+  symbol fcnname = get_symbol(namebuf);
+  dealloc(namebuf);
   logd("Defining function '%s'\n", symbol_name(fcnname));  
   c_root_code newfcn_root;
   newfcn_root.type = C_FUNCTION_DEF;

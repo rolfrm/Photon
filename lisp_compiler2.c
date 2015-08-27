@@ -187,67 +187,19 @@ bool is_float_literal(expr ex){
 
 type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * value, sub_expr * se){
   COMPILE_ASSERT(se->cnt > 0);
-  expr name_expr = se->exprs[0];
-  if(name_expr.type != VALUE){
-    // if the first expr is not the name of something
-    c_value * tmpvar = alloc0(sizeof(c_value));
-    type_def * td = compile_expr(NULL, block, tmpvar, name_expr);
-
-    if(td->type == FUNCTION || (td->type == POINTER && td->ptr.inner->type == FUNCTION)){
-      // So the name expression returns a function pointer or function.
-      // This can be called, by setting it to a temp variable and calling that in C.
-
-      c_var var;
-      expr * sym = gensym();
-      symbol s = expr_symbol(*sym);
-      {
-	var.value = tmpvar;
-	var.var.name = s;
-	var.var.type = td;
-	c_expr var_expr;
-	var_expr.type = C_VAR;
-	var_expr.var = var;
-	block_add(block, var_expr);
-      }
-      expr sexprs[se->cnt];
-      sexprs[0] = *sym;
-      for(size_t i = 1; i < se->cnt;i++)
-	sexprs[i] = se->exprs[i];
-      sub_expr se2;
-      se2.cnt = se->cnt;
-      se2.exprs = sexprs;
-
-      var_def * vardef = alloc0(sizeof(var_def));
-      vardef->name = s;
-      vardef->type = td;
-      vardef->data = NULL;
-      expr e;
-      e.type = EXPR;
-      e.sub_expr = se2;
-      size_t cnt = 1;
-      push_symbols(&vardef, &cnt);
-      type_def * td2 = compile_expr(expected_type, block,value,e);
-      ASSERT(td2 != NULL);
-      pop_symbols();
-      return td2;
-    }else{
-      loge("Unable to call type:\n");
-      print_decl(td, get_symbol("f"));
-      logd("\n");
-      return error_def;
-    }
-  }
-  if(name_expr.value.type != SYMBOL){
-    loge("Cannot call expr ");
-    print_expr(&name_expr);
-    logd("\n");
-    return error_def;
-  }
-
+  expr name_expr = se->exprs[0];  
   expr * args = se->exprs + 1;
   i64 argcnt = se->cnt - 1;
+  
+  symbol name;
+  if(name_expr.value.type != SYMBOL){
+    char * namebuf =  expr_to_string(name_expr);
+    name = get_symbol(namebuf);
+    dealloc(namebuf);
+  }else{
+    name = expr_symbol(name_expr);
+  }
 
-  symbol name = expr_symbol(name_expr);
   ASSERT(name.id != 0);
   void * var_data;
   type_def * var_type;

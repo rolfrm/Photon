@@ -39,7 +39,7 @@
 
 (defvar pi 3.141592653)
 (defvar 2pi (* pi 2))
-(load "vec2.lisp")
+
 ;; (if!! (is-linux?)
 ;;  (progn
 ;; (type (alias (ptr i32) thread-handle))
@@ -217,3 +217,4 @@
 	     0
 	     (unexpr (number2expr (cast size i64))) )))))
 
+(load "vec2.lisp")

@@ -1,16 +1,9 @@
-(type (alias
-       (struct _vec2 (x f64) (y f64))
-       vec2))
-
-(type
- (alias
-  (struct _vec3 (x f64) (y f64) (z f64))
-  vec3))
-
-(type 
- (alias
-  (struct _vec4 (x f64) (y f64) (z f64) (w f64))
-  vec4))
+(defstruct vec2  (x f64) (y f64))
+(defstruct vec3  (x f64) (y f64) (z f64))
+(defstruct vec4  (x f64) (y f64) (z f64) (w f64))
+(defstruct vec2f  (x f32) (y f32))
+(defstruct vec3f  (x f32) (y f32) (z f32))
+(defstruct vec4f  (x f32) (y f32) (z f32) (w f32))
 
 ;numbers:three ;; 3
 (defvar vec2-default :type vec2)
@@ -20,12 +13,30 @@
 (defvar vec4-default :type vec4)
 (memset (cast (addrof vec4-default) (ptr void)) 0 (size-of (type vec4)))
 
+;; (defmacro decl-vec-type (n-elements type)
+;;   ;(let ((
+;;   (expr
+;;    (defstruct (vec (unexpr n-lements) (unexpr type))
+;;      (
+
+
+(print (type vec2) newline)
+
+(defmacro vec-dim (vec-expr)
+  (let ((n (let ((t1 (type-of vec-expr)))
+	     (when (eq (cast t1 (ptr void)) null)
+	       (print "Error unable to evaluate " vec-expr  newline))
+	     (if (eq t1 (type vec2))
+		 2
+		 (if (eq t1 (type vec3))
+		     3
+		     4)))))
+    (number2expr n)))
+
 (defun vec2-length (f64 (a vec2))
   (let ((x (member a x))
 	(y (member a y)))
     (sqrt (+ (* x x) (* y y)))))
-
-
 
 (defoverloaded aref)
 (defun vec2-aref ((ptr f64) (a vec2) (idx i64))
@@ -67,6 +78,7 @@
 (overload vec makevec3)
 (overload vec makevec4)
 
+(print " " (vec-dim (vec 1 2 3)) newline)
 
 
 (defmacro vec2op (operator)
