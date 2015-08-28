@@ -44,45 +44,45 @@ type_def * compile_value(type_def * expected_type, c_value * val, value_expr e){
     all_alphanum &= is_alphanum(e.value[i]);
   
   if(all_alphanum){
-    if(e.strln > 2){
-      bool fits_hex = true;
-      bool fits_alphas = true;
-      int dots = 0;
-      if(e.value[0] == '0' && (e.value[1] == 'x' || e.value[1] == 'X')){
-	for(u64 i = 2; i<e.strln; i++)
-	  fits_hex &= is_hex(e.value[i]);
+    
+    bool fits_hex = e.strln > 2 && e.value[0] == '0' && (e.value[1] == 'x' || e.value[1] == 'X');
+    bool fits_alphas = true;
+    int dots = 0;
+    if(fits_hex){
+      for(u64 i = 2; i<e.strln; i++)
+	fits_hex &= is_hex(e.value[i]);
 	
-      }else{
-	for(u64 i = 0; i<e.strln; i++){
-	  fits_alphas &= isdigit(e.value[i]) || e.value[i] == '.';
-	  if(e.value[i] == '.')
-	    dots++;
-	  if(dots > 1)
-	    fits_alphas = false;
-	}
+    }else{
+      for(u64 i = 0; i<e.strln; i++){
+	fits_alphas &= isdigit(e.value[i]) || e.value[i] == '.';
+	if(e.value[i] == '.')
+	  dots++;
+	if(dots > 1)
+	  fits_alphas = false;
       }
-      bool isfloat = dots == 1;
-      if(fits_hex || fits_alphas){
-	val->raw.value = fmtstr("%.*s",e.strln,e.value);
-	if(expected_type != NULL){
-	  if( !isfloat && is_integer_type(expected_type)){
-	    val->raw.type = expected_type;
-	  }else if(is_float_type(expected_type)){
-	    val->raw.type = expected_type;
-	  }else{
-	    if(!is_check_type_run()){
-	      loge("Unable to convert %s literal '%.*s' to '", isfloat? "float" : "integer", e.strln,e.value);
-	      print_decl(expected_type, get_symbol("b")); logd("'.\n");
-	    }
-	    COMPILE_ERROR("Unable to convert literal.");
-	    val->raw.type = isfloat ? &f64_def: &i64_def;
-	  }
+    }
+    bool isfloat = dots == 1;
+    if(fits_hex || fits_alphas){
+      val->raw.value = fmtstr("%.*s",e.strln,e.value);
+      if(expected_type != NULL){
+	if( !isfloat && is_integer_type(expected_type)){
+	  val->raw.type = expected_type;
+	}else if(is_float_type(expected_type)){
+	  val->raw.type = expected_type;
 	}else{
+	  if(!is_check_type_run()){
+	    loge("Unable to convert %s literal '%.*s' to '", isfloat? "float" : "integer", e.strln,e.value);
+	    print_decl(expected_type, get_symbol("b")); logd("'.\n");
+	  }
+	  COMPILE_ERROR("Unable to convert literal.");
 	  val->raw.type = isfloat ? &f64_def: &i64_def;
 	}
-	
-	return val->raw.type;
+      }else{
+	val->raw.type = isfloat ? &f64_def: &i64_def;
       }
+	
+      return val->raw.type;
+      
     }
   }
   val->type = C_SYMBOL;
