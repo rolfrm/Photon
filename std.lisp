@@ -1,11 +1,10 @@
 ;; this file is a bit special because it builds up most of the standard library.
-;; without this the language is very basic and so, there are a lot of dependencies
-;; here.
-
+;; without this the language is very basic and so there are a lot of dependencies here.
 
 (defvar false (cast 0 bool))
 (defvar true (cast 1 bool))
-
+(defvar newline "
+")
 (defun not (bool (x bool)) (eq false x))
 (defvar null (cast 0 (ptr void)))
 (defvar null-expr (cast null (ptr expr)))
@@ -21,8 +20,18 @@
 
 ;; Loading a library
 (defun +load-symbol+ ((ptr expr) (_lib (ptr expr)) (name (ptr expr)) (cname (ptr expr)) (_type (ptr expr)))
-  (expr (defun! (stringify (unexpr name))
-                              (type (unexpr _type)) (load-symbol (unexpr _lib) (quote (unexpr cname))))))
+  (expr 
+   (var! ((addr (load-symbol (unexpr _lib) (stringify (unexpr cname)))))
+	 (progn
+	   (if! (eq null addr) 
+		(progn
+		  (builtin-print-str "Unknown symbol! ")
+		  (builtin-print-str (stringify (unexpr cname)))
+		  (builtin-print-str newline))
+		(noop))
+	   
+	   (defun! (stringify (unexpr name))
+	       (type (unexpr _type)) addr )))))
 
 
 (declare-macro load-symbol+ +load-symbol+)

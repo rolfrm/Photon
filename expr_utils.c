@@ -30,8 +30,7 @@ expr symbol_expr2(symbol name){
 }
 
 expr string_expr(char * name){
-  expr e = symbol_expr(name);
-  return e;
+  return  symbol_expr2(get_symbol_fmt("\"%s\"",name));
 }
 
 bool is_symbol(expr exp){

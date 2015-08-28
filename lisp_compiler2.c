@@ -27,7 +27,7 @@ type_def * compile_value(type_def * expected_type, c_value * val, value_expr e){
   if(e.strln > 0 && e.value[0] == '\"')
     {
       CHECK_TYPE(expected_type, char_ptr_def);
-      char * chr = fmtstr("%.*s",e.strln,e.value);
+      char * chr = fmtstr("%.*s",e.strln-2,e.value + 1);
       symbol s = get_symbol(chr);
       dealloc(chr);
       chr = symbol_name(s);

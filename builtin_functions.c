@@ -88,8 +88,9 @@ void * load_lib(char * path){
   return handle;
 }
 
-void * load_symbol(void * lib, symbol * name){
-  return dlsym(lib, get_c_name(*name));
+void * load_symbol(void * lib, char * name){
+  logd("Loading symbol %s\n", name);
+  return dlsym(lib, name);
 }
 
 #endif
@@ -208,7 +209,7 @@ void load_functions(){
   str2type("(alias (ptr (opaque-struct _lib)) lib)"); // declare the lib tyoedef
   defun("is-linux?",("(fcn bool)"), &is_linux);
   defun("load-lib",("(fcn lib (libname (ptr char)))"), load_lib);
-  defun("load-symbol", ("(fcn (ptr void) (_lib lib) (name (ptr symbol)))"), load_symbol);
+  defun("load-symbol", ("(fcn (ptr void) (_lib lib) (name (ptr char)))"), load_symbol);
   defun("type-of",("(fcn (ptr type_def) (expr (ptr expr)))"), type_of);
   defun("type-of2",("(fcn (ptr type_def) (expected_type (ptr type_def)) (expr (ptr expr)))"),
 	type_of2);

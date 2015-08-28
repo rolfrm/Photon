@@ -672,9 +672,10 @@ type_def * stringify_macro(type_def * expected_type, c_block * block, c_value * 
 }
 
 type_def * defun_macro(type_def * expected_type, c_block * block, c_value * value, expr * sub_exprs, size_t expr_cnt){
+  UNUSED(block);
   u64 ts = timestamp();
-  CHECK_TYPE(expected_type, char_ptr_def);
-  if(!lisp_print_errors) return char_ptr_def;
+  CHECK_TYPE(expected_type, &void_def);
+  if(!lisp_print_errors) return &void_def;
   // This function is rather complicated.
   // it handles turning something this: (defun funname (void (a i64) (b i64)) (+ a b)) 
   // into a function that can be called from througout the system.
@@ -777,7 +778,9 @@ type_def * defun_macro(type_def * expected_type, c_block * block, c_value * valu
   c_root_code_delete(newfcn_root);
   logd("Defined function: '%s' [%i µs].\n", symbol_name(fcnname), (timestamp() - ts) );
   // ** Just return the function name ** //
-  return compile_expr(char_ptr_def, block, value, string_expr(symbol_name(fcnname)));
+  //return compile_expr(char_ptr_def, block, value, string_expr(symbol_name(fcnname)));
+  value->type = C_NOTHING;
+  return &void_def;
 }
 
 type_def * math_operator(char * operator, type_def * expected_type, c_block * block, c_value * val, expr item1, expr item2){
