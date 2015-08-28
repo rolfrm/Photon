@@ -20,7 +20,6 @@ symbol expr_symbol(expr e){
 expr symbol_expr(char * name){
   expr e;
   e.type = VALUE;
-  e.value.type = SYMBOL;
   e.value.value = name;
   e.value.strln = strlen(name);
   return e;
@@ -32,20 +31,19 @@ expr symbol_expr2(symbol name){
 
 expr string_expr(char * name){
   expr e = symbol_expr(name);
-  e.value.type = STRING;
   return e;
 }
 
 bool is_symbol(expr exp){
-  return exp.type == VALUE && (exp.value.type == SYMBOL);
+  return exp.type == VALUE;
 }
 
 bool is_string(expr exp){
-  return exp.type == VALUE && exp.value.type == STRING;
+  return exp.type == VALUE;
 }
 
 bool is_keyword(expr exp){
-  return exp.type == VALUE && exp.value.type == KEYWORD;
+  return exp.type == VALUE;
 }
 
 char * read_symbol(expr name){

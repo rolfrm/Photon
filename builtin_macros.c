@@ -82,15 +82,13 @@ type_def * var_atom_macro(type_def * expected_type, c_block * block, c_value * v
     
     c_var var;
     if(var_expr.cnt == 2){
-      COMPILE_ASSERT(var_expr.exprs[0].type == VALUE 
-		     && var_expr.exprs[0].value.type == SYMBOL);
+      COMPILE_ASSERT(var_expr.exprs[0].type == VALUE);
       cval = alloc0(sizeof(c_value));
       var.var.type = compile_expr(NULL, block, cval, var_expr.exprs[1]);
       
     }else if(var_expr.cnt == 3){
       COMPILE_ASSERT(var_expr.exprs[0].type == VALUE 
-		     && var_expr.exprs[1].type == VALUE 
-		     && var_expr.exprs[0].value.type == SYMBOL);
+		     && var_expr.exprs[1].type == VALUE );
       var.var.type = expr2type(var_expr.exprs[2]);
       COMPILE_ASSERT(var.var.type != error_def);
     }else{
@@ -144,15 +142,13 @@ type_def * var_macro(type_def * expected_type, c_block * block, c_value * val, e
     
     c_var var;
     if(var_expr.cnt == 2){
-      COMPILE_ASSERT(var_expr.exprs[0].type == VALUE 
-		     && var_expr.exprs[0].value.type == SYMBOL);
+      COMPILE_ASSERT(var_expr.exprs[0].type == VALUE );
       cval = alloc0(sizeof(c_value));
       var.var.type = compile_expr(NULL, block, cval, var_expr.exprs[1]);
       
     }else if(var_expr.cnt == 3){
       COMPILE_ASSERT(var_expr.exprs[0].type == VALUE 
-		     && var_expr.exprs[1].type == VALUE 
-		     && var_expr.exprs[0].value.type == SYMBOL);
+		     && var_expr.exprs[1].type == VALUE );
       var.var.type = expr2type(var_expr.exprs[2]);
       COMPILE_ASSERT(var.var.type != error_def);
     }else{
@@ -670,8 +666,9 @@ type_def * stringify_macro(type_def * expected_type, c_block * block, c_value * 
     }
     ERROR("stringify");
   }
-  str.value.type = STRING;
-  return compile_expr(expected_type, block, value, str);
+  symbol sym = get_symbol_fmt("\"%.*s\"", str.value.strln, str.value.value);
+  
+  return compile_expr(expected_type, block, value, symbol_expr2(sym));
 }
 
 type_def * defun_macro(type_def * expected_type, c_block * block, c_value * value, expr * sub_exprs, size_t expr_cnt){
@@ -691,7 +688,7 @@ type_def * defun_macro(type_def * expected_type, c_block * block, c_value * valu
     COMPILE_ERROR("Invalid number of arguments for defun %i, expected 2 or 3", expr_cnt);
   }
 
-  static expr subargs[1] = {{.type = VALUE, .value = {.type = SYMBOL, .value = "void", .strln = 4}}};
+  static expr subargs[1] = {{.type = VALUE, .value = {.value = "void", .strln = 4}}};
   static expr args2 = {.type = EXPR, .sub_expr.cnt = 1, .sub_expr.exprs = subargs};
   expr args;
   expr body;
@@ -1006,14 +1003,13 @@ expr * number2expr(i64 num){
   char * str = fmtstr("%i",num);
   expr e;
   e.type = VALUE;
-  e.value.type = NUMBER;
   e.value.value = str;
   e.value.strln = strlen(str);
   return clone(&e, sizeof(e));
 }
 
 i64 expr2number(expr * e){
-  ASSERT(e->type == VALUE && e->value.type == NUMBER);
+  ASSERT(e->type == VALUE);
   char buf[e->value.strln + 1];
   buf[e->value.strln] = 0;
   memcpy(buf, e->value.value, e->value.strln);
@@ -1116,14 +1112,13 @@ symbol * expr2symbol(expr * e){
 expr * symbol2expr(symbol * s){
   expr * out = alloc(sizeof(expr));
   out->type = VALUE;
-  out->value.type = SYMBOL;
   out->value.value = symbol_name(*s);
   out->value.strln = strlen(out->value.value);
   return out;
 }
 
 bool is_expr_symbol(expr * e){
-  return e->type == VALUE && e->value.type == SYMBOL;
+  return e->type == VALUE;
 }
 	  
 bool is_sub_expr(expr * e){

@@ -46,3 +46,4 @@ bool test_lisp_parser();
 
 // parsing
 bool is_alphanum(char c);
+int is_hex(char c);

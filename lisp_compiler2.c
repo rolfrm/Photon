@@ -138,7 +138,7 @@ type_def * expr2type(expr typexpr){
       for(size_t i = 0 ; i < memcnt; i++){
 	COMPILE_ASSERT(sub->type == EXPR && sub->sub_expr.cnt == 2);
 	sub_expr sx = sub->sub_expr;
-	COMPILE_ASSERT(sx.exprs[0].type == VALUE && sx.exprs[0].value.type == SYMBOL);
+	COMPILE_ASSERT(sx.exprs[0].type == VALUE);
 	members[i].name = vexpr_symbol(sx.exprs[0].value);
 	members[i].type = expr2type(sx.exprs[1]);
 	sub++;

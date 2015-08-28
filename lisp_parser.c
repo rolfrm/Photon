@@ -156,7 +156,6 @@ char * parse_number(char * code, value_expr * string){
   if(l == 0) return NULL;
   string->value = code;
   string->strln = l;
-  string->number_kind = kind;
   return it;
 }
 
@@ -171,7 +170,6 @@ char * parse_single_line_comment(char * code){
 
 char * parse_value(char * code, value_expr * val){
   char * next;
-  if(next != NULL) return next;
   next = parse_string(code, val);
   if(next != NULL) return next;
   next = parse_keyword(code, val);
@@ -220,12 +218,10 @@ char * parse_subexpr(char * code, sub_expr * subexpr){
     subexpr->cnt = 0;
     return NULL;
   }
-  if(e.type == VALUE && e.value.type == COMMENT){
-    // skip comments
-  }else{
-    exprs[len] = e;
-    len++;
-  }
+
+  exprs[len] = e;
+  len++;
+  
   goto next_part;
  
 }
@@ -279,9 +275,7 @@ void print_expr(expr * expr1){
       format(")");
       break;
     case VALUE:
-      if(value.type == STRING) logd("\"");
       format("%.*s",value.strln ,value.value);
-      if(value.type == STRING) logd("\"");
       break;
     case ERROR:
       logd("(Parser Error)");
@@ -308,11 +302,9 @@ char * lisp_parse(char * code, expr * out_exprs, int * out_exprs_count){
     if(cn == NULL) goto end;
     code = cn;
     
-    if(out_expr.type == VALUE && out_expr.value.type == COMMENT){
-      // skip comment
-    }else{
-      out_exprs[expr_cnt++] = out_expr;
-    }
+    
+    out_exprs[expr_cnt++] = out_expr;
+    
   }
 
  end:
