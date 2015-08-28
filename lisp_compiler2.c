@@ -40,21 +40,27 @@ type_def * compile_value(type_def * expected_type, c_value * val, value_expr e){
       return type_pool_get(char_ptr_def);
     }
   bool all_alphanum = true;
-  for(u64 i = 0; i < e.strln; i++)
-    all_alphanum &= is_alphanum(e.value[i]);
+  char * number_test = e.value;
+  u64 number_len = e.strln;
+  if(number_len > 0 && number_test[0] == '-'){
+    number_len -= 1;
+    number_test += 1;
+  }
+   
+  for(u64 i = 0; i < number_len; i++)
+    all_alphanum &= (is_alphanum(number_test[i]) || number_test[i] == '.');
   
   if(all_alphanum){
-    
-    bool fits_hex = e.strln > 2 && e.value[0] == '0' && (e.value[1] == 'x' || e.value[1] == 'X');
+    bool fits_hex = number_len > 2 && number_test[0] == '0' && (number_test[1] == 'x' || number_test[1] == 'X');
     bool fits_alphas = true;
     int dots = 0;
     if(fits_hex){
-      for(u64 i = 2; i<e.strln; i++)
-	fits_hex &= is_hex(e.value[i]);
+      for(u64 i = 2; i<number_len; i++)
+	fits_hex &= is_hex(number_test[i]);
 	
     }else{
-      for(u64 i = 0; i<e.strln; i++){
-	fits_alphas &= isdigit(e.value[i]) || e.value[i] == '.';
+      for(u64 i = 0; i<number_len; i++){
+	fits_alphas &= isdigit(number_test[i]) || number_test[i] == '.';
 	if(e.value[i] == '.')
 	  dots++;
 	if(dots > 1)
