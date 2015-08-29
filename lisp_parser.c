@@ -27,19 +27,6 @@ bool is_keyword_char(char c){
   return !is_endexpr(c);
 }
 
-char * parse_keyword(char * code, value_expr * kw){
-  if(code[0] != ':')
-    return NULL;
-  code++;
-  char * end = take_while(code, &is_keyword_char);
-  if(!is_endexpr(*end)){
-    return NULL;
-  }
-  kw->value = code;
-  kw->strln = (int) (end - code);
-  return end;
-}
-
 char * parse_symbol(char * code, value_expr * sym){
   char * end = take_while(code,is_keyword_char);
   if(end == code)
@@ -62,7 +49,7 @@ char * read_to_end_of_string(char * code){
     if(*code == '\\')
       code++;//next item is escaped. skip it.
   }
-  //this is an error.
+  ASSERT("this is an error");
   return NULL;
 }
 
@@ -103,62 +90,6 @@ int is_hex(char chr){
     return 0;
   }
 }
-int is_digit(char chr){
-  switch(chr){
-  case '0':
-  case '1':
-  case '2':
-  case '3':
-  case '4':  
-  case '5':
-  case '6':
-  case '7':
-  case '8':
-  case '9':
-    return 1;
-  default:
-    return 0;
-  }
-}
-char * parse_number(char * code, value_expr * string){
-  int decimal_reached = 0;
-  char * it = code;
-  bool is_negative = false;
-  if(*it == '-') {
-    is_negative = true;
-    it++;
-  }
-
-  int (* val_chr)(char chr) = is_digit;
-
-  if(*it == '0' && (it[1] == 'x' || it[1] == 'X')) {
-    decimal_reached = 1;
-    it += 2;
-    val_chr = is_hex;
-  }else if(*it == '0' && ( it[1] == 'b' || it[1] == 'B')){
-    decimal_reached = 1;
-    it += 2;
-    val_chr = is_hex;
-  }
-
-  for(; false == is_endexpr(*it); it++){
-    if(*it == '.'){
-      if(decimal_reached)
-	return NULL;
-      decimal_reached = 1;
-    }else if(!val_chr(*it)){
-      return NULL;
-    }
-  }
-  size_t l = (it - code);
-  if(l == 1 && is_negative)
-    return NULL;
-  if(l == 0) return NULL;
-  string->value = code;
-  string->strln = l;
-  return it;
-}
-
 char * parse_single_line_comment(char * code){
   bool is_comment(char c){
     return c != '\n';
@@ -171,10 +102,6 @@ char * parse_single_line_comment(char * code){
 char * parse_value(char * code, value_expr * val){
   char * next;
   next = parse_string(code, val);
-  if(next != NULL) return next;
-  next = parse_keyword(code, val);
-  if(next != NULL) return next;
-  next = parse_number(code, val);
   if(next != NULL) return next;
   next = parse_symbol(code, val);
   if(next != NULL) return next;

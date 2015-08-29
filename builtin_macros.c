@@ -226,7 +226,7 @@ type_def * defvar_macro(type_def * expected_type, c_block * block,
     logd("Defining variable '%s'.\n", symbol_name(sym));
   type_def * t;
 
-  if(is_keyword(exprs[1]) && expr_symbol(exprs[1]).id == get_symbol("type").id && cnt == 3){
+  if(is_keyword(exprs[1]) && expr_symbol(exprs[1]).id == get_symbol(":type").id && cnt == 3){
     
     t = expr2type(exprs[2]);
     val->type = C_SYMBOL;
