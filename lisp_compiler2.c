@@ -51,7 +51,7 @@ type_def * compile_value(type_def * expected_type, c_value * val, value_expr e){
     all_alphanum &= (is_alphanum(number_test[i]) || number_test[i] == '.');
   
   if(all_alphanum){
-    bool fits_hex = number_len > 2 && number_test[0] == '0' && (number_test[1] == 'x' || number_test[1] == 'X');
+    bool fits_hex = number_len > 2 && number_test[0] == '0' && ((number_test[1] == 'x' || number_test[1] == 'X') || (number_test[1] == 'b' || number_test[1] == 'B')) ;
     bool fits_alphas = true;
     int dots = 0;
     if(fits_hex){
