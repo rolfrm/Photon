@@ -57,12 +57,12 @@ V1 Release Checklist (Aiming at August 21 release)
 * [x] faster type-of macro (current version requires compiling the code to check the types. Better to just do it once. Memorizing?
 * [x] Call function pointers
 * [x] proper interned literal strings (checkout tries. no probably to hash tables instead.)
-* [ ] Fix massive memory leaks
+* [ ] Waste less memory
 * [x] Bugs / Stability	 	 
 * [ ] better error handling
 * [ ] line number of exprs.
 * [ ] lvalue checking (setf 1 10) is invalid for instance. (setf a 10) might be ok.
-* [ ] Windows 64bit support.
+* [x] Windows 64bit support.
 
 Future Features
 ---------
