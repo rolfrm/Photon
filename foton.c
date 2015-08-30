@@ -103,7 +103,7 @@ int main(int argc, char *argv[] ){
     lisp_current_compiler = lisp_make_compiler();
     set_compile_out(lisp_current_compiler, c_compile_out);
     TEST(test_symbols);
-    TEST(test_lisp_parser);
+    //TEST(test_lisp_parser);
     TEST(test_type_pool);
     TEST(test_lisp2c);
     return 0;

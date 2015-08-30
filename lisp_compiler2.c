@@ -699,13 +699,14 @@ compile_status lisp_run_script_file(char * filepath){
 }
 
 compile_status lisp_run_script_string(char * code){
-  size_t exprcnt = 0;
-  expr * exprs = lisp_parse_all(code, &exprcnt);
-  compile_status s = lisp_run_exprs(exprs, exprcnt);
-  for(size_t i = 0; i < exprcnt; i++)
-    delete_expr(exprs + i);
-  if(exprs != NULL)
-    dealloc(exprs);
+  expr _expr;
+  compile_status s;
+  while(NULL != (code = lisp_parse(code, &_expr))){
+     s = lisp_run_exprs(&_expr, 1);
+     if(s == COMPILE_ERROR)
+       break;
+     delete_expr(&_expr);
+  }
   return s;
 }
 
@@ -718,7 +719,7 @@ bool test_lisp2c(){
   opaque_expr();
   str2type("(fcn (ptr expr) (a (ptr expr)))");
   logd("(fcn (ptr expr) (a (ptr expr)))");
-
+  
   lisp_load_base(".");
   bool ret = TEST_SUCCESS;
   type_def * type = str2type("(fcn void (a (ptr type_def)))");

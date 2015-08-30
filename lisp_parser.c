@@ -212,52 +212,23 @@ void print_expr(expr * expr1){
 }
 
 
-char * lisp_parse(char * code, expr * out_exprs, int * out_exprs_count){
-  size_t expr_cnt = 0;
-  size_t outexprcnt = *out_exprs_count;
-  while(*code != 0 && expr_cnt != outexprcnt){
+char * lisp_parse(char * code, expr * out_expr){
+  while(true){
     code = take_while(code, is_whitespace);
-    expr out_expr;
-    
     char * commentskip = parse_single_line_comment(code);
     if(commentskip != NULL){
       code = commentskip;
-      continue;
-    }
-    char * cn = parse_expr(code, &out_expr);
-    if(cn == NULL) goto end;
-    code = cn;
-    out_exprs[expr_cnt++] = out_expr;
-    
+    }else break;
   }
-
- end:
-  *out_exprs_count = expr_cnt;
-  return code;
-}
-
-expr * lisp_parse_all(char * code, size_t * out_cnt){
-  *out_cnt = 0;
-  expr * exprs = NULL;
-  expr expr;
-  char * next = code;
-  while(next != NULL && *next != 0){
-    int cnt = 1;
-    next = lisp_parse(next, &expr, &cnt);
-    if(cnt == 0 || next == NULL)
-      break;
-    list_add((void **) &exprs, out_cnt, &expr, sizeof(expr));
-  }
-  return exprs;
+  return parse_expr(code, out_expr);   
 }
 
 expr lisp_parse1(char * code){
-  int out_cnt = 1;
   expr expr;
   char * next = code;
-  next = lisp_parse(next, &expr, &out_cnt);
-  if(out_cnt == 0 || next == NULL){
-    ERROR("Unable to parse '%s'", code);
+  next = lisp_parse(next, &expr);
+  if(next == NULL){
+    expr.type = ERROR;
   }
   return expr;  
 }
@@ -299,51 +270,51 @@ expr * clone_expr(expr * tree){
   return root;
 }
 
-static bool test_infinite_bug(){
-  // this turned out to not be a bug.
-  char * code = "(print_string \"Hello World\\n\")(glfwInit)(print_string (glfwGetVersionString))";
-  char * next = code;
-  expr out_expr[2];
-  while(next != NULL && *next != 0){
-    int out = array_count(out_expr);
-    char * prev = next;
-    next = lisp_parse(next,out_expr,&out);
-    TEST_ASSERT(prev != next);
-  }
-  return TEST_SUCCESS;
-}
+// static bool test_infinite_bug(){
+//   // this turned out to not be a bug.
+//   char * code = "(print_string \"Hello World\\n\")(glfwInit)(print_string (glfwGetVersionString))";
+//   char * next = code;
+//   expr out_expr[2];
+//   while(next != NULL && *next != 0){
+//     int out = array_count(out_expr);
+//     char * prev = next;
+//     next = lisp_parse(next,out_expr,&out);
+//     TEST_ASSERT(prev != next);
+//   }
+//   return TEST_SUCCESS;
+// }
 
-bool test_empty(){
-  char code[] = ";hello world\n;hello world\n\n;asd\n\n\n";
-  size_t out_cnt = 0;
-  expr * exprs = lisp_parse_all(code, &out_cnt);
-  TEST_ASSERT(out_cnt == 0 && exprs == NULL);
-  return TEST_SUCCESS;
-}
+// bool test_empty(){
+//   char code[] = ";hello world\n;hello world\n\n;asd\n\n\n";
+//   size_t out_cnt = 0;
+//   expr * exprs = lisp_parse_all(code, &out_cnt);
+//   TEST_ASSERT(out_cnt == 0 && exprs == NULL);
+//   return TEST_SUCCESS;
+// }
 
-bool test_type_bug(){
-  char * code = "(alias (struct _s1 (x i16) (y i8) (z i16) (x2 i16) (y2 i8) (z2 i16) (x3 i16) (y3 i8) (z3 i16)) s1)";
-  size_t out_cnt = 0;
-  expr * exprs = lisp_parse_all(code, &out_cnt);
-  ASSERT(exprs->type == EXPR);
-  return TEST_SUCCESS;
-}
+// bool test_type_bug(){
+//   char * code = "(alias (struct _s1 (x i16) (y i8) (z i16) (x2 i16) (y2 i8) (z2 i16) (x3 i16) (y3 i8) (z3 i16)) s1)";
+//   size_t out_cnt = 0;
+//   expr * exprs = lisp_parse_all(code, &out_cnt);
+//   ASSERT(exprs->type == EXPR);
+//   return TEST_SUCCESS;
+// }
 
-bool test_lisp_parser(){
+// bool test_lisp_parser(){
 
-  TEST(test_empty);
-  expr exprs[10];
-  int exprs_count = 10;
+//   TEST(test_empty);
+//   expr exprs[10];
+//   int exprs_count = 10;
 
-  lisp_parse("(hej (hej2 1.0312))(add (sub 1 :a 5  \"hello\") 2) -1\n",exprs,&exprs_count);
-  TEST_ASSERT(exprs_count == 3);
-  //TEST_ASSERT(exprs[2].type == VALUE && exprs[2].value.type == NUMBER && exprs[2].value.value[0] == '-');
-  for(int i = 0; i < exprs_count; i++)
-    delete_expr(exprs + i);
-  TEST(test_infinite_bug);
-  TEST(test_type_bug);
-  return TEST_SUCCESS;
-}
+//   lisp_parse("(hej (hej2 1.0312))(add (sub 1 :a 5  \"hello\") 2) -1\n",exprs,&exprs_count);
+//   TEST_ASSERT(exprs_count == 3);
+//   //TEST_ASSERT(exprs[2].type == VALUE && exprs[2].value.type == NUMBER && exprs[2].value.value[0] == '-');
+//   for(int i = 0; i < exprs_count; i++)
+//     delete_expr(exprs + i);
+//   TEST(test_infinite_bug);
+//   TEST(test_type_bug);
+//   return TEST_SUCCESS;
+// }
 
 
 
