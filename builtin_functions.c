@@ -89,7 +89,6 @@ void * load_lib(char * path){
 }
 
 void * load_symbol(void * lib, char * name){
-  logd("Loading symbol %s\n", name);
   return dlsym(lib, name);
 }
 

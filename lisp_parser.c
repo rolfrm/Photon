@@ -27,14 +27,16 @@ bool is_keyword_char(char c){
   return !is_endexpr(c);
 }
 
-char * parse_symbol(char * code, value_expr * sym){
+char * parse_symbol(char * code, expr * sym){
   char * end = take_while(code,is_keyword_char);
   if(end == code)
     return NULL;
   if(!is_endexpr(*end))
     return NULL;
-  sym->value = code;
-  sym->strln = (int) (end - code);
+
+  int len = (int) (end - code);
+  sym->value = strfmt("%.*s", len, code);
+  sym->type = LISP_VALUE;
   return end;
 }
 
@@ -53,11 +55,10 @@ char * read_to_end_of_string(char * code){
   return NULL;
 }
 
-char * parse_string(char * code, value_expr * string){
+char * parse_string(char * code, expr * string){
   if(*code != '"') return NULL;
   char * end = read_to_end_of_string(code);
-  string->value = code;
-  string->strln = (int) (end - code);
+  string->value = strfmt("%.*s",(int) (end - code), code);
   return end;
 }
 
@@ -99,7 +100,7 @@ char * parse_single_line_comment(char * code){
   return take_while(code, is_comment) + 1;
 }
 
-char * parse_value(char * code, value_expr * val){
+char * parse_value(char * code, expr * val){
   char * next;
   next = parse_string(code, val);
   if(next != NULL) return next;
@@ -107,11 +108,12 @@ char * parse_value(char * code, value_expr * val){
   if(next != NULL) return next;
   return NULL;
 }
+
 char * parse_expr(char * code, expr * out_expr);
 
 
-char * parse_subexpr(char * code, sub_expr * subexpr){
-  expr exprs[100];
+char * parse_subexpr(char * code, expr * subexpr){
+  expr * exprs[100] = {0};
   if(code[0] != '(')
     return NULL;
   code++;
@@ -130,23 +132,21 @@ char * parse_subexpr(char * code, sub_expr * subexpr){
   }
 
   if(*code == ')') {
-    subexpr->exprs = clone(exprs,sizeof(expr) * len);
-    subexpr->cnt = len;
+    subexpr->exprs = clone(exprs,sizeof(expr) * (len + 1)); //last is 0
     return code + 1;
-
   }  
   
   expr e;
   
-    
   code = parse_expr(code, &e);
   
   if(code == NULL){
-    subexpr->cnt = 0;
+    // delete allocated
+    //subexpr->cnt = 0;
     return NULL;
   }
 
-  exprs[len] = e;
+  exprs[len] = clone(&e, sizeof(expr));
   len++;
   
   goto next_part;
@@ -156,53 +156,43 @@ char * parse_subexpr(char * code, sub_expr * subexpr){
 char * parse_expr(char * code, expr * out_expr){
   code = take_while(code,is_whitespace);
   {// parse subexpr.
-    sub_expr subexpr;
-    char * next = parse_subexpr(code,&subexpr);
-    if(next != NULL){
-      out_expr->type = EXPR;
-      out_expr->sub_expr = subexpr;
+    char * next = parse_subexpr(code,out_expr);
+    if(next != NULL)
       return next;
-    }
   }
   
-  value_expr value;
   { // parse value.
-    char * next = parse_value(code, &value);
-    if(next != NULL){
-      out_expr->value = value;
-      out_expr->type = VALUE;
+    char * next = parse_value(code, out_expr);
+    if(next != NULL)
       return next;
-    }
   }
   return NULL;
 }
 
 void delete_expr(expr * expr){
   if(expr->type == EXPR){
-    sub_expr sexpr = expr->sub_expr;
     for(size_t i = 0 ; i < sexpr.cnt; i++){
-      delete_expr(sexpr.exprs + i);
+      delete_expr(expr.exprs + i);
     }
-    dealloc(sexpr.exprs);
+    dealloc(expr.exprs);
   }
 }
 
 void print_expr(expr * expr1){
   void iprint(expr * expr2, int indent){
-    value_expr value = expr2->value;
-    sub_expr subexpr = expr2->sub_expr;
     
     switch(expr2->type){
     case EXPR:
       format("(");
-      for(size_t i = 0 ; i < subexpr.cnt; i++){
-	iprint(subexpr.exprs + i,indent + 1);
-	if(i != (subexpr.cnt - 1)) logd(" ");
+      ;
+      for(expr * f = expr2->exprs ; *f != NULL; f++){
+	iprint(f,indent + 1);
+	logd(" ");
       }
       format(")");
       break;
     case VALUE:
-      format("%.*s",value.strln ,value.value);
+      format("%s", expr2->value);
       break;
     case ERROR:
       logd("(Parser Error)");
@@ -229,9 +219,7 @@ char * lisp_parse(char * code, expr * out_exprs, int * out_exprs_count){
     if(cn == NULL) goto end;
     code = cn;
     
-    
     out_exprs[expr_cnt++] = out_expr;
-    
   }
 
  end:
@@ -281,7 +269,7 @@ char * expr_to_string(expr e){
 
 expr clone_expr2(expr body){
   if(body.type == VALUE){
-    body.value.value = clone(body.value.value,body.value.strln);
+    body.value = fmtstr("%s", body.value);
     return body;
   }
   sub_expr exp = body.sub_expr;

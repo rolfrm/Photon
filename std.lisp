@@ -12,6 +12,7 @@
 (defvar libc :type lib)
 (if! (is-linux?)
      (setf libc (load-lib "libc.so"))
+     ;(setf libc (load-lib "libc.so"))
      (setf libc (load-lib "msvcrt.dll")))
 
 (defun +quote ((ptr expr) (sstr (ptr expr)))

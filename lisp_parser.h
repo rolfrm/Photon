@@ -1,30 +1,20 @@
 // requires .
 typedef enum{
-  EXPR = 5,
-  VALUE = 6,
-  ERROR
+  LISP_EXPR = 5,
+  LISP_VALUE = 6,
+  LISP_ERROR
 }expr_type;
 
-typedef struct{
-  char * value;
-  size_t strln;
-}value_expr;
-
-typedef struct _expr expr;
-
-typedef struct{
-  expr * exprs;
-  size_t cnt;  
-}sub_expr;
-
-struct _expr{
+typedef struct _expr{
   expr_type type;
   union{
-    sub_expr sub_expr;
-    value_expr value;
+    // 0-terminated
+    expr ** exprs;
+    // 0-terminated
+    char * value;
+    void * payload;
   };
-};
-
+}expr;
 // Parses a number of expers no bigger than the start value of *in_out_exprs_count.
 // returns the number of parsed expres in in_out_exprs_count. returns where the parser got to.
 char * lisp_parse(char * code, expr * out_exprs, int * in_out_exprs_count);
