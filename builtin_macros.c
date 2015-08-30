@@ -427,6 +427,17 @@ expr * expand_macro_store2(macro_store * ms, expr * expr){
   return expand_macro_store(opaque_expr(), ms, expr->sub_expr.exprs, expr->sub_expr.cnt);
 }
 
+expr * expand_macro2(expr * e){
+  if(e->type == VALUE){
+    return e;
+  }
+  expr * exprs = e->sub_expr.exprs;
+  size_t cnt = e->sub_expr.cnt;
+  symbol name = expr_symbol(exprs[0]);
+  var_def * fcn_var = get_any_variable(name);
+  return expand_macro_store(NULL, fcn_var->data, exprs + 1, cnt - 1);
+}
+
 type_def * expand_macro(type_def * expected_type, c_block * block, c_value * val, 
 			expr * exprs, size_t cnt){
   COMPILE_ASSERT(cnt > 0);
@@ -1238,4 +1249,5 @@ void builtin_macros_load(){
   defun("macro-store-args", ("(fcn i64 (ms (ptr macro_store)))"), macro_store_args);
   defun("gensym",("(fcn (ptr expr))"), gensym);
   defun("free-expr", ("(fcn void (e (ptr expr)))"), free_expr);
+  defun("expand", "(fcn (ptr expr) (e (ptr expr)))", expand_macro2);
 }
