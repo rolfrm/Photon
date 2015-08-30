@@ -1117,10 +1117,16 @@ type_def * member_macro(type_def * expected_type, c_block * blk, c_value * val, 
 }
 
 symbol * expr2symbol(expr * e){
-  char buffer[e->value.strln + 1];
-  memcpy(buffer, e->value.value, e->value.strln);
-  buffer[e->value.strln] = 0;
-  return get_symbol2(buffer);
+  if(e->type == VALUE){
+    char buffer[e->value.strln + 1];
+    memcpy(buffer, e->value.value, e->value.strln);
+    buffer[e->value.strln] = 0;
+    return get_symbol2(buffer);
+  }
+  char * namebuf =  expr_to_string(*e);
+  symbol * s = get_symbol2(namebuf);
+  dealloc(namebuf);
+  return s;
 }
 
 expr * symbol2expr(symbol * s){

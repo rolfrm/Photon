@@ -197,11 +197,11 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
   
   symbol name;
   if(name_expr.type == VALUE){
+    name = expr_symbol(name_expr);
+  }else{
     char * namebuf =  expr_to_string(name_expr);
     name = get_symbol(namebuf);
     dealloc(namebuf);
-  }else{
-    name = expr_symbol(name_expr);
   }
 
   ASSERT(name.id != 0);
