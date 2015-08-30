@@ -1,6 +1,6 @@
 // requires lisp_parser.h, lisp_types.h, stdbool.h
 
-symbol vexpr_symbol(value_expr e);
+symbol vexpr_symbol(expr e);
 symbol expr_symbol(expr e);
 expr symbol_expr(char * name);
 expr symbol_expr2(symbol name);

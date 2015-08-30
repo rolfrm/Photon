@@ -27,14 +27,14 @@ bool is_keyword_char(char c){
   return !is_endexpr(c);
 }
 
-char * parse_symbol(char * code, value_expr * sym){
+char * parse_symbol(char * code, expr * sym){
   char * end = take_while(code,is_keyword_char);
   if(end == code)
     return NULL;
   if(!is_endexpr(*end))
     return NULL;
-  sym->value = code;
-  sym->strln = (int) (end - code);
+  sym->value = fmtstr("%.*s",end - code, code);
+  sym->type = VALUE;
   return end;
 }
 
@@ -53,11 +53,11 @@ char * read_to_end_of_string(char * code){
   return NULL;
 }
 
-char * parse_string(char * code, value_expr * string){
+char * parse_string(char * code, expr * string){
   if(*code != '"') return NULL;
   char * end = read_to_end_of_string(code);
-  string->value = code;
-  string->strln = (int) (end - code);
+  string->value = fmtstr("%.*s",end - code, code);
+  string->type = VALUE;
   return end;
 }
 
@@ -99,7 +99,7 @@ char * parse_single_line_comment(char * code){
   return take_while(code, is_comment) + 1;
 }
 
-char * parse_value(char * code, value_expr * val){
+char * parse_value(char * code, expr * val){
   char * next;
   next = parse_string(code, val);
   if(next != NULL) return next;
@@ -165,14 +165,12 @@ char * parse_expr(char * code, expr * out_expr){
     }
   }
   
-  value_expr value;
+  
   { // parse value.
-    char * next = parse_value(code, &value);
-    if(next != NULL){
-      out_expr->value = value;
-      out_expr->type = VALUE;
+    
+    char * next = parse_value(code, out_expr);
+    if(next != NULL)
       return next;
-    }
   }
   return NULL;
 }
@@ -184,12 +182,13 @@ void delete_expr(expr * expr){
       delete_expr(sexpr.exprs + i);
     }
     dealloc(sexpr.exprs);
+  }else if(expr->type == VALUE){
+    dealloc(expr->value);
   }
 }
 
 void print_expr(expr * expr1){
   void iprint(expr * expr2, int indent){
-    value_expr value = expr2->value;
     sub_expr subexpr = expr2->sub_expr;
     
     switch(expr2->type){
@@ -202,7 +201,7 @@ void print_expr(expr * expr1){
       format(")");
       break;
     case VALUE:
-      format("%.*s",value.strln ,value.value);
+      format("%s", expr2->value);
       break;
     case ERROR:
       logd("(Parser Error)");
@@ -228,8 +227,6 @@ char * lisp_parse(char * code, expr * out_exprs, int * out_exprs_count){
     char * cn = parse_expr(code, &out_expr);
     if(cn == NULL) goto end;
     code = cn;
-    
-    
     out_exprs[expr_cnt++] = out_expr;
     
   }
@@ -281,7 +278,7 @@ char * expr_to_string(expr e){
 
 expr clone_expr2(expr body){
   if(body.type == VALUE){
-    body.value.value = clone(body.value.value,body.value.strln);
+    body.value = clone(body.value,strlen(body.value) + 1);
     return body;
   }
   sub_expr exp = body.sub_expr;

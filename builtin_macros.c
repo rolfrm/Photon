@@ -205,7 +205,7 @@ type_def * var_macro(type_def * expected_type, c_block * block, c_value * val, e
   }
   block_add(block, sblk_expr);
   if(!is_void){
-    type_def * ret = compile_value(expected_type, val, symbol_expr2(tmpvar.var.var.name).value);
+    type_def * ret = compile_value(expected_type, val, symbol_expr2(tmpvar.var.var.name));
     COMPILE_ASSERT(ret == ret_type);
   }else{
     val->type = C_NOTHING;
@@ -634,20 +634,23 @@ type_def * declare_macro_macro(type_def * expected_type, c_block * block, c_valu
   macro->fcn = expr_symbol(function_name);
   macro->rest = cnt == 3;
   define_variable(expr_symbol(macro_name), macro_store_type() , macro, false);
-  return compile_value(expected_type, val, string_expr(read_symbol(macro_name)).value);
+  return compile_value(expected_type, val, string_expr(read_symbol(macro_name)));
 }
 
 // Casts a variable to a new type.
 type_def * cast_macro(type_def * expected_type, c_block * block, c_value * value, 
 		      expr body, expr type){
+
   type_def * cast_to = expr2type(type);
+  COMPILE_ASSERT(cast_to != error_def);
   if(is_check_type_run())
     return cast_to;
   c_value * v = alloc0(sizeof(c_value));
   type_def * td = compile_expr(NULL, block, v, body);
   COMPILE_ASSERT(td != error_def);	  
-  
+
   CHECK_TYPE(expected_type, cast_to);
+
   value->type = C_CAST;
   value->cast.value = v;
   value->cast.type = cast_to;
@@ -677,9 +680,8 @@ type_def * stringify_macro(type_def * expected_type, c_block * block, c_value * 
     }
     ERROR("stringify");
   }
-  symbol sym = get_symbol_fmt("\"%.*s\"", str.value.strln, str.value.value);
   
-  return compile_expr(expected_type, block, value, symbol_expr2(sym));
+  return compile_expr(expected_type, block, value, string_expr(str.value));
 }
 
 type_def * defun_macro(type_def * expected_type, c_block * block, c_value * value, expr * sub_exprs, size_t expr_cnt){
@@ -700,7 +702,7 @@ type_def * defun_macro(type_def * expected_type, c_block * block, c_value * valu
     COMPILE_ERROR("Invalid number of arguments for defun %i, expected 2 or 3", expr_cnt);
   }
 
-  static expr subargs[1] = {{.type = VALUE, .value = {.value = "void", .strln = 4}}};
+  static expr subargs[1] = {{.type = VALUE, .value = "void"}};
   static expr args2 = {.type = EXPR, .sub_expr.cnt = 1, .sub_expr.exprs = subargs};
   expr args;
   expr body;
@@ -1014,21 +1016,16 @@ type_def * addrof_macro(type_def * expected_type, c_block * block, c_value * val
 }
 
 expr * number2expr(i64 num){
-  char * str = fmtstr("%i",num);
   expr e;
   e.type = VALUE;
-  e.value.value = str;
-  e.value.strln = strlen(str);
+  e.value = fmtstr("%i",num);
   return clone(&e, sizeof(e));
 }
 
 i64 expr2number(expr * e){
   ASSERT(e->type == VALUE);
-  char buf[e->value.strln + 1];
-  buf[e->value.strln] = 0;
-  memcpy(buf, e->value.value, e->value.strln);
   char * endptr = NULL;
-  return strtoll(buf, &endptr, 10);
+  return strtoll(e->value, &endptr, 10);
 }
 
 type_def * boolean_operator(char * operator, type_def * expected_type, c_block * blk, c_value * val, expr left, expr right){
@@ -1118,10 +1115,7 @@ type_def * member_macro(type_def * expected_type, c_block * blk, c_value * val, 
 
 symbol * expr2symbol(expr * e){
   if(e->type == VALUE){
-    char buffer[e->value.strln + 1];
-    memcpy(buffer, e->value.value, e->value.strln);
-    buffer[e->value.strln] = 0;
-    return get_symbol2(buffer);
+    return get_symbol2(e->value);
   }
   char * namebuf =  expr_to_string(*e);
   symbol * s = get_symbol2(namebuf);
@@ -1132,8 +1126,7 @@ symbol * expr2symbol(expr * e){
 expr * symbol2expr(symbol * s){
   expr * out = alloc(sizeof(expr));
   out->type = VALUE;
-  out->value.value = symbol_name(*s);
-  out->value.strln = strlen(out->value.value);
+  out->value = symbol_name(*s);
   return out;
 }
 

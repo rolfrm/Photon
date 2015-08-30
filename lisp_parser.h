@@ -5,11 +5,6 @@ typedef enum{
   ERROR
 }expr_type;
 
-typedef struct{
-  char * value;
-  size_t strln;
-}value_expr;
-
 typedef struct _expr expr;
 
 typedef struct{
@@ -21,7 +16,7 @@ struct _expr{
   expr_type type;
   union{
     sub_expr sub_expr;
-    value_expr value;
+    char * value;
   };
 };
 

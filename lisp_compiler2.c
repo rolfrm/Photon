@@ -21,13 +21,15 @@ var_def * get_any_variable(symbol s){
 #include <stdbool.h>
 #include <ctype.h>
 
-type_def * compile_value(type_def * expected_type, c_value * val, value_expr e){
+type_def * compile_value(type_def * expected_type, c_value * val, expr e){
+  ASSERT(e.type == VALUE);
   val->type = C_INLINE_VALUE;
   var_def * vdef = NULL;
-  if(e.strln > 0 && e.value[0] == '\"')
+  if(e.value[0] == '\"')
     {
       CHECK_TYPE(expected_type, char_ptr_def);
-      char * chr = fmtstr("%.*s",e.strln-2,e.value + 1);
+      int len = strlen(e.value);
+      char * chr = fmtstr("%.*s",len-2,e.value + 1);
       symbol s = get_symbol(chr);
       dealloc(chr);
       chr = symbol_name(s);
@@ -41,7 +43,7 @@ type_def * compile_value(type_def * expected_type, c_value * val, value_expr e){
     }
   bool all_alphanum = true;
   char * number_test = e.value;
-  u64 number_len = e.strln;
+  u64 number_len = strlen(e.value);
   if(number_len > 0 && number_test[0] == '-'){
     number_len -= 1;
     number_test += 1;
@@ -69,7 +71,7 @@ type_def * compile_value(type_def * expected_type, c_value * val, value_expr e){
     }
     bool isfloat = dots == 1;
     if(fits_hex || fits_alphas){
-      val->raw.value = fmtstr("%.*s",e.strln,e.value);
+      val->raw.value = fmtstr("%s", e.value);
       if(expected_type != NULL){
 	if( !isfloat && is_integer_type(expected_type)){
 	  val->raw.type = expected_type;
@@ -77,7 +79,8 @@ type_def * compile_value(type_def * expected_type, c_value * val, value_expr e){
 	  val->raw.type = expected_type;
 	}else{
 	  if(!is_check_type_run()){
-	    loge("Unable to convert %s literal '%.*s' to '", isfloat? "float" : "integer", e.strln,e.value);
+	    loge("Unable to convert %s literal '%s' to '", 
+		 isfloat? "float" : "integer", e.value);
 	    print_decl(expected_type, get_symbol("b")); logd("'.\n");
 	  }
 	  COMPILE_ERROR("Unable to convert literal.");
@@ -106,9 +109,8 @@ type_def * expr2type(expr typexpr){
     COMPILE_ASSERT(sexp.cnt > 0);
     expr kind = sexp.exprs[0];
     COMPILE_ASSERT(kind.type == VALUE);
-    value_expr vkind = kind.value;
 
-    if(strncmp(vkind.value,"fcn",vkind.strln) == 0){
+    if(strcmp(kind.value, "fcn") == 0){
       type_def out;
       out.type = FUNCTION;
       COMPILE_ASSERT(sexp.cnt > 1);
@@ -127,13 +129,13 @@ type_def * expr2type(expr typexpr){
       out.fcn.cnt = array_count(args);
       return type_pool_get(&out);
 
-    }else if (strncmp(vkind.value,"ptr",vkind.strln) == 0){
+    }else if (strcmp(kind.value,"ptr") == 0){
       COMPILE_ASSERT(sexp.cnt == 2);
       type_def out;
       out.type = POINTER;
       out.ptr.inner = expr2type(sexp.exprs[1]);
       return type_pool_get(&out);
-    }else if (strncmp(vkind.value, "struct",vkind.strln) == 0){
+    }else if (strcmp(kind.value, "struct") == 0){
       COMPILE_ASSERT(sexp.cnt >= 2);
       char * namebuf = expr_to_string(sexp.exprs[1]);
       symbol name = get_symbol(namebuf);
@@ -145,7 +147,7 @@ type_def * expr2type(expr typexpr){
 	COMPILE_ASSERT(sub->type == EXPR && sub->sub_expr.cnt == 2);
 	sub_expr sx = sub->sub_expr;
 	COMPILE_ASSERT(sx.exprs[0].type == VALUE);
-	members[i].name = vexpr_symbol(sx.exprs[0].value);
+	members[i].name = get_symbol(sx.exprs[0].value);
 	members[i].type = expr2type(sx.exprs[1]);
 	sub++;
       }
@@ -155,15 +157,15 @@ type_def * expr2type(expr typexpr){
       out.cstruct.cnt = memcnt;
       out.cstruct.name = name;
       return type_pool_get(&out);
-    }else if(strncmp(vkind.value, "opaque-struct", vkind.strln) == 0){
+    }else if(strcmp(kind.value, "opaque-struct") == 0){
       COMPILE_ASSERT(sexp.cnt == 2);
       type_def out;
       out.type = OPAQUE_STRUCT;
       out.cstruct.members = NULL;
       out.cstruct.cnt = 0;
-      out.cstruct.name = vexpr_symbol(sexp.exprs[1].value);
+      out.cstruct.name = get_symbol(sexp.exprs[1].value);
       return type_pool_get(&out);
-    }else if (strncmp(vkind.value, "alias", vkind.strln) == 0){
+    }else if (strcmp(kind.value, "alias") == 0){
       COMPILE_ASSERT(sexp.cnt == 3);
       type_def out;
       out.type = TYPEDEF;
@@ -316,7 +318,7 @@ type_def * compile_expr(type_def * expected_type, c_block * block, c_value * val
     return _compile_expr(expected_type, block, val, &e.sub_expr);
     break;
   case VALUE:
-    return compile_value(expected_type, val,e.value);
+    return compile_value(expected_type, val,e);
     break;
   case ERROR:
     return error_def;

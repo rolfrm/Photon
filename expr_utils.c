@@ -6,22 +6,18 @@
 #include "lisp_compiler.h"
 #include "lisp_std_types.h"
 #include "expr_utils.h"
-symbol vexpr_symbol(value_expr e){
-  char buf[e.strln + 1];
-  buf[e.strln] = 0;
-  memcpy(buf, e.value, e.strln);
-  return get_symbol(buf);
+symbol vexpr_symbol(expr e){
+  return get_symbol(e.value);
 }
 
 symbol expr_symbol(expr e){
-  return vexpr_symbol(e.value);
+  return get_symbol(e.value);
 }
 
 expr symbol_expr(char * name){
   expr e;
   e.type = VALUE;
-  e.value.value = name;
-  e.value.strln = strlen(name);
+  e.value = name;
   return e;
 }
 
@@ -46,5 +42,5 @@ bool is_keyword(expr exp){
 }
 
 char * read_symbol(expr name){
-  return fmtstr("%.*s",name.value.strln, name.value.value);
+  return name.value;
 }
