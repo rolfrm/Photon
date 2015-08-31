@@ -164,10 +164,8 @@ char * parse_expr(char * code, expr * out_expr){
       return next;
     }
   }
-  
-  
-  { // parse value.
     
+  { // parse value.  
     char * next = parse_value(code, out_expr);
     if(next != NULL)
       return next;
@@ -221,16 +219,6 @@ char * lisp_parse(char * code, expr * out_expr){
     }else break;
   }
   return parse_expr(code, out_expr);   
-}
-
-expr lisp_parse1(char * code){
-  expr expr;
-  char * next = code;
-  next = lisp_parse(next, &expr);
-  if(next == NULL){
-    expr.type = ERROR;
-  }
-  return expr;  
 }
 
 char * expr_to_string(expr e){

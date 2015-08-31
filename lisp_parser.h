@@ -1,17 +1,24 @@
 // requires .
 typedef enum{
+  // The expression is a sub-expression.
   EXPR = 5,
+  // The expression is a value (symbol or string)
   VALUE = 6,
+  // Used in case of parser errors.
   ERROR
 }expr_type;
 
 typedef struct _expr expr;
 
+//Sub expression type.
 typedef struct{
+  // Elements. Might be null if cnt == 0.
   expr * exprs;
+  // Number of elements in exprs.
   size_t cnt;  
 }sub_expr;
 
+// Expression type. Can be either a sub expression or value.
 struct _expr{
   expr_type type;
   union{
@@ -30,8 +37,7 @@ void delete_expr(expr * expr);
 // prints an expression tree.
 void print_expr(expr * expr);
 
-// convenience
-expr lisp_parse1(char * code);
+// Clones an expression tree.
 expr * clone_expr(expr * e);
 expr clone_expr2(expr tree);
 char * expr_to_string(expr e);
@@ -39,5 +45,7 @@ char * expr_to_string(expr e);
 bool test_lisp_parser();
 
 // parsing
+// returns true if c is alphanumeric
 bool is_alphanum(char c);
+// returns true if c is a hex character 0-9A-Fa-f.
 int is_hex(char c);
