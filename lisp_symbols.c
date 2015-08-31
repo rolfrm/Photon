@@ -201,67 +201,60 @@ char * get_c_name(symbol s){
 void format_c_name(symbol s){
   format("%s", get_c_name(s));
 }
-/*
-#define EXPR_CHUNK_SIZE 1000;
-expr *** expr_chunks = NULL;
+
+#define EXPR_CHUNK_SIZE 1000
+expr ** expr_chunks = NULL;
 u64 * expr_taken = 0;
 size_t expr_chunk_cnt = 0;
 
-expr *** value_chunks = NULL;
-u64 * values_taken = 0;
-size_t value_chunk_cnt = 0;
-
 expr * get_interned(expr * e){
-  for(size_t i = 0; i < expr_chunks_cnt; i++){
+  for(size_t i = 0; i < expr_chunk_cnt; i++){
     if( e >= expr_chunks[i] && e < (expr_chunks[i] + EXPR_CHUNK_SIZE))
       return expr_chunks[i];
   }
   return NULL;
 }
-
+/*
 expr * intern_expr(expr * e){
   expr * interned = get_interned(e);
   if(interned != NULL)
     return interned;
-  if(e->type == LISP_EXPR){
-    { // check if this expression is already interned.
-      
+  if(e->type == EXPR){
+    { // check if this expression is already interned. 
       if(interned != NULL) 
 	return e;
     }
+    expr * nexprs[e.sub_expr.cnt];
+    for(int i = 0; i < e.sub_expr.cnt; i++){
+      nexprs[i] = intern_expr(e.sub_expr.exprs + i);
+    }
     { // Find similar interned expression and return that
-      expr * nexprs[e.sub_expr.cnt];
-      for(int i = 0; i < e.sub_expr.cnt; i++){
-	nexprs[i] = intern_expr(e.sub_expr.exprs[i]);
-      }
       for(size_t chunk_it = 0; chunk_it < expr_chunk_cnt; chunk_it++){
 	u64 s = expr_taken[chunk_it] - array_count(nexprs);
-	expr ** chunk = expr_chunks[chunk_it];
+	expr * chunk = expr_chunks[chunk_it];
 	for(size_t i = 0; i < s; i++){
-	  for(size_t j = 0; j< array_count(nexprs);j++){
-	    expr e2 = chunk[i + j];
-	    if(e2.type == nexprs[j].type){
-	      if(e2.payload != nexprs[j].payload){
+	  expr * e2 = chunk + i;
+	  if(e2->sub_expr.cnt == e->sub_expr.cnt)
+	    for(size_t j = 0; j< array_count(nexprs);j++){
+	      if(e2->sub_expr.exprs[j].payload != nexprs[j]->payload){
 		goto next_item;
 	      }
 	    }
+	  return e2;
 	  }
-	}
-	expr out;
-	out.type = LISP_EXPR;
-	out.sub_expr.exprs = chunk + i + j;
-	out.sub_expr.cnt = e.sub_expr.cnt;
-	  return out;
-	next_item:
-	  continue;
-
+      next_item:
+	continue;
       }
     }
     { // Allocate new interned expression
-
+      if(expr_chunk_cnt == 0 || expr_taken[expr_chunk_cnt - 1] == EXPR_CHUNK_SIZE){
+	list_add((void **) &expr_chunks, &expr_chunk_cnt
+      }
+      
+      expr * en = expr_chunks
     }
     
-  }else if(e->type == LISP_VALUE){
+  }else if(e->type == VALUE){
       symbol s = get_symbol(e.value);
       // Find similar interned symbol
     return out;
@@ -270,7 +263,6 @@ expr * intern_expr(expr * e){
   expr er;
   return er;
 }
-
 */
 
 bool test_get_cname(){

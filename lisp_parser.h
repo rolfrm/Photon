@@ -24,6 +24,11 @@ struct _expr{
   union{
     sub_expr sub_expr;
     char * value;
+    struct{
+      expr * exprs;
+      size_t cnt;
+    };
+    void * payload;
   };
 };
 
