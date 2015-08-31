@@ -90,6 +90,7 @@ int is_hex(char chr){
     return 0;
   }
 }
+
 char * parse_single_line_comment(char * code){
   bool is_comment(char c){
     return c != '\n';
@@ -107,8 +108,6 @@ char * parse_value(char * code, expr * val){
   if(next != NULL) return next;
   return NULL;
 }
-char * parse_expr(char * code, expr * out_expr);
-
 
 char * parse_subexpr(char * code, sub_expr * subexpr){
   expr exprs[100];
@@ -133,14 +132,10 @@ char * parse_subexpr(char * code, sub_expr * subexpr){
     subexpr->exprs = clone(exprs,sizeof(expr) * len);
     subexpr->cnt = len;
     return code + 1;
-
   }  
   
   expr e;
-  
-    
-  code = parse_expr(code, &e);
-  
+  code = lisp_parse(code, &e);
   if(code == NULL){
     subexpr->cnt = 0;
     return NULL;
@@ -153,8 +148,14 @@ char * parse_subexpr(char * code, sub_expr * subexpr){
  
 }
 
-char * parse_expr(char * code, expr * out_expr){
-  code = take_while(code,is_whitespace);
+char * lisp_parse(char * code, expr * out_expr){
+  while(true){
+    code = take_while(code, is_whitespace);
+    char * commentskip = parse_single_line_comment(code);
+    if(commentskip != NULL){
+      code = commentskip;
+    }else break;
+  }
   {// parse subexpr.
     sub_expr subexpr;
     char * next = parse_subexpr(code,&subexpr);
@@ -207,18 +208,6 @@ void print_expr(expr * expr1){
     }
   }
   iprint(expr1,0);
-}
-
-
-char * lisp_parse(char * code, expr * out_expr){
-  while(true){
-    code = take_while(code, is_whitespace);
-    char * commentskip = parse_single_line_comment(code);
-    if(commentskip != NULL){
-      code = commentskip;
-    }else break;
-  }
-  return parse_expr(code, out_expr);   
 }
 
 char * expr_to_string(expr e){
