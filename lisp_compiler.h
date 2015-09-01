@@ -3,7 +3,7 @@
 // variable definition
 typedef struct _var_def{
   // Name of the variable
-  symbol name;
+  expr * name;
   // Type of the variable
   type_def * type;
   // Pointer to the variable data.
@@ -81,24 +81,26 @@ void compiler_reg_type(compiler_state *c, symbol name, type_def * t);
 void compiler_load_types(compiler_state *);
 
 // returns the global variable named s. Returns NULL if it does not exist.
-var_def * get_global(symbol s);
+var_def * get_global(expr * s);
 
 // Finds a variable on the stack. Data will usually be NULL for these.
-var_def * get_stack_variable(symbol name);
+var_def * get_stack_variable(expr * name);
 
 // Finds a variable on the stack or globally. It searches the stack from the top and last the global scope.
-var_def * get_any_variable(symbol name);
-void define_variable(symbol name, type_def * type, void * data, bool is_ptr);
+var_def * get_any_variable(expr * name);
+void define_variable(expr * name, type_def * type, void * data, bool is_ptr);
  
 // writes out the dependencies for deps as c code.
 void write_dependencies(type_def ** deps);
 
 // Gets a c-compatible version of the name of s.
 // Warning: returned pointer is only valid untill next time get_c_name is called.
-char * get_c_name(symbol s);
+char * get_c_name(expr * s);
 
 // Prints get_c_name out.
-void format_c_name(symbol s);
+void format_c_name(expr * s);
+
+i64 interned_index(expr * e);
 
 // Gets the type from typexprs.
 type_def * expr2type(expr typexpr);
@@ -136,19 +138,19 @@ type_def * expand_macro(type_def * expected_type, c_block * block, c_value * val
 extern const symbol symbol_empty;
 
 // Interns the string 'name' as a new symbol.
-symbol  get_symbol(char * name);
+expr * get_symbol(char * name);
 
 // Interns the formatted string as a new symbol.
-symbol get_symbol_fmt(char * fmt, ...);
+//symbol get_symbol_fmt(char * fmt, ...);
 
 // Interns the string 'name' as a new symbol.
-symbol * get_symbol2(char * name);
+//symbol * get_symbol2(char * name);
 
 // Returns the interned name of the symbol 's'. The returned char * is guaranteed to be the same pointer if the symbol is the same.
-char * symbol_name(symbol s);
+//char * symbol_name(symbol s);
 
 // Compares two symbols. Returns true if equals.
-bool symbol_cmp(symbol a, symbol b);
+//bool symbol_cmp(symbol a, symbol b);
 
 // Pushes a symbol array on the symbol stack. Used for new scopes. *vars is allowed to change while on the stack.
 void push_symbols(var_def ** vars, size_t * vars_cnt);

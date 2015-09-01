@@ -6,9 +6,9 @@
 #include <iron/types.h>
 #include <iron/log.h>
 #include <iron/mem.h>
+#include "lisp_parser.h"
 #include "lisp_types.h"
 #include "c_ast.h"
-#include "lisp_parser.h"
 #include "lisp_compiler.h"
 #include "lisp_std_types.h"
 #include "type_pool.h"
@@ -87,7 +87,7 @@ void load_defs(){
     type_def_kind_def.ctypedef.inner = &type_def_kind_def_inner;
     type_def_kind_def.ctypedef.name = get_symbol("type_def_kind");
     static char * kindnames[] = {"SIMPLE", "FUNCTION", "POINTER", "STRUCT", "UNION", "ENUM"};
-    static symbol kindnames2[array_count(kindnames)];
+    static expr * kindnames2[array_count(kindnames)];
     for(size_t i = 0; i < array_count(kindnames); i++)
       kindnames2[i] = get_symbol(kindnames[i]);
     static i64 kindvalues[] = {SIMPLE, FUNCTION, POINTER, STRUCT, UNION, ENUM};
@@ -114,13 +114,13 @@ void load_defs(){
       static type_def type_def_union;
       static decl umembers[7];
       type_def_union.type = UNION;    
-      type_def_union.cunion.name = symbol_empty;
+      type_def_union.cunion.name = NULL;
       type_def_union.cunion.cnt = array_count(umembers);
       type_def_union.cunion.members = umembers;
       
       members[1].type = &type_def_union;
 
-      members[1].name = symbol_empty;
+      members[1].name = NULL;
 
       {// anon union members
 	

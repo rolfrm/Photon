@@ -30,7 +30,8 @@ char * get_compile_out(compiler_state * compiler){
   return compiler->compile_out_file;
 }
 
-var_def * get_global(symbol name){
+var_def * get_global(expr * name){
+  name = intern_expr(name);
   ASSERT(lisp_current_compiler != NULL);// sanity
   size_t varcnt = lisp_current_compiler->cnt;
   for(size_t i = 0;i < varcnt; i++){
@@ -39,7 +40,7 @@ var_def * get_global(symbol name){
     size_t rest = lisp_current_compiler->used - offset;
     size_t lim = MIN(((size_t)VAR_BLOCK_SIZE), rest);
     for(size_t j = 0; j < lim; j++){
-      if(symbol_cmp(name, vars[j].name))
+      if(name == vars[j].name)
 	return vars + j;
     }
   }
@@ -58,7 +59,7 @@ var_def * new_global(compiler_state * state){
   return state->vars[state->cnt - 1] + offset;
 }
 
-void define_variable(symbol name, type_def * t, void * data, bool is_ptr){
+void define_variable(expr * name, type_def * t, void * data, bool is_ptr){
   t = type_pool_get(t);
   var_def * var = get_global(name);
   if(var == NULL)

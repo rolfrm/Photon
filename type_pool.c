@@ -10,8 +10,8 @@
 #include <iron/fileio.h>
 #include <iron/mem.h>
 #include <iron/array.h>
-#include "lisp_types.h"
 #include "lisp_parser.h"
+#include "lisp_types.h"
 #include "c_ast.h"
 #include "lisp_compiler.h"
 #include "lisp_std_types.h"
@@ -20,7 +20,7 @@ static size_t known_types_cnt[type_def_kind_cnt] = {0};
 static type_def ** known_types[type_def_kind_cnt] = {NULL};
 
 static bool compare_simple(type_def * a, type_def * b){
-  return a->simple.name.id == b->simple.name.id;
+  return a->simple.name == b->simple.name;
 }
 
 static bool compare_pointer(type_def * a, type_def * b){
@@ -28,15 +28,15 @@ static bool compare_pointer(type_def * a, type_def * b){
 }
 
 static bool compare_struct(type_def * a, type_def * b){
-  return a->cstruct.name.id == b->cstruct.name.id;
+  return a->cstruct.name == b->cstruct.name;
 }
 
 static bool compare_enum(type_def * a, type_def * b){
-  return a->cenum.name.id == b->cenum.name.id;
+  return a->cenum.name == b->cenum.name;
 }
 
 static bool compare_typedef(type_def * a, type_def * b){
-  return a->ctypedef.name.id ==  b->ctypedef.name.id;
+  return a->ctypedef.name ==  b->ctypedef.name;
 }
 	  
 static bool compare_function(type_def * a, type_def * b){
@@ -114,7 +114,7 @@ type_def * _type_pool_get(type_def * lookup, bool is_static){
       break;
     case UNION:
     case STRUCT:
-      if(found->cstruct.name.id == symbol_empty.id){
+      if(found->cstruct.name == NULL){
 	anonsym = fmtstr("__anon%i",anon_type_id++);
 	found->cstruct.name = get_symbol(anonsym);
 	dealloc(anonsym);
@@ -147,7 +147,7 @@ void checktypepool(){
   size_t c = known_types_cnt[TYPEDEF];
   type_def ** td = known_types[TYPEDEF];
   for(u32 i = 0; i < c;i++){
-    ASSERT(td[i]->ctypedef.name.id != 0);
+    ASSERT(td[i]->ctypedef.name != NULL);
   }
 }
 	  
@@ -164,7 +164,7 @@ void type_pool_reg_static(type_def * lookup){
 }
 
 
-type_def * _type_pool_simple(symbol s){
+type_def * _type_pool_simple(expr * s){
   type_def_kind valid_kinds[] = {SIMPLE, TYPEDEF, STRUCT, UNION, ENUM};
   for(size_t j = 0; j < array_count(valid_kinds); j++){
     size_t c = known_types_cnt[valid_kinds[j]];
@@ -172,21 +172,21 @@ type_def * _type_pool_simple(symbol s){
     switch(valid_kinds[j]){
     case SIMPLE:
       for(size_t i = 0; i < c; i++)
-	if(td[i]->simple.name.id == s.id) return td[i];
+	if(td[i]->simple.name == s) return td[i];
       break;
     case TYPEDEF:
       for(size_t i = 0; i < c; i++)     
-	if(td[i]->ctypedef.name.id == s.id) return td[i];  
+	if(td[i]->ctypedef.name == s) return td[i];  
       break;
     case OPAQUE_STRUCT:
     case STRUCT:
     case UNION:
       for(size_t i = 0; i < c; i++)
-	if(td[i]->cstruct.name.id == s.id) return td[i];
+	if(td[i]->cstruct.name == s) return td[i];
       break;
     case ENUM:
       for(size_t i = 0; i < c; i++)
-	if(td[i]->cenum.name.id == s.id) return td[i];
+	if(td[i]->cenum.name == s) return td[i];
       break;
     case POINTER:
     case FUNCTION:
@@ -199,7 +199,7 @@ type_def * _type_pool_simple(symbol s){
   return NULL;
 }
 
-type_def * type_pool_simple(symbol sym){
+type_def * type_pool_simple(expr * sym){
   return _type_pool_simple(sym);
 }
 	  

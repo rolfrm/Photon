@@ -8,7 +8,7 @@ typedef struct{
 }c_block;
 
 struct _c_fcndef{
-  symbol name;
+  expr * name;
   type_def * type;
   symbol * args;
   c_block block;
@@ -61,14 +61,14 @@ typedef struct{
 }c_raw_value;
 
 typedef struct{
-  symbol name;
+  expr * name;
   c_value * args;
   size_t arg_cnt;
   type_def * type;
 }c_function_call;
 
 typedef struct{
-  symbol name;
+  expr * name;
   c_value * item;
   type_def * type;
 }c_member;
@@ -83,7 +83,7 @@ struct _c_value{
   union{
     c_cast cast;
     c_raw_value raw; //inline
-    symbol symbol;
+    expr * symbol;
     c_value * value;//sub expr, address of
     c_function_call call;
     c_operator operator;
@@ -125,10 +125,10 @@ typedef struct{
 }c_root_code;
 
 // Calculates the type and variable dependencies for a c_root_code.
-void c_root_code_dep(type_def ** deps, symbol* vdeps, c_root_code code);
+void c_root_code_dep(type_def ** deps, expr ** vdeps, c_root_code code);
 
 // Calculates the type and variable dependencies for a c code block.
-void block_dep(type_def ** deps, symbol * vdeps, c_block blk);
+void block_dep(type_def ** deps, expr ** vdeps, c_block blk);
 
 // Adds an expression to a block.
 void block_add(c_block * blk, c_expr expr);

@@ -18,17 +18,17 @@ const c_block c_block_empty = {0,0};
 const c_value c_value_empty = {0};
 const c_expr c_expr_block = {.type = C_BLOCK};
 const c_expr c_expr_value = {.type = C_VALUE};
-void add_var_dep(symbol * vdeps, symbol newdep){
+void add_var_dep(expr ** vdeps, expr * newdep){
   ASSERT(symbol_name(newdep) != NULL);
-  for(;!symbol_cmp(*vdeps, symbol_empty); vdeps++){
-    if(symbol_cmp(*vdeps, newdep))
+  for(;*vdeps != NULL; vdeps++){
+    if(*vdeps == newdep)
       return;
   }
   *vdeps = newdep;
 }
 
 #include "type_pool.h"
-void value_dep(type_def ** deps, symbol * vdeps, c_value val){
+void value_dep(type_def ** deps, expr ** vdeps, c_value val){
   var_def * var;
   switch(val.type){
   case C_NOTHING:
@@ -77,7 +77,7 @@ void value_dep(type_def ** deps, symbol * vdeps, c_value val){
   }
 }
 
-void expr_dep(type_def ** deps, symbol * vdeps, c_expr expr){
+void expr_dep(type_def ** deps, expr ** vdeps, c_expr expr){
   switch(expr.type){
   case C_VAR:
     make_dependency_graph(deps, expr.var.var.type);
@@ -97,13 +97,13 @@ void expr_dep(type_def ** deps, symbol * vdeps, c_expr expr){
   }
 }
 
-void block_dep(type_def ** deps, symbol * vdeps, c_block blk){
+void block_dep(type_def ** deps, expr ** vdeps, c_block blk){
   for(size_t i = 0; i < blk.expr_cnt; i++){
     expr_dep(deps, vdeps, blk.exprs[i]);
   }
 }
 
-void c_root_code_dep(type_def ** deps, symbol * vdeps, c_root_code code){
+void c_root_code_dep(type_def ** deps, expr ** vdeps, c_root_code code){
   switch(code.type){
   case C_FUNCTION_DEF:
     make_dependency_graph(deps, code.fcndef.type);

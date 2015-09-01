@@ -11,7 +11,7 @@
 #include "builtin_macros.h"
 #include "builtin_functions.h"
 
-var_def * get_any_variable(symbol s){
+var_def * get_any_variable(expr * s){
   var_def * stackvar = get_stack_variable(s);
   if(stackvar == NULL)
     stackvar = get_global(s);
@@ -30,12 +30,10 @@ type_def * compile_value(type_def * expected_type, c_value * val, expr e){
       CHECK_TYPE(expected_type, char_ptr_def);
       int len = strlen(e.value);
       char * chr = fmtstr("%.*s",len-2,e.value + 1);
-      symbol s = get_symbol(chr);
-      dealloc(chr);
-      chr = symbol_name(s);
+      expr * s = get_symbol(chr);
       char buf[100];
-      sprintf(buf, "__istr_%i", s.id);
-      symbol bufsym = get_symbol(buf);
+      sprintf(buf, "__istr_%i", interned_index(s));
+      expr * bufsym = get_symbol(buf);
       define_variable(bufsym, type_pool_get(char_ptr_def), chr, false);
       val->type = C_SYMBOL;
       val->symbol = bufsym;
@@ -95,10 +93,10 @@ type_def * compile_value(type_def * expected_type, c_value * val, expr e){
     }
   }
   val->type = C_SYMBOL;
-  val->symbol = vexpr_symbol(e);
+  val->symbol = intern_expr(&e);
   vdef = get_any_variable(val->symbol);
   if(vdef == NULL){
-    COMPILE_ERROR("Unknown variable '%s'", symbol_name(val->symbol));
+    COMPILE_ERROR("Unknown variable 's'");//, symbol_name(val->symbol));
   }
   return type_pool_get(vdef->type);
 }
@@ -137,9 +135,7 @@ type_def * expr2type(expr typexpr){
       return type_pool_get(&out);
     }else if (strcmp(kind.value, "struct") == 0){
       COMPILE_ASSERT(sexp.cnt >= 2);
-      char * namebuf = expr_to_string(sexp.exprs[1]);
-      symbol name = get_symbol(namebuf);
-      dealloc(namebuf);
+      expr * name = intern_expr(sexp.exprs + 1);
       size_t memcnt = sexp.cnt - 2;
       expr * sub = sexp.exprs + 2;
       decl members[memcnt];
@@ -147,7 +143,7 @@ type_def * expr2type(expr typexpr){
 	COMPILE_ASSERT(sub->type == EXPR && sub->sub_expr.cnt == 2);
 	sub_expr sx = sub->sub_expr;
 	COMPILE_ASSERT(sx.exprs[0].type == VALUE);
-	members[i].name = get_symbol(sx.exprs[0].value);
+	members[i].name = intern_expr(sx.exprs);
 	members[i].type = expr2type(sx.exprs[1]);
 	sub++;
       }
@@ -163,27 +159,22 @@ type_def * expr2type(expr typexpr){
       out.type = OPAQUE_STRUCT;
       out.cstruct.members = NULL;
       out.cstruct.cnt = 0;
-      out.cstruct.name = get_symbol(sexp.exprs[1].value);
+      out.cstruct.name = intern_expr(sexp.exprs + 1);
       return type_pool_get(&out);
     }else if (strcmp(kind.value, "alias") == 0){
       COMPILE_ASSERT(sexp.cnt == 3);
       type_def out;
       out.type = TYPEDEF;
-      char * namebuf = expr_to_string(sexp.exprs[2]);
-      out.ctypedef.name = get_symbol(namebuf);
-      dealloc(namebuf);
+      out.ctypedef.name = intern_expr(sexp.exprs + 2);
       out.ctypedef.inner = expr2type(sexp.exprs[1]);
       return type_pool_get(&out);
     }
     else{
-      char * namebuf = expr_to_string(typexpr);
-      type_def * td = type_pool_simple(get_symbol(namebuf));
-      dealloc(namebuf);
-      return td;
+      return type_pool_simple(intern_expr(&typexpr));
     }
   }else{
-    type_def * td = type_pool_simple(expr_symbol(typexpr));
-    if(td != NULL && td != error_def) return td;
+    type_def * td = type_pool_simple(intern_expr(&typexpr));
+    if(td != error_def) return td;
   }
   loge("Unable to understand type: ");
   print_expr(&typexpr);
@@ -193,25 +184,16 @@ type_def * expr2type(expr typexpr){
 
 type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * value, sub_expr * se){
   COMPILE_ASSERT(se->cnt > 0);
-  expr name_expr = se->exprs[0];  
   expr * args = se->exprs + 1;
   i64 argcnt = se->cnt - 1;
   
-  symbol name;
-  if(name_expr.type == VALUE){
-    name = expr_symbol(name_expr);
-  }else{
-    char * namebuf =  expr_to_string(name_expr);
-    name = get_symbol(namebuf);
-    dealloc(namebuf);
-  }
-
-  ASSERT(name.id != 0);
+  expr * name = intern_expr(se->exprs);
+  ASSERT(name != NULL);
   void * var_data;
   type_def * var_type;
   {
     var_def * fvar = get_any_variable(name);
-    if(fvar == NULL) COMPILE_ERROR("unknown symbol '%s'", symbol_name(name));
+    if(fvar == NULL) COMPILE_ERROR("unknown symbol");// '%s'", symbol_name(name));
     var_data = fvar->data;
     var_type = fvar->type;
   }
@@ -219,8 +201,10 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
   if(var_type == type_pool_get(&cmacro_def_def)){
     cmacro_def * macro = var_data;
 
-    if(macro->arg_cnt != argcnt && macro->arg_cnt != -1)
-      COMPILE_ERROR("Unsupported number of arguments %i for %s",argcnt, symbol_name(name));
+    if(macro->arg_cnt != argcnt && macro->arg_cnt != -1){
+      COMPILE_ERROR("Unsupported number of arguments %i",argcnt); print_expr(name);
+      COMPILE_ERROR("");
+    }
     type_def * ( *macro_fcn)(type_def * ex_type, c_block * block, c_value * val, ...) = macro->fcn;
     type_def * td = NULL;
     switch(macro->arg_cnt){
@@ -269,7 +253,9 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
     type_def * td = var_type->type == POINTER ? var_type->ptr.inner : var_type;
 
     if(td->fcn.cnt != argcnt){
-      COMPILE_ERROR("Too few arguments to function '%s' got %i expected %i.", symbol_name(name), argcnt, td->fcn.cnt);
+      loge("Too few arguments to function ");
+      print_expr(name);
+      COMPILE_ERROR("got %i expected %i.", argcnt, td->fcn.cnt);
     }
     c_value fargs[argcnt];
     memset(fargs,0,sizeof(c_value) * argcnt);
@@ -280,9 +266,9 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
       if(td->fcn.args[i] != farg_types[i]){
 	char buf[10];
 	sprintf(buf, "arg%i", i);
-	symbol fcnsym = get_symbol(buf);
+	expr * fcnsym = get_symbol(buf);
 	err_arg = i;
-	loge("Error at argument %i of call to '%s'.", i, symbol_name(name));
+	loge("Error at argument %i of call to ", i); print_expr(name);loge("\n");
 	logd("\nExpected: ");
 	print_decl(td->fcn.args[i], fcnsym);
 	logd("\nGot     : ");
@@ -293,7 +279,7 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
     }
 
     if(err_arg >= 0)
-      COMPILE_ERROR("Non matching types for function '%s' arg %i\n", symbol_name(name), err_arg);
+      COMPILE_ERROR("Non matching types for function 's' arg %i\n", err_arg);
 
     c_function_call call;
     call.type = td;
@@ -332,7 +318,9 @@ c_root_code compile_lisp_to_eval(expr exp, compile_status * status){
   c_root_code r;
   r.type = C_FUNCTION_DEF;
   r.fcndef.block = c_block_empty;
-  r.fcndef.name = get_symbol_fmt("__eval%i", eval_id);
+  char name[100];
+  sprintf(name, "__eval%i", eval_id);
+  r.fcndef.name = get_symbol(name);
 
   c_expr expr = {.type = C_VALUE};
   type_def * t = compile_expr(NULL, &r.fcndef.block, &expr.value, exp);
@@ -401,13 +389,13 @@ TCCState * mktccs(){
 }
 
 
-void go_write(type_def ** deps, symbol * vdeps, c_root_code * codes, size_t code_cnt){
+void go_write(type_def ** deps, expr ** vdeps, c_root_code * codes, size_t code_cnt){
 
   write_dependencies(deps);
-  for(size_t i = 0; vdeps[i].id != 0; i++){
+  for(size_t i = 0; vdeps[i] != NULL; i++){
     var_def * var = get_global(vdeps[i]);
     if(var == NULL){
-      ERROR("No global variable named '%s'", symbol_name(vdeps[i]));
+      ERROR("No global variable named 's'");//, symbol_name(vdeps[i]));
       continue;
     }
 
@@ -428,22 +416,23 @@ void go_write(type_def ** deps, symbol * vdeps, c_root_code * codes, size_t code
 
 }
 
-void checkvdeps(symbol * vdep){
+void checkvdeps(expr ** vdep){
   int it = 0;
-  while(vdep[it].id != 0){
-    if(symbol_name(*vdep) == NULL){
+  while(vdep[it] != NULL){
+    if(vdep[it] == NULL){
       ERROR("Symbol NULL %i", it);
     }
-    if(type_pool_simple(*vdep) != NULL){
-      ERROR("Name '%s' already used as type. This usecase currently not supported.\n", symbol_name(vdep[it]));
-    }
+    //if(type_pool_simple(*vdep) != NULL){
+    //  logd("Name '");print_expr(vdep[it]);logd("' already used as type.\n");
+    //  ERROR("This usecase currently not supported.\n");
+    //}
     it++;
   }
 }
 
 void * compile_as_c(c_root_code * codes, size_t code_cnt){
   type_def * deps[1000];
-  symbol vdeps[1000];
+  expr * vdeps[1000];
   memset(deps, 0, sizeof(deps));
   memset(vdeps, 0, sizeof(vdeps));
   for(size_t i = 0; i < code_cnt; i++)
@@ -471,7 +460,7 @@ void * compile_as_c(c_root_code * codes, size_t code_cnt){
     append_buffer_to_file(data, datasize,compile_out_path);
   }
   TCCState * tccs = mktccs();
-  for(size_t i = 0; i < array_count(vdeps) && vdeps[i].id != 0; i++){
+  for(size_t i = 0; i < array_count(vdeps) && vdeps[i] != NULL; i++){
     var_def * var = get_global(vdeps[i]);
     ASSERT(var != NULL);
     int fail = 0;
@@ -555,7 +544,7 @@ void print_current_mem(int id){
 }
 var_def * lisp_compile_expr(expr ex, compile_status * optout_status){
   //allocator * trace_alloc = trace_allocator_make();
-  symbol name = {0};
+  expr * name = NULL;
   with_allocator(/*trace_alloc*/ NULL, lambda(void,(){
 	//allocator * prev = current_allocator;
 	//current_allocator = trace_alloc;
@@ -636,7 +625,8 @@ compile_status lisp_run_expr(expr ex){
   }else if(ret == str2type("(ptr symbol)")){
     symbol * (* fcn)() = evaldef->data;
     symbol * s = fcn();
-    logd("'%s\n", symbol_name(*s));
+    UNUSED(s);
+    //logd("'%s\n", symbol_name(*s));
 
   }else if(ret->type == POINTER || ret->type == FUNCTION){
     void * (* fcn)() = evaldef->data;

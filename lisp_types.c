@@ -9,8 +9,8 @@
 #include <iron/test.h>
 #include <iron/fileio.h>
 #include <iron/mem.h>
-#include "lisp_types.h"
 #include "lisp_parser.h"
+#include "lisp_types.h"
 #include "c_ast.h"
 #include "lisp_compiler.h"
 
@@ -122,7 +122,7 @@ void print_min_type(type_def * type){
   }
 }
 
-void print_function_decl(int ptrs, type_def * def, symbol name){
+void print_function_decl(int ptrs, type_def * def, expr * name){
   ASSERT(def->type == FUNCTION);
   print_min_type(def->fcn.ret);
   
@@ -131,7 +131,7 @@ void print_function_decl(int ptrs, type_def * def, symbol name){
     format("*");
   }
   format(" ");
-  if(name.id != 0)
+  if(name != NULL)
     format_c_name(name);
   format(")(");
   for(i64 i = 0; i < def->fcn.cnt; i++){
@@ -169,7 +169,7 @@ void print_cdecl(decl idecl){
       int inner_ptrs;
       type_def * fptr = get_inner_function(def, &inner_ptrs);
       
-      if(idecl.name.id == 0){
+      if(idecl.name == NULL){
 	if(fptr == NULL)
 	  print_min_type(def);
 	else
@@ -195,7 +195,7 @@ void print_cdecl(decl idecl){
   }
 }
 
-void print_decl(type_def * t, symbol name){
+void print_decl(type_def * t, expr * name){
   decl dcl;
   dcl.name = name;
   dcl.type = t;
@@ -219,11 +219,11 @@ void print_def(type_def * type){
     break;
   case STRUCT:
     format("struct ");
-    if(type->cstruct.name.id != 0)
+    if(type->cstruct.name != NULL)
       format_c_name(type->cstruct.name);
     format("{\n");
     for(i64 i = 0; i < type->cstruct.cnt; i++){	
-      if(type->cstruct.members[i].name.id != 0){
+      if(type->cstruct.members[i].name != NULL){
 	print_min_type(type->cstruct.members[i].type);
 	format(" ");
 	format_c_name(type->cstruct.members[i].name);
@@ -240,13 +240,13 @@ void print_def(type_def * type){
     format(" *");
     break;
   case ENUM:
-    format("%s",symbol_name(type->cenum.name));
+    format_c_name(type->cenum.name);
     break;
   case UNION:
     format("union {\n");
     for(i64 i = 0; i < type->cunion.cnt; i++){
       print_def(type->cunion.members[i].type);
-      format(" %s;\n", symbol_name(type->cunion.members[i].name));
+      format(" %s;\n", get_c_name(type->cunion.members[i].name));
     }
     format("};");
     break;
@@ -296,7 +296,7 @@ void _make_dependency_graph(type_def ** defs, type_def * def, bool nested, bool 
       _make_dependency_graph(defs,sdef,true, is_sizeless);
     }	  
     
-    if(def->cunion.name.id != 0 && !nested) check_add();// *defs_it = def;
+    if(def->cunion.name != NULL && !nested) check_add();// *defs_it = def;
     break;
   case STRUCT:
     if(is_sizeless){
@@ -428,7 +428,7 @@ void write_dependencies(type_def ** deps){
 	format("typedef enum {\n");
 	for(int j = 0; j < inner->cenum.cnt; j++){
 	  char * comma = (j !=(inner->cenum.cnt-1) ? "," : "");
-	  format("   %s = %i%s\n", symbol_name(inner->cenum.names[j]), inner->cenum.values[j], comma);
+	  format("   %s = %i%s\n", get_c_name(inner->cenum.names[j]), inner->cenum.values[j], comma);
 	}
 	format("}");
 	format_c_name(t->ctypedef.name);
@@ -482,9 +482,9 @@ bool test_print_c_code(){
     cv1.call.arg_cnt = 1;
     cv1.call.args = &a_sym;
 
-    c_expr expr;
-    expr.type = C_VALUE;
-    expr.value = cv1;
+    c_expr expr0;
+    expr0.type = C_VALUE;
+    expr0.value = cv1;
     
     c_fcndef fundef;
     type_def ftype;
@@ -504,7 +504,7 @@ bool test_print_c_code(){
     ret.type = C_RETURN;
     ret.value = a_sym;
 
-    c_expr exprs2[] = {var, expr, ret};
+    c_expr exprs2[] = {var, expr0, ret};
     
     c_block block;
     block.exprs = exprs2;

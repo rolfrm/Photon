@@ -6,12 +6,12 @@
 #include "lisp_compiler.h"
 #include "lisp_std_types.h"
 #include "expr_utils.h"
-symbol vexpr_symbol(expr e){
-  return get_symbol(e.value);
+expr * vexpr_symbol(expr e){
+  return intern_expr(&e);
 }
 
-symbol expr_symbol(expr e){
-  return get_symbol(e.value);
+expr * expr_symbol(expr e){
+  return intern_expr(&e);
 }
 
 expr symbol_expr(char * name){

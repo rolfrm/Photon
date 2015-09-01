@@ -529,7 +529,7 @@ bool recurse_expr(expr * ex, c_block * block, int id, int * cnt, var_def ** vars
     return true;
   sub_expr exp = ex->sub_expr;
   if(exp.cnt > 0 && is_symbol(exp.exprs[0]) 
-     && expr_symbol(exp.exprs[0]).id == get_symbol("unexpr").id){
+     && expr_symbol(exp.exprs[0]) == get_symbol("unexpr")){
     if(exp.cnt != 2)
       return false;
     
