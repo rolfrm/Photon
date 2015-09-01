@@ -95,18 +95,17 @@ void parse_args(char * argv[], int cnt){
   }
 }
 int main(int argc, char *argv[] ){
-  //  TEST(test_intern_expr);
-  //return 0;
   parse_args(argv, argc);
   logd("Running from %s\n", exec_path);
   if(run_test){
     log("Running tests...\n");
     lisp_current_compiler = lisp_make_compiler();
     set_compile_out(lisp_current_compiler, c_compile_out);
+    TEST(test_intern_expr);
     TEST(test_symbols);
     //TEST(test_lisp_parser);
     TEST(test_type_pool);
-    TEST(test_lisp2c);
+    //TEST(test_lisp2c);
     return 0;
   }
 

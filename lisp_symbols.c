@@ -242,9 +242,7 @@ expr * intern_expr(expr * e){
 	expr * chunk = expr_chunks[chunk_it];
 	for(size_t i = 0; i < s; i++){
 	  expr * e2 = chunk + i;
-	  print_expr(e2);print_expr(e);logd("\n");
 	  if(e2->type == EXPR && e2->sub_expr.cnt == e->sub_expr.cnt){
-
 	    for(size_t j = 0; j< array_count(nexprs);j++){
 	      if(e2->sub_expr.exprs[j].payload != nexprs[j]->payload){
 		goto next_item;
@@ -252,9 +250,10 @@ expr * intern_expr(expr * e){
 	    }
 	    return e2;
 	  }
+	next_item:
+	  continue;
 	}
-      next_item:
-	continue;
+
       }
     }
     { // Allocate new interned expression
@@ -309,13 +308,16 @@ bool test_intern_expr(){
   expr e, ee;
   lisp_parse(lisp_parse("(hello) (hello2)", &e), &ee);
   print_expr(&e);
-  expr * e1 = intern_expr(&e);
-  expr * e2 = intern_expr(&e);
-  expr * e3 = intern_expr(&ee);
-  expr * e4 = intern_expr(&ee);
-  TEST_ASSERT(e1 == e2);
-  TEST_ASSERT(e1 != e3);
-  TEST_ASSERT(e4 == e3);
+  for(int i = 0; i < 1000; i++){
+    expr * e1 = intern_expr(&e);
+    expr * e2 = intern_expr(&e);
+    expr * e3 = intern_expr(&ee);
+    logd("Interning e4\n");
+    expr * e4 = intern_expr(&ee);
+    TEST_ASSERT(e1 == e2);
+    TEST_ASSERT(e1 != e3);
+    TEST_ASSERT(e4 == e3);
+  }
   return TEST_SUCCESS;
 }
 
