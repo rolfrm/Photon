@@ -214,6 +214,14 @@ expr * get_interned(expr * e){
   return NULL;
 }
 
+i64 interned_index(expr * e){
+  for(size_t i = 0; i < expr_chunk_cnt; i++){
+    if( e >= expr_chunks[i] && e < (expr_chunks[i] + EXPR_CHUNK_SIZE))
+      return (i64)i * EXPR_CHUNK_SIZE + ((i64)(e - expr_chunks[i]));
+  }
+  return -1;
+}
+
 expr * alloc_interned(){
   if(expr_chunk_cnt == 0 || expr_taken[expr_chunk_cnt - 1] == EXPR_CHUNK_SIZE){
     void * nptr = alloc0(sizeof(expr) * EXPR_CHUNK_SIZE);
@@ -253,7 +261,6 @@ expr * intern_expr(expr * e){
 	next_item:
 	  continue;
 	}
-
       }
     }
     { // Allocate new interned expression
@@ -305,18 +312,25 @@ bool test_intern_expr1(){
 }
 
 bool test_intern_expr(){
-  expr e, ee;
-  lisp_parse(lisp_parse("(hello) (hello2)", &e), &ee);
+  expr e, ee, eee;
+  lisp_parse(lisp_parse(lisp_parse("(hello a b c) (hello2) hello", &e), &ee), &eee);
   print_expr(&e);
-  for(int i = 0; i < 1000; i++){
+  for(int i = 0; i < 100; i++){
     expr * e1 = intern_expr(&e);
     expr * e2 = intern_expr(&e);
     expr * e3 = intern_expr(&ee);
-    logd("Interning e4\n");
     expr * e4 = intern_expr(&ee);
+    expr * e5 = intern_expr(&eee);
     TEST_ASSERT(e1 == e2);
     TEST_ASSERT(e1 != e3);
     TEST_ASSERT(e4 == e3);
+    i64 n1 = interned_index(e1);
+    i64 n2 = interned_index(e3);
+    TEST_ASSERT(n1 != n2);
+    i64 n3 = interned_index(e2);
+    TEST_ASSERT(n1 == n3);
+    i64 n4 = interned_index(e5);
+    TEST_ASSERT(n4 == 0);
   }
   return TEST_SUCCESS;
 }

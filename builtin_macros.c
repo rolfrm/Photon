@@ -702,7 +702,7 @@ type_def * defun_macro(type_def * expected_type, c_block * block, c_value * valu
     COMPILE_ERROR("Invalid number of arguments for defun %i, expected 2 or 3", expr_cnt);
   }
 
-  static expr subargs[1] = {{.type = VALUE, .value = "void"}};
+  static expr subargs[] = {{.type = VALUE, .value = "void"}};
   static expr args2 = {.type = EXPR, .sub_expr.cnt = 1, .sub_expr.exprs = subargs};
   expr args;
   expr body;
