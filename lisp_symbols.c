@@ -88,7 +88,6 @@ void pop_symbols(){
 }
 
 var_def * get_stack_variable(symbol name){
-
   for(i64 j = stack_count-1; j >= 0; j--){
     symbol_stack ss = symbolstacks[j];
     var_def * vars = *ss.vars;
@@ -214,56 +213,111 @@ expr * get_interned(expr * e){
   }
   return NULL;
 }
-/*
+
+expr * alloc_interned(){
+  if(expr_chunk_cnt == 0 || expr_taken[expr_chunk_cnt - 1] == EXPR_CHUNK_SIZE){
+    void * nptr = alloc0(sizeof(expr) * EXPR_CHUNK_SIZE);
+    list_add((void **) &expr_chunks, &expr_chunk_cnt, &nptr, sizeof(expr *));
+    expr_chunk_cnt -= 1;
+    size_t nv = 0;
+    list_add((void **) &expr_taken, &expr_chunk_cnt, &nv, sizeof(size_t));
+  }
+  return expr_chunks[expr_chunk_cnt - 1] + expr_taken[expr_chunk_cnt - 1]++;
+}
+
 expr * intern_expr(expr * e){
+  // check if this expression is already interned. 
   expr * interned = get_interned(e);
   if(interned != NULL)
     return interned;
   if(e->type == EXPR){
-    { // check if this expression is already interned. 
-      if(interned != NULL) 
-	return e;
-    }
-    expr * nexprs[e.sub_expr.cnt];
-    for(int i = 0; i < e.sub_expr.cnt; i++){
-      nexprs[i] = intern_expr(e.sub_expr.exprs + i);
+    
+    expr * nexprs[e->sub_expr.cnt];
+    for(size_t i = 0; i < e->sub_expr.cnt; i++){
+      nexprs[i] = intern_expr(e->sub_expr.exprs + i);
     }
     { // Find similar interned expression and return that
       for(size_t chunk_it = 0; chunk_it < expr_chunk_cnt; chunk_it++){
-	u64 s = expr_taken[chunk_it] - array_count(nexprs);
+	u64 s = expr_taken[chunk_it];
 	expr * chunk = expr_chunks[chunk_it];
 	for(size_t i = 0; i < s; i++){
 	  expr * e2 = chunk + i;
-	  if(e2->sub_expr.cnt == e->sub_expr.cnt)
+	  print_expr(e2);print_expr(e);logd("\n");
+	  if(e2->type == EXPR && e2->sub_expr.cnt == e->sub_expr.cnt){
+
 	    for(size_t j = 0; j< array_count(nexprs);j++){
 	      if(e2->sub_expr.exprs[j].payload != nexprs[j]->payload){
 		goto next_item;
 	      }
 	    }
-	  return e2;
+	    return e2;
 	  }
+	}
       next_item:
 	continue;
       }
     }
     { // Allocate new interned expression
-      if(expr_chunk_cnt == 0 || expr_taken[expr_chunk_cnt - 1] == EXPR_CHUNK_SIZE){
-	list_add((void **) &expr_chunks, &expr_chunk_cnt
-      }
-      
-      expr * en = expr_chunks
+
+      expr * out = alloc_interned();
+      out->sub_expr.exprs = alloc0(sizeof(expr) * e->sub_expr.cnt);
+      for(size_t i = 0; i < e->sub_expr.cnt; i++)
+	out->sub_expr.exprs[i] = *nexprs[i];
+      out->sub_expr.cnt = e->sub_expr.cnt;
+      out->type = EXPR;
+      return out;
     }
     
   }else if(e->type == VALUE){
-      symbol s = get_symbol(e.value);
+    symbol s = get_symbol(e->value);
+    char * s_str = symbol_name(s);
+    for(size_t chunk_it = 0; chunk_it < expr_chunk_cnt; chunk_it++){
+	u64 size = expr_taken[chunk_it];
+	expr * chunk = expr_chunks[chunk_it];
+	for(size_t i = 0; i < size; i++){
+	  expr * e2 = chunk + i;
+	  if(e2->type == VALUE && e2->value == s_str){
+	    return e2;
+	  }
+	}
+    }
+    
+    expr * out = alloc_interned();
+    out->type = VALUE;
+    out->value = s_str;
       // Find similar interned symbol
     return out;
   }
   UNREACHABLE();
-  expr er;
-  return er;
+  return NULL;
 }
-*/
+
+bool test_intern_expr1(){
+  expr * last = NULL;
+  expr * a = alloc_interned();
+  for(int i = 0; i < 10000; i++){
+    last = a;
+    a = alloc_interned();
+    if(((int)(a - last)) != 1)
+      logd("I: %i %i\n", i, (a - last));
+  }
+  logd("chunk cnt: %i\n", expr_chunk_cnt);
+  return TEST_SUCCESS;
+}
+
+bool test_intern_expr(){
+  expr e, ee;
+  lisp_parse(lisp_parse("(hello) (hello2)", &e), &ee);
+  print_expr(&e);
+  expr * e1 = intern_expr(&e);
+  expr * e2 = intern_expr(&e);
+  expr * e3 = intern_expr(&ee);
+  expr * e4 = intern_expr(&ee);
+  TEST_ASSERT(e1 == e2);
+  TEST_ASSERT(e1 != e3);
+  TEST_ASSERT(e4 == e3);
+  return TEST_SUCCESS;
+}
 
 bool test_get_cname(){
   char * get_c(char * str){return get_c_name(get_symbol(str));};
