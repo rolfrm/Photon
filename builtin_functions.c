@@ -230,6 +230,7 @@ void load_functions(){
   defun("fcn-ret-type", ("(fcn (ptr type_def) (t (ptr type_def)))"), fcn_ret_type);
   defun("fcn-arg-cnt", ("(fcn u64 (t (ptr type_def)))"), fcn_arg_cnt);
   defun("set-printer", ("(fcn void (ptr (ptr symbol)))"), set_printer);
+  defun("intern", "(fcn (ptr expr) (e (ptr expr)))", intern_expr);
   str2type("(alias (opaque-struct _ccdispatch) ccdispatch)");
   defun("timestamp", ("(fcn i64)"), timestamp);
 }

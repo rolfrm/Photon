@@ -155,7 +155,7 @@ void push_symbols(var_def ** vars, size_t * vars_cnt);
 
 // Pops the top stack from the list of symbols.
 void pop_symbols();
-
+expr * intern_expr(expr * e);
 // generates a unique symbol.
 expr * gensym();
 bool is_number_literal(expr ex);
