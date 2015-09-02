@@ -162,8 +162,8 @@ size_t expr_chunk_cnt = 0;
 
 expr * get_interned(expr * e){
   for(size_t i = 0; i < expr_chunk_cnt; i++){
-    if( e >= expr_chunks[i] && e < (expr_chunks[i] + EXPR_CHUNK_SIZE))
-      return expr_chunks[i];
+    if( e >= expr_chunks[i] && e < (expr_chunks[i] + expr_taken[i]))
+      return e;
   }
   return NULL;
 }
@@ -192,6 +192,7 @@ expr * intern_expr(expr * e){
   expr * interned = get_interned(e);
   if(interned != NULL)
     return interned;
+  
   if(e->type == EXPR){
     
     expr * nexprs[e->sub_expr.cnt];
@@ -229,13 +230,12 @@ expr * intern_expr(expr * e){
     }
     
   }else if(e->type == VALUE){
-    char * s_str = e->value;
     for(size_t chunk_it = 0; chunk_it < expr_chunk_cnt; chunk_it++){
 	u64 size = expr_taken[chunk_it];
 	expr * chunk = expr_chunks[chunk_it];
 	for(size_t i = 0; i < size; i++){
 	  expr * e2 = chunk + i;
-	  if(e2->type == VALUE && strcmp(e2->value, s_str) == 0){
+	  if(e2->type == VALUE && strcmp(e2->value, e->value) == 0){
 	    return e2;
 	  }
 	}
@@ -243,7 +243,7 @@ expr * intern_expr(expr * e){
     
     expr * out = alloc_interned();
     out->type = VALUE;
-    out->value = clone(s_str,strlen(s_str) + 1);
+    out->value = clone(e->value,strlen(e->value) + 1);
       // Find similar interned symbol
     return out;
   }

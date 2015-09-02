@@ -188,13 +188,14 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
   COMPILE_ASSERT(se->cnt > 0);
   expr * args = se->exprs + 1;
   i64 argcnt = se->cnt - 1;
-  
   expr * name = intern_expr(se->exprs);
   ASSERT(name != NULL);
   void * var_data;
   type_def * var_type;
   {
     var_def * fvar = get_any_variable(name);
+    ASSERT(fvar->name == name);
+
     if(fvar == NULL) COMPILE_ERROR("unknown symbol");// '%s'", symbol_name(name));
     var_data = fvar->data;
     var_type = fvar->type;
@@ -301,6 +302,7 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
 }
 
 type_def * compile_expr(type_def * expected_type, c_block * block, c_value * val,  expr e ){
+
   switch(e.type){
   case EXPR:
     return _compile_expr(expected_type, block, val, &e.sub_expr);
