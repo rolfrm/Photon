@@ -36,7 +36,6 @@ static bool compare_enum(type_def * a, type_def * b){
 }
 
 static bool compare_typedef(type_def * a, type_def * b){
-  print_expr(a->ctypedef.name); logd(" "); print_expr(b->ctypedef.name); logd(" %i \n", b->ctypedef.name == a->ctypedef.name);
   return a->ctypedef.name ==  b->ctypedef.name;
 }
 	  
@@ -95,7 +94,6 @@ type_def * _type_pool_get(type_def * lookup, bool is_static){
   }
   if(is_static && found)
     return found;
-  logd("Not found..\n");
   static size_t anon_type_id = 0;
   char * anonsym;
   if(found == NULL){
@@ -113,10 +111,6 @@ type_def * _type_pool_get(type_def * lookup, bool is_static){
       break;
     case TYPEDEF:
       found->ctypedef.inner = _type_pool_get(found->ctypedef.inner, is_static);
-      logd("Added %i ", *cnt);print_expr(found->ctypedef.name);logd("\n");
-      //for(size_t i = 0; i < *cnt; i++){
-      //logd("tst ");print_expr((*kind_array[i])->ctypedef.name);logd("\n");
-      //}
       break;
     case UNION:
     case STRUCT:

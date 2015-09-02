@@ -28,8 +28,6 @@ expr * get_symbol_fmt(char * fmt, ...){
   return get_symbol(buf);
 }
 
-
-
 typedef struct _symbol_stack symbol_stack;
 struct _symbol_stack{
   var_def ** vars;
@@ -245,7 +243,7 @@ expr * intern_expr(expr * e){
     
     expr * out = alloc_interned();
     out->type = VALUE;
-    out->value = s_str;
+    out->value = clone(s_str,strlen(s_str) + 1);
       // Find similar interned symbol
     return out;
   }

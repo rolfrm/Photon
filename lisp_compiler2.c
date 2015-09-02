@@ -168,7 +168,6 @@ type_def * expr2type(expr typexpr){
       out.type = TYPEDEF;
       out.ctypedef.name = intern_expr(sexp.exprs + 2);
       out.ctypedef.inner = expr2type(sexp.exprs[1]);
-      logd("THis happens..\n");
       return type_pool_get(&out);
     }
     else{

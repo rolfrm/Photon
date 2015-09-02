@@ -1196,7 +1196,6 @@ void builtin_macros_load(){
   // Macros
   macro_store_type();
   macro_store_type();
-  exit(0);
   define_macro("type", 1, type_macro);
   define_macro("defun", -1, defun_macro);
   define_macro("var", 2, var_macro);
