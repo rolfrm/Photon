@@ -168,6 +168,7 @@ type_def * expr2type(expr typexpr){
       out.type = TYPEDEF;
       out.ctypedef.name = intern_expr(sexp.exprs + 2);
       out.ctypedef.inner = expr2type(sexp.exprs[1]);
+      logd("THis happens..\n");
       return type_pool_get(&out);
     }
     else{
@@ -175,11 +176,12 @@ type_def * expr2type(expr typexpr){
     }
   }else{
     type_def * td = type_pool_simple(intern_expr(&typexpr));
-    if(td != error_def) return td;
+    if(td != error_def)
+      return td;
   }
-  loge("Unable to understand type: ");
+  logd("Unable to understand type: ");
   print_expr(&typexpr);
-  logd("\n");
+  ERROR("\n");
   return error_def;
 }
 
