@@ -102,6 +102,7 @@ type_def * compile_value(type_def * expected_type, c_value * val, expr e){
 }
 
 type_def * expr2type(expr typexpr){
+  typexpr = *intern_expr(&typexpr);
   if(typexpr.type == EXPR){
     sub_expr sexp = typexpr.sub_expr;
     COMPILE_ASSERT(sexp.cnt > 0);
