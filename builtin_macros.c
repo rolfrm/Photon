@@ -31,9 +31,11 @@ type_def * type_macro(type_def * expected_type, c_block * block, c_value * value
   CHECK_TYPE(expected_type, &type_def_ptr_def);
   static int typevarid = 0;
   type_def * t = expr2type(e);
-  symbol varname = get_symbol_fmt("__type_%i",typevarid++);
+  char buf[100];
+  sprintf(buf, "__type_%i", typevarid++);
+  expr * varname = get_symbol(buf);
   define_variable(varname, &type_def_ptr_def, t, false);
-  type_def * rt = compile_expr(NULL, block, value, symbol_expr2(varname));
+  type_def * rt = compile_expr(NULL, block, value, *varname);
   ASSERT(rt == type_pool_get(&type_def_ptr_def));
   return rt;
 }
@@ -47,9 +49,11 @@ expr mk_sub_expr(expr * exprs, size_t cnt){
 }
 
 // checks for conflict in argtypename and argname.
-bool check_decl(symbol name, type_def * type){
+bool check_decl(expr * name, type_def * type){
   if(type == NULL){
-    loge("Type is error, symbol: '%s'\n", symbol_name(name));
+    loge("Type is error, symbol: ");
+    print_expr(name);
+    loge("\n");
     return false;
   }
   type_def * td = type_pool_simple(name);
@@ -59,7 +63,9 @@ bool check_decl(symbol name, type_def * type){
     td2 = td2->ptr.inner;
   }
   if(td == td2){
-    loge("Type/name conflict for variable named '%s'.\n", symbol_name(name));
+    loge("Type/name conflict for variable named");// '%s'.\n", symbol_ame(name));
+    print_expr(name);
+    
     return false;
   }
   return true;
@@ -95,7 +101,7 @@ type_def * var_atom_macro(type_def * expected_type, c_block * block, c_value * v
       COMPILE_ERROR("Invalid var form");
     }
     
-    var.var.name = expr_symbol(var_expr.exprs[0]);
+    var.var.name = intern_expr(var_expr.exprs);
     
     if(!check_decl(var.var.name, var.var.type))
       return error_def;
@@ -155,7 +161,7 @@ type_def * var_macro(type_def * expected_type, c_block * block, c_value * val, e
       COMPILE_ERROR("Invalid var form");
     }
     
-    var.var.name = expr_symbol(var_expr.exprs[0]);
+    var.var.name = intern_expr(var_expr.exprs + 0);
     
     if(!check_decl(var.var.name, var.var.type))
       return error_def;
@@ -179,7 +185,9 @@ type_def * var_macro(type_def * expected_type, c_block * block, c_value * val, e
   if(!is_void){
     static i64 tmpid = 0;
     tmpvar.type = C_VAR;
-    tmpvar.var.var.name = get_symbol_fmt("_tmpvar_%i", tmpid++);
+    char buf[20];
+    sprintf(buf, "_tmpvar_%i", tmpid++);
+    tmpvar.var.var.name = get_symbol(buf);
     tmpvar.var.value = NULL;
     lisp_vars[sexpr.cnt].type = rettype;
     lisp_vars[sexpr.cnt].name = tmpvar.var.var.name;
@@ -193,7 +201,7 @@ type_def * var_macro(type_def * expected_type, c_block * block, c_value * val, e
   set_expr.type = C_VALUE;
   type_def * ret_type = NULL;
   if(!is_void){
-    ret_type = setf_macro(expected_type, &sblk_expr.block, &set_expr.value, symbol_expr2(tmpvar.var.var.name), body);
+    ret_type = setf_macro(expected_type, &sblk_expr.block, &set_expr.value, *tmpvar.var.var.name, body);
     tmpvar.var.var.type = ret_type;
   }else{
     ret_type = compile_expr(NULL, &sblk_expr.block, &set_expr.value, body);
@@ -205,7 +213,7 @@ type_def * var_macro(type_def * expected_type, c_block * block, c_value * val, e
   }
   block_add(block, sblk_expr);
   if(!is_void){
-    type_def * ret = compile_value(expected_type, val, symbol_expr2(tmpvar.var.var.name));
+    type_def * ret = compile_value(expected_type, val, *tmpvar.var.var.name);
     COMPILE_ASSERT(ret == ret_type);
   }else{
     val->type = C_NOTHING;
@@ -220,13 +228,13 @@ type_def * defvar_macro(type_def * expected_type, c_block * block,
 			c_value * val, expr * exprs, size_t cnt){
   COMPILE_ASSERT(cnt == 2 || cnt == 3);
   expr name = exprs[0];
-  COMPILE_ASSERT(is_symbol(name));
-  symbol sym = expr_symbol(name);
+  //COMPILE_ASSERT(is_symbol(name));
+  expr * sym = expr_symbol(name);
   if(!is_check_type_run())
     logd("Defining variable '%s'.\n", symbol_name(sym));
   type_def * t;
 
-  if(is_keyword(exprs[1]) && expr_symbol(exprs[1]).id == get_symbol(":type").id && cnt == 3){
+  if(is_keyword(exprs[1]) && expr_symbol(exprs[1]) == get_symbol(":type") && cnt == 3){
     
     t = expr2type(exprs[2]);
     val->type = C_SYMBOL;
@@ -333,7 +341,7 @@ type_def * progn_macro(type_def * expected_type, c_block * block, c_value * val,
 }
 	  
 typedef struct{
-  symbol fcn;
+  expr * fcn;
   bool rest;
 }macro_store;
 
@@ -433,7 +441,7 @@ expr * expand_macro2(expr * e){
   }
   expr * exprs = e->sub_expr.exprs;
   size_t cnt = e->sub_expr.cnt;
-  symbol name = expr_symbol(exprs[0]);
+  expr * name = intern_expr(exprs + 0);
   var_def * fcn_var = get_any_variable(name);
   return expand_macro_store(NULL, fcn_var->data, exprs + 1, cnt - 1);
 }
@@ -441,11 +449,10 @@ expr * expand_macro2(expr * e){
 type_def * expand_macro(type_def * expected_type, c_block * block, c_value * val, 
 			expr * exprs, size_t cnt){
   COMPILE_ASSERT(cnt > 0);
-  COMPILE_ASSERT(is_symbol(exprs[0]));
-  
+  //COMPILE_ASSERT(is_symbol(exprs[0]));  
   type_def * exprtd = macro_store_type();
 
-  symbol name = expr_symbol(exprs[0]);
+  expr * name = intern_expr(exprs + 0);
   var_def * fcn_var = get_any_variable(name);
   COMPILE_ASSERT(fcn_var != NULL);
   COMPILE_ASSERT(fcn_var->type == exprtd);
@@ -466,12 +473,12 @@ int recurse_count(expr ex){
     return 0;
   sub_expr exp = ex.sub_expr;
   if(exp.cnt > 0 && is_symbol(exp.exprs[0]) 
-     && expr_symbol(exp.exprs[0]).id == get_symbol("unexpr").id){
+     && expr_symbol(exp.exprs[0]) == get_symbol("unexpr")){
     return 1;
   }
   
   if(exp.cnt > 0 && is_symbol(exp.exprs[0]) 
-     && expr_symbol(exp.exprs[0]).id == get_symbol("expr").id){
+     && expr_symbol(exp.exprs[0]) == get_symbol("expr")){
     //ASSERT(exp.cnt == 2);
     return 0;
   }
@@ -487,13 +494,13 @@ expr recurse_expand(expr ex, expr ** exprs, int * cnt){
     return clone_expr2(ex);
   sub_expr exp = ex.sub_expr;
   if(exp.cnt > 0 && is_symbol(exp.exprs[0]) 
-     && expr_symbol(exp.exprs[0]).id == get_symbol("unexpr").id){
+     && expr_symbol(exp.exprs[0]) == get_symbol("unexpr")){
     ASSERT(exp.cnt == 2);
     int idx = *cnt;
     (*cnt)++;
     return clone_expr2(*exprs[idx]);
   }else if(exp.cnt > 0 && is_symbol(exp.exprs[0]) 
-	   && expr_symbol(exp.exprs[0]).id == get_symbol("expr").id){
+	   && expr_symbol(exp.exprs[0]) == get_symbol("expr")){
     return clone_expr2(ex);
   }
   expr sexp[exp.cnt];
@@ -520,7 +527,7 @@ expr * expand_expr(expr * exprs, ...){
   return clone(&_new, sizeof(expr));
 }
 
-symbol get_recurse_sym(int id, int cnt){
+expr * get_recurse_sym(int id, int cnt){
   return get_symbol_fmt("_tmp_%i__%i_", id, cnt);
 }
 
@@ -557,7 +564,7 @@ bool recurse_expr(expr * ex, c_block * block, int id, int * cnt, var_def ** vars
     block_add(block, exp);
     return true;
   }else if(exp.cnt > 0 && is_symbol(exp.exprs[0]) 
-	   && expr_symbol(exp.exprs[0]).id == get_symbol("expr").id){
+	   && expr_symbol(exp.exprs[0]) == get_symbol("expr")){
     return true;
   }else{
     bool ok = true;
@@ -573,8 +580,8 @@ type_def * expr_macro(type_def * expected_type, c_block * block, c_value * val, 
   int id = _id; 
   type_def * exprtd = opaque_expr();	  
   
-  symbol tmp = get_symbol_fmt("_tmp_symbol_%i", id);
-  expr * ex = clone_expr(&body);
+  expr * tmp = get_symbol_fmt("_tmp_symbol_%i", id);
+  expr * ex = intern_expr(&body);
   int cnt = 0;
   var_def * vars = NULL;
   bool ok = recurse_expr(ex, block, id, &cnt, &vars);
@@ -590,17 +597,17 @@ type_def * expr_macro(type_def * expected_type, c_block * block, c_value * val, 
   ftype.fcn.cnt = cnt + 1;
 
   type_def * ftype2 = type_pool_get(&ftype);
-  symbol expandname = get_symbol_fmt("___expand%i", cnt);
+  expr * expandname = get_symbol_fmt("___expand%i", cnt);
   if(get_global(expandname) == NULL)
     {
       define_variable(expandname, ftype2,  expand_expr, true);
     }
 
   expr callexprs[cnt + 2];
-  callexprs[0] = symbol_expr2(expandname);
-  callexprs[1] = symbol_expr2(tmp);
+  callexprs[0] = *expandname;
+  callexprs[1] = *tmp ;
   for(int i = 0; i < cnt; i++)
-    callexprs[i + 2] = symbol_expr2(get_recurse_sym(id, i));
+    callexprs[i + 2] = *get_recurse_sym(id, i);
   expr sexp;
   sexp.type = EXPR;
   sexp.sub_expr.exprs = callexprs;
@@ -715,9 +722,7 @@ type_def * defun_macro(type_def * expected_type, c_block * block, c_value * valu
     body = sub_exprs[2];
   }
   COMPILE_ASSERT(args.type == EXPR || args.sub_expr.cnt > 0);
-  char * namebuf = expr_to_string(sub_exprs[0]);
-  symbol fcnname = get_symbol(namebuf);
-  dealloc(namebuf);
+  expr * fcnname = intern_expr(sub_exprs + 0);
   logd("Defining function '%s'\n", symbol_name(fcnname));  
   c_root_code newfcn_root;
   newfcn_root.type = C_FUNCTION_DEF;
@@ -730,7 +735,7 @@ type_def * defun_macro(type_def * expected_type, c_block * block, c_value * valu
   f->name = fcnname;
   
   type_def * arg_types[args.sub_expr.cnt - 1];
-  symbol arg_names[args.sub_expr.cnt - 1];
+  expr * arg_names[args.sub_expr.cnt - 1];
   f->args = arg_names;
   for(size_t i = 0; i < args.sub_expr.cnt - 1; i++){
     expr arg = args.sub_expr.exprs[i + 1];
@@ -740,7 +745,7 @@ type_def * defun_macro(type_def * expected_type, c_block * block, c_value * valu
     expr namexpr = arg.sub_expr.exprs[0];
     expr typexpr = arg.sub_expr.exprs[1];
     COMPILE_ASSERT(is_symbol(namexpr));
-    arg_names[i] = expr_symbol(namexpr);
+    arg_names[i] = intern_expr(&namexpr);
     arg_types[i] = expr2type(typexpr);
   }
   
@@ -1102,7 +1107,7 @@ type_def * member_macro(type_def * expected_type, c_block * blk, c_value * val, 
   type_def * memtype = NULL;
   for(int i = 0; i < obj_type->cstruct.cnt; i++){
     decl member = obj_type->cstruct.members[i];
-    if(member.name.id == val->member.name.id){
+    if(member.name == val->member.name){
       memtype = member.type;
     }
   }
@@ -1113,22 +1118,22 @@ type_def * member_macro(type_def * expected_type, c_block * blk, c_value * val, 
   return memtype;
 }
 
-symbol * expr2symbol(expr * e){
+/*symbol * expr2symbol(expr * e){
   if(e->type == VALUE){
     return get_symbol2(e->value);
   }
   char * namebuf =  expr_to_string(*e);
-  symbol * s = get_symbol2(namebuf);
+  expr * s = get_symbol(namebuf);
   dealloc(namebuf);
   return s;
-}
+  }*/
 
-expr * symbol2expr(symbol * s){
+/*expr * symbol2expr(symbol * s){
   expr * out = alloc(sizeof(expr));
   out->type = VALUE;
   out->value = symbol_name(*s);
   return out;
-}
+  }*/
 
 bool is_expr_symbol(expr * e){
   return e->type == VALUE;
@@ -1170,8 +1175,7 @@ expr * sub_expr_skip(expr * e){
 
 expr * gensym(){
   static int symid = 0;
-  expr e = symbol_expr2(get_symbol_fmt("__sym_%i", symid++));
-  return (expr *) clone(&e, sizeof(e));
+  return get_symbol_fmt("__sym_%i", symid++);
 }
 
 void free_expr(expr * e){
@@ -1235,8 +1239,8 @@ void builtin_macros_load(){
   opaque_expr();
   defun("number2expr",("(fcn (ptr expr) (a i64))"), number2expr);
   defun("expr2number",("(fcn i64 (a (ptr expr)))"), expr2number);
-  defun("expr2symbol", ("(fcn (ptr symbol) (a (ptr expr)))"), expr2symbol);
-  defun("symbol2expr", ("(fcn (ptr expr) (a (ptr symbol)))"), symbol2expr);
+  //defun("expr2symbol", ("(fcn (ptr symbol) (a (ptr expr)))"), expr2symbol);
+  //defun("symbol2expr", ("(fcn (ptr expr) (a (ptr symbol)))"), symbol2expr);
   defun("is-sub-expr", ("(fcn bool (expr (ptr expr)))"), is_sub_expr);
   defun("sub-expr.cnt", ("(fcn u64 (expr (ptr expr)))"), get_sub_expr_cnt);
   defun("sub-expr.expr", ("(fcn (ptr expr) (expr (ptr expr)) (idx u64))"), get_sub_expr);

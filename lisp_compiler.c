@@ -60,6 +60,7 @@ var_def * new_global(compiler_state * state){
 }
 
 void define_variable(expr * name, type_def * t, void * data, bool is_ptr){
+  name = intern_expr(name);
   t = type_pool_get(t);
   var_def * var = get_global(name);
   if(var == NULL)

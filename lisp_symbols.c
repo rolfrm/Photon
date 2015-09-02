@@ -7,12 +7,28 @@
 #include "lisp_compiler.h"
 #include "lisp_std_types.h"
 #include <ctype.h>
-
+#include <stdarg.h>
 expr * get_symbol(char * name){
   expr e;
   lisp_parse(name, &e);
   return intern_expr(&e);
 }
+
+expr * get_symbol_fmt(char * fmt, ...){
+  ASSERT(fmt != NULL);
+  va_list args;
+  va_start(args, fmt);
+  va_list args2;
+  va_copy(args2, args);
+  size_t size = vsnprintf (NULL, 0, fmt, args2) + 1;
+  va_end(args2);
+  char buf[size];
+  vsprintf (buf, fmt, args);
+  va_end(args);
+  return get_symbol(buf);
+}
+
+
 
 typedef struct _symbol_stack symbol_stack;
 struct _symbol_stack{
@@ -125,6 +141,16 @@ char * get_c_name(expr * s){
   i64 v = interned_index(s);
   sprintf(cname, "S_%i", v);
   return cname;
+}
+
+char backbuffers[1000][3];
+int backbuf = 0;
+char * symbol_name(expr * e){
+  int backbuffer = (backbuf++) % 3;
+  char * out = expr_to_string(*e);
+  strcpy(backbuffers[backbuffer], out);
+  dealloc(out);
+  return backbuffers[backbuffer];
 }
 
 void format_c_name(expr * s){

@@ -153,7 +153,7 @@ void print_value(c_value val){
     break;
   case C_FUNCTION_CALL:
     {
-      ASSERT(val.call.name.id != 0);
+      ASSERT(val.call.name != NULL);
       /*var_def * fvar = get_any_variable(val.call.name);*/
       //ASSERT(fvar != NULL);
       //ASSERT(fvar->name.id == val.call.name.id);

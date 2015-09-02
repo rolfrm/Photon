@@ -41,10 +41,10 @@ expr _type2expr(type_def * type_def){
     return o;
   }
   if(type_def->type == SIMPLE){
-    return symbol_expr2(type_def->simple.name);
+    return *type_def->simple.name;
   }
   if(type_def->type == TYPEDEF){
-    return symbol_expr2(type_def->ctypedef.name);
+    return *type_def->ctypedef.name;
   }
   ERROR("Not supported");
   expr e;
@@ -118,9 +118,9 @@ type_def * type_of(expr * ex){
   return type_of2(NULL, ex);
 }
 
-char * symbol_name2(symbol * sym){
+/*char * symbol_name2(symbol * sym){
   return symbol_name(*sym);
-}
+  }*/
 
 bool is_fcn_type(type_def * t){
   return t->type == FUNCTION;
@@ -150,15 +150,15 @@ void set_printer(symbol * sym){
   printer = sym;
 }
 
-type_def * var_type(symbol * sym){
-  var_def * var = get_any_variable(*sym);
+type_def * var_type(expr * sym){
+  var_def * var = get_any_variable(intern_expr(sym));
   if(var != NULL)
     return var->type;
   return NULL;
 }
 
-void * get_var(symbol * sym){
-  var_def * var = get_global(*sym);
+void * get_var(expr * sym){
+  var_def * var = get_global(intern_expr(sym));
   if(var == NULL) return NULL;
   if(var->is_ptr)
     return var->data;
@@ -203,7 +203,7 @@ void load_functions(){
   defun("eval!", ("(fcn void (expr (ptr expr)))"), eval);
   defun("load", ("(fcn void (file (ptr char)))"), load_builtin);
   defun("builtin-print-str", ("(fcn void (str (ptr char)))"), builtin_print_string);
-  defun("get-symbol", ("(fcn (ptr symbol) (a (ptr char)))"), get_symbol2);
+  //defun("get-symbol", ("(fcn (ptr symbol) (a (ptr char)))"), get_symbol2);
   defun("size-of",("(fcn u64 (type (ptr type_def)))"), size_of);
   defun("defun!", ("(fcn void (name (ptr char)) (t (ptr type_def)) (p (ptr void)))"), defun2);
   str2type("(alias (ptr (opaque-struct _lib)) lib)"); // declare the lib tyoedef
@@ -219,7 +219,7 @@ void load_functions(){
   defun("print-expr", ("(fcn void (theexpr (ptr expr)))"), print_expr);
   defun("ptr-inner", ("(fcn (ptr type_def) (ptr (ptr type_def)))"),  ptr_inner);
   defun("type2expr", ("(fcn (ptr expr) (t (ptr type_def)))"), type2expr);
-  defun("symbol-name", ("(fcn (ptr char) (sym (ptr symbol)))"), symbol_name2);
+  //  defun("symbol-name", ("(fcn (ptr char) (sym (ptr symbol)))"), symbol_name2);
   defun("var-type", ("(fcn (ptr type_def) (variable (ptr symbol)))"), var_type);
   defun("get-var", ("(fcn (ptr void) (sym (ptr symbol)))"), get_var);
   defun("is-fcn-type?", ("(fcn bool (type (ptr type_def)))"), is_fcn_type);

@@ -141,13 +141,13 @@ extern const symbol symbol_empty;
 expr * get_symbol(char * name);
 
 // Interns the formatted string as a new symbol.
-//symbol get_symbol_fmt(char * fmt, ...);
+expr * get_symbol_fmt(char * fmt, ...);
 
 // Interns the string 'name' as a new symbol.
 //symbol * get_symbol2(char * name);
 
 // Returns the interned name of the symbol 's'. The returned char * is guaranteed to be the same pointer if the symbol is the same.
-//char * symbol_name(symbol s);
+char * symbol_name(expr * s);
 
 // Compares two symbols. Returns true if equals.
 //bool symbol_cmp(symbol a, symbol b);

@@ -10,7 +10,7 @@ typedef struct{
 struct _c_fcndef{
   expr * name;
   type_def * type;
-  symbol * args;
+  expr ** args;
   c_block block;
 };
 
@@ -99,7 +99,7 @@ struct _c_expr{
     // return, value
     c_value value;
     c_block block;
-    symbol keyword;
+    expr * keyword;
 
   };
 };

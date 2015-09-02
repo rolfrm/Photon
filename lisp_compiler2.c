@@ -575,7 +575,7 @@ var_def * lisp_compile_expr(expr ex, compile_status * optout_status){
   return get_global(name);
 }
 
-symbol * printer = NULL;
+expr * printer = NULL;
 
 compile_status lisp_run_expr(expr ex){
   static int run_level = 0;
@@ -584,7 +584,7 @@ compile_status lisp_run_expr(expr ex){
   expr _ex;
   if(printer != NULL){
     _ex.type = EXPR;
-    exes[0] = symbol_expr2(*printer);
+    exes[0] = *printer;
     exes[1] = ex;
     _ex.sub_expr.cnt = 2;
     _ex.sub_expr.exprs = exes;
