@@ -227,18 +227,16 @@ type_def * var_macro(type_def * expected_type, c_block * block, c_value * val, e
 type_def * defvar_macro(type_def * expected_type, c_block * block, 
 			c_value * val, expr * exprs, size_t cnt){
   COMPILE_ASSERT(cnt == 2 || cnt == 3);
-  expr name = exprs[0];
-  //COMPILE_ASSERT(is_symbol(name));
-  expr * sym = expr_symbol(name);
+  expr * name = intern_expr(exprs + 0);
   if(!is_check_type_run())
-    logd("Defining variable '%s'.\n", symbol_name(sym));
+    logd("Defining variable '%s'.\n", symbol_name(name));
   type_def * t;
 
   if(is_keyword(exprs[1]) && expr_symbol(exprs[1]) == get_symbol(":type") && cnt == 3){
     
     t = expr2type(exprs[2]);
     val->type = C_SYMBOL;
-    val->symbol = sym;
+    val->symbol = name;
     if(is_check_type_run()){
       return t;
     }
@@ -248,7 +246,7 @@ type_def * defvar_macro(type_def * expected_type, c_block * block,
     c_value * vr = alloc0(sizeof(c_value));
     c_value * vl = alloc0(sizeof(c_value));
     vl->type = C_SYMBOL;
-    vl->symbol = sym;
+    vl->symbol = name;
     t = compile_expr(expected_type, block, vr, body);
     if(is_check_type_run()){
       return t;
@@ -262,7 +260,7 @@ type_def * defvar_macro(type_def * expected_type, c_block * block,
   
   c_root_code var_root;
   var_root.type = C_VAR_DEF;
-  var_root.var.var.name = sym;
+  var_root.var.var.name = name;
   var_root.var.var.type = t;
   var_root.var.value = NULL;
   void * codebuf = compile_as_c(&var_root,1);

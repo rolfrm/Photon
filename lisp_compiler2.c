@@ -184,23 +184,35 @@ type_def * expr2type(expr typexpr){
   return error_def;
 }
 
-type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * value, sub_expr * se){
+type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * value, expr e){
+  sub_expr * se = &e.sub_expr;
   COMPILE_ASSERT(se->cnt > 0);
   expr * args = se->exprs + 1;
   i64 argcnt = se->cnt - 1;
+  {
+    expr * name1 = intern_expr(&e);
+    var_def * var1 = get_any_variable(name1);
+    if(var1 != NULL){
+      value->type = C_SYMBOL;
+      value->symbol = name1;
+      if(var1 == NULL){
+	COMPILE_ERROR("Unknown variable '%s'", symbol_name(value->symbol));
+      }
+      return type_pool_get(var1->type);
+    }
+  }
   expr * name = intern_expr(se->exprs);
   ASSERT(name != NULL);
   void * var_data;
   type_def * var_type;
   {
     var_def * fvar = get_any_variable(name);
+    if(fvar == NULL) COMPILE_ERROR("unknown symbol '%s'", symbol_name(name));
     ASSERT(fvar->name == name);
-
-    if(fvar == NULL) COMPILE_ERROR("unknown symbol");// '%s'", symbol_name(name));
     var_data = fvar->data;
     var_type = fvar->type;
   }
-
+  
   if(var_type == type_pool_get(&cmacro_def_def)){
     cmacro_def * macro = var_data;
 
@@ -305,7 +317,7 @@ type_def * compile_expr(type_def * expected_type, c_block * block, c_value * val
 
   switch(e.type){
   case EXPR:
-    return _compile_expr(expected_type, block, val, &e.sub_expr);
+    return _compile_expr(expected_type, block, val, e);
     break;
   case VALUE:
     return compile_value(expected_type, val,e);
