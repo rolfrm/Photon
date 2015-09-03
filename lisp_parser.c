@@ -187,15 +187,16 @@ void delete_expr(expr * expr){
 }
 
 void print_expr(expr * expr1){
-  void iprint(expr * expr2, int indent){
+  void iprint(expr * expr2){
     sub_expr subexpr = expr2->sub_expr;
     
     switch(expr2->type){
     case EXPR:
       format("(");
       for(size_t i = 0 ; i < subexpr.cnt; i++){
-	iprint(subexpr.exprs + i,indent + 1);
-	if(i != (subexpr.cnt - 1)) logd(" ");
+	iprint(subexpr.exprs + i);
+	if(i != (subexpr.cnt - 1)) 
+	  format(" ");
       }
       format(")");
       break;
@@ -207,7 +208,7 @@ void print_expr(expr * expr1){
       break;
     }
   }
-  iprint(expr1,0);
+  iprint(expr1);
 }
 
 char * expr_to_string(expr e){
