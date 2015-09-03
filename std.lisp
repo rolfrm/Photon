@@ -14,9 +14,9 @@
      (setf libc (load-lib "libc.so"))
      (setf libc (load-lib "msvcrt.dll")))
 
-(defun +quote ((ptr expr) (sstr (ptr expr)))
-  (expr (get-symbol (stringify (unexpr sstr)))))
-(declare-macro quote +quote)
+;(defun +quote ((ptr expr) (sstr (ptr expr)))
+;  (expr (get-symbol (stringify (unexpr sstr)))))
+;(declare-macro quote +quote)
 
 ;; Loading a library
 (defun +load-symbol+ ((ptr expr) (_lib (ptr expr)) (name (ptr expr)) (cname (ptr expr)) (_type (ptr expr)))

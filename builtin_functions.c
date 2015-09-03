@@ -145,8 +145,8 @@ type_def * fcn_ret_type(type_def * td){
   return td->fcn.ret;
 }
 
-extern symbol * printer;
-void set_printer(symbol * sym){
+extern expr * printer;
+void set_printer(expr * sym){
   printer = sym;
 }
 
@@ -154,6 +154,8 @@ type_def * var_type(expr * sym){
   var_def * var = get_any_variable(intern_expr(sym));
   if(var != NULL)
     return var->type;
+  print_expr(sym);
+  logd("Var is null!\n");
   return NULL;
 }
 
@@ -220,7 +222,7 @@ void load_functions(){
   defun("ptr-inner", ("(fcn (ptr type_def) (ptr (ptr type_def)))"),  ptr_inner);
   defun("type2expr", ("(fcn (ptr expr) (t (ptr type_def)))"), type2expr);
   //  defun("symbol-name", ("(fcn (ptr char) (sym (ptr symbol)))"), symbol_name2);
-  defun("var-type", ("(fcn (ptr type_def) (variable (ptr symbol)))"), var_type);
+  defun("var-type", ("(fcn (ptr type_def) (variable (ptr expr)))"), var_type);
   defun("get-var", ("(fcn (ptr void) (sym (ptr expr)))"), get_var);
   defun("is-fcn-type?", ("(fcn bool (type (ptr type_def)))"), is_fcn_type);
   defun("is-ptr-type?", ("(fcn bool (type (ptr type_def)))"), is_ptr_type);
@@ -229,7 +231,7 @@ void load_functions(){
   defun("fcn-arg-types", ("(fcn (ptr (ptr type_def)) (t (ptr type_def)))"), fcn_arg_types);
   defun("fcn-ret-type", ("(fcn (ptr type_def) (t (ptr type_def)))"), fcn_ret_type);
   defun("fcn-arg-cnt", ("(fcn u64 (t (ptr type_def)))"), fcn_arg_cnt);
-  defun("set-printer", ("(fcn void (ptr (ptr symbol)))"), set_printer);
+  defun("set-printer", ("(fcn void (ptr (ptr expr)))"), set_printer);
   defun("intern", "(fcn (ptr expr) (e (ptr expr)))", intern_expr);
   str2type("(alias (opaque-struct _ccdispatch) ccdispatch)");
   defun("timestamp", ("(fcn i64)"), timestamp);

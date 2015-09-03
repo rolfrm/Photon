@@ -108,8 +108,8 @@
 
 ;; (printstr "??
 ;; ")
-(defvar ms (cast (get-var (quote print-rest)) (ptr macro_store)))
- (print-macro-store ms)
+;(defvar ms (cast (get-var (quote print-rest)) (ptr macro_store)))
+; (print-macro-store ms)
 ;; (printstr "
 ;; ??
 ;; ")
