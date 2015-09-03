@@ -10,7 +10,10 @@
 #include <stdarg.h>
 expr * get_symbol(char * name){
   expr e;
-  lisp_parse(name, &e);
+  if(name == NULL || lisp_parse(name, &e) == NULL){
+    e.type = VALUE;
+    e.value = "";
+  }
   return intern_expr(&e);
 }
 
@@ -134,8 +137,20 @@ void base61format(char * str, char * output){
   basea2b(next_glyph, 256, 63, emit_glyph);
 }
 
+bool is_valid_c(char * str){
+  if(isdigit(str[0])) return false;
+  for(;*str != 0; str++){
+    if(!(is_alphanum(*str) || *str =='_'))
+      return false;
+  }
+  return true;
+}
+
 char cname[1000];
 char * get_c_name(expr * s){
+  if(s->type == VALUE && is_valid_c(s->value)){
+    return s->value;
+  }
   i64 v = interned_index(s);
   sprintf(cname, "S_%i", v);
   return cname;
