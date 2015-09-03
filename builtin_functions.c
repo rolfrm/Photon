@@ -158,7 +158,7 @@ type_def * var_type(expr * sym){
 }
 
 void * get_var(expr * sym){
-  var_def * var = get_global(intern_expr(sym));
+  var_def * var = get_global(sym);
   if(var == NULL) return NULL;
   if(var->is_ptr)
     return var->data;
@@ -221,7 +221,7 @@ void load_functions(){
   defun("type2expr", ("(fcn (ptr expr) (t (ptr type_def)))"), type2expr);
   //  defun("symbol-name", ("(fcn (ptr char) (sym (ptr symbol)))"), symbol_name2);
   defun("var-type", ("(fcn (ptr type_def) (variable (ptr symbol)))"), var_type);
-  defun("get-var", ("(fcn (ptr void) (sym (ptr symbol)))"), get_var);
+  defun("get-var", ("(fcn (ptr void) (sym (ptr expr)))"), get_var);
   defun("is-fcn-type?", ("(fcn bool (type (ptr type_def)))"), is_fcn_type);
   defun("is-ptr-type?", ("(fcn bool (type (ptr type_def)))"), is_ptr_type);
   defun("is-integer-type?", ("(fcn bool (type (ptr type_def)))"), is_integer_type);

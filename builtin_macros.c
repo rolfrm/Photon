@@ -633,12 +633,12 @@ type_def * declare_macro_macro(type_def * expected_type, c_block * block, c_valu
   expr macro_name = exprs[0];
   expr function_name = exprs[1];
   ASSERT(is_symbol(macro_name));
-  ASSERT(is_symbol(function_name));
+  //ASSERT(is_symbol(function_name));
   
   macro_store * macro = alloc0(sizeof(macro_store));
-  macro->fcn = expr_symbol(function_name);
+  macro->fcn = intern_expr(&function_name);
   macro->rest = cnt == 3;
-  define_variable(expr_symbol(macro_name), macro_store_type() , macro, false);
+  define_variable(intern_expr(&macro_name), macro_store_type() , macro, false);
   return compile_value(expected_type, val, string_expr(read_symbol(macro_name)));
 }
 

@@ -94,13 +94,13 @@
 	      (memcpy (ptr+ buffer (cast a-len i64)) (cast b (ptr void)) b-len)
 	      (cast buffer (ptr char))))))
 
-(defun symbol-combine ((ptr symbol) (a (ptr symbol)) (b (ptr symbol)))
-  (var ((aname (symbol-name a)) (bname (symbol-name b)))
-       (var ((combined (string-concat aname bname)))
-	    (var ((sym (get-symbol combined)))
-		 (progn
-		   (dealloc (cast combined (ptr void)))
-		   sym)))))
+;; (defun symbol-combine ((ptr symbol) (a (ptr symbol)) (b (ptr symbol)))
+;;   (var ((aname (symbol-name a)) (bname (symbol-name b)))
+;;        (var ((combined (string-concat aname bname)))
+;; 	    (var ((sym (get-symbol combined)))
+;; 		 (progn
+;; 		   (dealloc (cast combined (ptr void)))
+;; 		   sym)))))
 
 
 (defun unfold-body ((ptr expr) (header (ptr expr)) (args (ptr expr)))
@@ -206,8 +206,8 @@
 (defun printstr (void (x (ptr char)))
   (+std:print-str std:file x))
 
-(defun print-symbol (void (x (ptr symbol)))
-  (printstr (symbol-name x)))
+;; (defun print-symbol (void (x (ptr symbol)))
+;;   (printstr (symbol-name x)))
 
 (defun print-hex(void (x i64))
   (std:print-i64 "%x" x))
@@ -265,7 +265,7 @@
 (defun *defmacro ((ptr expr) (name (ptr expr)) (args (ptr expr)) (body (ptr expr)))
   (if (check-type-run?)
       (expr (noop))
-      (let ((defun-name (symbol2expr (symbol-combine (quote **) (expr2symbol name))))
+      (let ((defun-name (expr (macro (unexpr name))))
 	    (arg-cnt (sub-expr.cnt args))
 	    (exprtype (expr (ptr expr)))
 	    (use-rest false)
@@ -278,10 +278,7 @@
 	      (it 0)
 	      (item 0))
 	  (if (and (eq (sub-expr.cnt args) 3)
-		   (and (expr-symbol? (sub-expr.expr args 0))
-			(eq (expr2symbol (sub-expr.expr args 0)) (quote &type))))
-					;(defun name ((ptr expr) (expected-type (ptr type_def)) (ex (ptr expr)))
-					;  @body )
+		   (eq (intern (sub-expr.expr args 0)) (intern (expr &type))))
 	      (expr
 	       (progn
 		 (defun (unexpr defun-name) 
@@ -297,7 +294,7 @@
 		  (let ((arg (sub-expr.expr args (cast it u64))))
 		    (if! (and 
 			  (not (is-sub-expr arg))
-			  (eq (expr2symbol (sub-expr.expr args (cast it u64))) (quote &rest)))
+			  (eq (intern (sub-expr.expr args (cast it u64))) (intern (expr &rest))))
 			 (progn
 			   (setf use-rest true)
 			   (setf item (.- item 1))
@@ -481,7 +478,7 @@
 (defmacro if!!(cond _then _else)
   (progn
     (eval! (expr (defvar if!!-result (unexpr cond))))
-    (var ((cond-r (deref (cast (get-var (quote if!!-result)) (ptr bool)))))
+    (var ((cond-r (deref (cast (get-var (intern (expr if!!-result))) (ptr bool)))))
       (if cond-r
 	  _then
 	  _else))))

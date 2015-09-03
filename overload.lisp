@@ -2,14 +2,14 @@
 (type 
  (alias 
   (struct _overload-info
-	  (sym (ptr symbol))
+	  (sym (ptr expr))
 	  (type (ptr type_def)))
   overload-info))
 
 (type
  (alias
   (struct _overload-macro
-	  (sym (ptr symbol))
+	  (sym (ptr expr))
 	  (arg-cnt i64))
   overload-macro))
 
@@ -88,7 +88,7 @@
       (setf i (.+ i 1)))
     out))
 
-(defun expand-macro2 ((ptr expr) (sym (ptr symbol)) (expr2 (ptr expr)))
+(defun expand-macro2 ((ptr expr) (sym (expr symbol)) (expr2 (ptr expr)))
   (let ((v (cast (get-var sym) (ptr macro_store))))
     (let ((r (expand-macro v expr2)))
       r)))
