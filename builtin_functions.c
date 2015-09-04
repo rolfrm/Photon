@@ -29,31 +29,30 @@ type_def * ptr_inner(type_def * ptr_def){
   return ptr_def->ptr.inner;
 }
 
-expr _type2expr(type_def * type_def){
+expr * type2expr(type_def * ptr_def);
+expr * _type2expr(type_def * type_def){
   if(type_def->type == POINTER){
-    expr subs[2];
+    expr * subs[2];
     subs[0] = symbol_expr("ptr");
-    subs[1] = _type2expr(type_def->ptr.inner);
+    subs[1] = type2expr(type_def->ptr.inner);
     expr o;
     o.type = EXPR;
-    o.sub_expr.exprs = clone(subs,sizeof(subs));
+    o.sub_expr.exprs = subs;
     o.sub_expr.cnt = 2;
-    return o;
+    return intern_expr(&o);
   }
   if(type_def->type == SIMPLE){
-    return *type_def->simple.name;
+    return type_def->simple.name;
   }
   if(type_def->type == TYPEDEF){
-    return *type_def->ctypedef.name;
+    return type_def->ctypedef.name;
   }
   ERROR("Not supported");
-  expr e;
-  return e;
+  return NULL;
 }
 
 expr * type2expr(type_def * ptr_def){
-  expr e = _type2expr(ptr_def);
-  return clone(&e, sizeof(e));
+  return _type2expr(ptr_def);
 }
 
 bool is_linux(){
@@ -99,7 +98,7 @@ void * load_symbol(void * lib, char * name){
 type_def * type_of3(type_def * expected_type, expr * ex){
   c_block blk = c_block_empty;
   c_value val = {.type = C_NOTHING};
-  type_def * td = compile_expr(expected_type, &blk, &val, *ex);
+  type_def * td = compile_expr(expected_type, &blk, &val, ex);
   c_block_delete(blk);
   c_value_delete(val);
   return td;
@@ -168,7 +167,7 @@ void * get_var(expr * sym){
 }
 
 void eval(expr * e){
-  lisp_run_expr(*e);
+  lisp_run_expr(e);
 }
 
 void builtin_print_string(char * str){

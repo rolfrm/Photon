@@ -199,7 +199,7 @@ expr * alloc_interned(){
     size_t nv = 0;
     list_add((void **) &expr_taken, &expr_chunk_cnt, &nv, sizeof(size_t));
   }
-  logd("alloc: %i\n", expr_chunk_cnt * EXPR_CHUNK_SIZE + expr_taken[expr_chunk_cnt - 1] + 1);
+  //logd("alloc: %i\n", expr_chunk_cnt * EXPR_CHUNK_SIZE + expr_taken[expr_chunk_cnt - 1] + 1);
   return expr_chunks[expr_chunk_cnt - 1] + expr_taken[expr_chunk_cnt - 1]++;
 }
 
@@ -207,7 +207,7 @@ expr * intern_expr(expr * e){
   // check if this expression is already interned. 
   expr * interned = get_interned(e);
   if(interned != NULL){
-    logd("found!\n");
+    //logd("found!\n");
     return interned;
   }
   

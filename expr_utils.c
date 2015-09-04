@@ -7,11 +7,11 @@
 #include "lisp_std_types.h"
 #include "expr_utils.h"
 expr * vexpr_symbol(expr * e){
-  return intern_expr(&e);
+  return intern_expr(e);
 }
 
 expr * expr_symbol(expr * e){
-  return intern_expr(&e);
+  return intern_expr(e);
 }
 
 expr * symbol_expr(char * name){
@@ -25,12 +25,12 @@ expr * string_expr(char * name){
   return get_symbol_fmt("\"%s\"",name);
 }
 
-bool is_symbol(expr exp){
-  return exp.type == VALUE;
+bool is_symbol(expr * exp){
+  return exp->type == VALUE;
 }
 
 bool is_string(expr * exp){
-  return exp->type == VALUE && expr->value[0] == '"';
+  return exp->type == VALUE && exp->value[0] == '"';
 }
 
 bool is_keyword(expr * exp){

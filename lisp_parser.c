@@ -195,7 +195,7 @@ void print_expr(expr * expr1){
     case EXPR:
       format("(");
       for(size_t i = 0 ; i < subexpr.cnt; i++){
-	iprint(subexpr.exprs + i);
+	iprint(subexpr.exprs[i]);
 	if(i != (subexpr.cnt - 1)) 
 	  format(" ");
       }

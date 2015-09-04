@@ -10,7 +10,7 @@
 #include "builtin_macros.h"
 #include "expr_utils.h"
 #include <stdlib.h>
-type_def * setf_macro(type_def * expected_type, c_block * block, c_value * val, expr name, expr body);
+type_def * setf_macro(type_def * expected_type, c_block * block, c_value * val, expr * name, expr * body);
 bool lisp_print_errors = true;
 type_def * opaque_expr(){
   static type_def * exprtd = NULL;
@@ -35,12 +35,12 @@ type_def * type_macro(type_def * expected_type, c_block * block, c_value * value
   sprintf(buf, "__type_%i", typevarid++);
   expr * varname = get_symbol(buf);
   define_variable(varname, &type_def_ptr_def, t, false);
-  type_def * rt = compile_expr(NULL, block, value, *varname);
+  type_def * rt = compile_expr(NULL, block, value, varname);
   ASSERT(rt == type_pool_get(&type_def_ptr_def));
   return rt;
 }
 
-expr mk_sub_expr(expr * exprs, size_t cnt){
+expr mk_sub_expr(expr ** exprs, size_t cnt){
   expr e;
   e.type = EXPR;
   e.sub_expr.exprs = exprs;
@@ -83,25 +83,25 @@ type_def * var_atom_macro(type_def * expected_type, c_block * block, c_value * v
   var_def * lisp_vars = alloc(sizeof(var_def) * (sexpr.cnt + 1));
   for(size_t i = 0; i < sexpr.cnt; i++){
     c_value * cval = NULL;
-    COMPILE_ASSERT(sexpr.exprs[i].type == EXPR);
-    sub_expr var_expr = sexpr.exprs[i].sub_expr;
+    COMPILE_ASSERT(sexpr.exprs[i]->type == EXPR);
+    sub_expr var_expr = sexpr.exprs[i]->sub_expr;
     
     c_var var;
     if(var_expr.cnt == 2){
-      COMPILE_ASSERT(var_expr.exprs[0].type == VALUE);
+      COMPILE_ASSERT(var_expr.exprs[0]->type == VALUE);
       cval = alloc0(sizeof(c_value));
       var.var.type = compile_expr(NULL, block, cval, var_expr.exprs[1]);
       
     }else if(var_expr.cnt == 3){
-      COMPILE_ASSERT(var_expr.exprs[0].type == VALUE 
-		     && var_expr.exprs[1].type == VALUE );
+      COMPILE_ASSERT(var_expr.exprs[0]->type == VALUE 
+		     && var_expr.exprs[1]->type == VALUE );
       var.var.type = expr2type(var_expr.exprs[2]);
       COMPILE_ASSERT(var.var.type != error_def);
     }else{
       COMPILE_ERROR("Invalid var form");
     }
     
-    var.var.name = intern_expr(var_expr.exprs);
+    var.var.name = intern_expr(var_expr.exprs[0]);
     
     if(!check_decl(var.var.name, var.var.type))
       return error_def;
@@ -173,7 +173,7 @@ type_def * var_macro(type_def * expected_type, c_block * block, c_value * val, e
     cvars[i].var = var;
   }
   push_symbols(&lisp_vars, &sexpr.cnt);
-  type_def * rettype = type_of(&body);
+  type_def * rettype = type_of(body);
   bool is_void = rettype == &void_def;
   pop_symbols();
   
@@ -201,7 +201,7 @@ type_def * var_macro(type_def * expected_type, c_block * block, c_value * val, e
   set_expr.type = C_VALUE;
   type_def * ret_type = NULL;
   if(!is_void){
-    ret_type = setf_macro(expected_type, &sblk_expr.block, &set_expr.value, *tmpvar.var.var.name, body);
+    ret_type = setf_macro(expected_type, &sblk_expr.block, &set_expr.value, tmpvar.var.var.name, body);
     tmpvar.var.var.type = ret_type;
   }else{
     ret_type = compile_expr(NULL, &sblk_expr.block, &set_expr.value, body);
@@ -213,7 +213,7 @@ type_def * var_macro(type_def * expected_type, c_block * block, c_value * val, e
   }
   block_add(block, sblk_expr);
   if(!is_void){
-    type_def * ret = compile_value(expected_type, val, *tmpvar.var.var.name);
+    type_def * ret = compile_value(expected_type, val, tmpvar.var.var.name);
     COMPILE_ASSERT(ret == ret_type);
   }else{
     val->type = C_NOTHING;
@@ -228,6 +228,7 @@ type_def * defvar_macro(type_def * expected_type, c_block * block,
 			c_value * val, expr ** exprs, size_t cnt){
   COMPILE_ASSERT(cnt == 2 || cnt == 3);
   expr * name = exprs[0];
+  print_expr(name);logd("\n");
   if(!is_check_type_run())
     logd("Defining variable '%s'.\n", symbol_name(name));
   type_def * t;
@@ -242,7 +243,7 @@ type_def * defvar_macro(type_def * expected_type, c_block * block,
     }
   }else{
     COMPILE_ASSERT(cnt == 2);
-    expr body = exprs[1];
+    expr * body = exprs[1];
     c_value * vr = alloc0(sizeof(c_value));
     c_value * vl = alloc0(sizeof(c_value));
     vl->type = C_SYMBOL;
@@ -400,28 +401,29 @@ expr * expand_macro_store(type_def * expected_type, macro_store * ms, expr ** ex
   }else{
     size_t extra_args = cnt - t->fcn.cnt + 1;
     size_t offset = t->fcn.cnt - 1;
-    expr * last_sub_expr;
-    last_sub_expr.type = EXPR;
-    last_sub_expr.sub_expr.exprs = exprs + offset;
-    last_sub_expr.sub_expr.cnt = extra_args;
+    expr lse;
+    expr * last_sub_expr = &lse;
+    last_sub_expr->type = EXPR;
+    last_sub_expr->sub_expr.exprs = exprs + offset;
+    last_sub_expr->sub_expr.cnt = extra_args;
       
     switch(t->fcn.cnt){
     case 1:
-      return d(&last_sub_expr);
+      return d(last_sub_expr);
     case 2:
-      return d(exprs[0], &last_sub_expr);
+      return d(exprs[0], last_sub_expr);
     case 3:
-      return d(exprs[0], exprs[1], &last_sub_expr);
+      return d(exprs[0], exprs[1], last_sub_expr);
     case 4:
-      return d(exprs[0], exprs[1], exprs[2], &last_sub_expr);
+      return d(exprs[0], exprs[1], exprs[2], last_sub_expr);
     case 5:
-      return d(exprs[0], exprs[1], exprs[2], exprs[3], &last_sub_expr);
+      return d(exprs[0], exprs[1], exprs[2], exprs[3], last_sub_expr);
     case 6:
-      return d(exprs[0], exprs[1], exprs[2], exprs[3], exprs[4], &last_sub_expr);
+      return d(exprs[0], exprs[1], exprs[2], exprs[3], exprs[4], last_sub_expr);
     case 7:
-      return d(exprs[0], exprs[1], exprs[2], exprs[3], exprs[4], exprs[5], &last_sub_expr);
+      return d(exprs[0], exprs[1], exprs[2], exprs[3], exprs[4], exprs[5], last_sub_expr);
     case 8:
-      return d(exprs[0], exprs[1], exprs[2], exprs[3], exprs[4], exprs[5], exprs[6], &last_sub_expr);
+      return d(exprs[0], exprs[1], exprs[2], exprs[3], exprs[4], exprs[5], exprs[6], last_sub_expr);
     default:
       ERROR("Unsupported number of macro args");
     }
@@ -437,9 +439,9 @@ expr * expand_macro2(expr * e){
   if(e->type == VALUE){
     return e;
   }
-  expr * exprs = e->sub_expr.exprs;
+  expr ** exprs = e->sub_expr.exprs;
   size_t cnt = e->sub_expr.cnt;
-  expr * name = intern_expr(exprs + 0);
+  expr * name = intern_expr(exprs[0]);
   var_def * fcn_var = get_any_variable(name);
   return expand_macro_store(NULL, fcn_var->data, exprs + 1, cnt - 1);
 }
@@ -453,7 +455,7 @@ type_def * expand_macro(type_def * expected_type, c_block * block, c_value * val
   var_def * fcn_var = get_any_variable(name);
   COMPILE_ASSERT(fcn_var != NULL);
   COMPILE_ASSERT(fcn_var->type == exprtd);
-  expr * outexpr = expand_macro_store(expected_type, fcn_var->data, exprs[1], cnt - 1);
+  expr * outexpr = expand_macro_store(expected_type, fcn_var->data, exprs + 1, cnt - 1);
   // Note: nothing going in or out from expand_macro_store can be deleted. 
   // Anything going in is already deleted later, stuff going out might be. 
   // The rest could be deleted, but user has to mark for deletion.
@@ -482,32 +484,32 @@ int recurse_count(expr ex){
 
   int cnt = 0;
   for(size_t i = 0; i < exp.cnt; i++)
-    cnt += recurse_count(exp.exprs[i]);    
+    cnt += recurse_count(*exp.exprs[i]);    
   return cnt;
 }
 
-expr recurse_expand(expr ex, expr ** exprs, int * cnt){
-  if(ex.type == VALUE)
-    return clone_expr2(ex);
-  sub_expr exp = ex.sub_expr;
+expr * recurse_expand(expr * ex, expr ** exprs, int * cnt){
+  if(ex->type == VALUE)
+    return ex;
+  sub_expr exp = ex->sub_expr;
   if(exp.cnt > 0 && is_symbol(exp.exprs[0]) 
-     && expr_symbol(exp.exprs[0]) == get_symbol("unexpr")){
+     && exp.exprs[0] == get_symbol("unexpr")){
     ASSERT(exp.cnt == 2);
     int idx = *cnt;
     (*cnt)++;
-    return clone_expr2(*exprs[idx]);
+    return exprs[idx];
   }else if(exp.cnt > 0 && is_symbol(exp.exprs[0]) 
-	   && expr_symbol(exp.exprs[0]) == get_symbol("expr")){
-    return clone_expr2(ex);
+	   && (exp.exprs[0] == get_symbol("expr"))){
+    return ex;
   }
-  expr sexp[exp.cnt];
+  expr * sexp[exp.cnt];
   for(size_t i = 0; i < exp.cnt; i++)
     sexp[i] = recurse_expand(exp.exprs[i], exprs, cnt);
   expr new;
   new.type = EXPR;
-  new.sub_expr.exprs = clone(sexp, sizeof(sexp));
+  new.sub_expr.exprs = sexp;
   new.sub_expr.cnt = exp.cnt;
-  return new;
+  return intern_expr(&new);
 }
 #include <stdarg.h>
 expr * expand_expr(expr * exprs, ...){
@@ -520,8 +522,7 @@ expr * expand_expr(expr * exprs, ...){
   for(int i = 0; i < nexprs; i++)
     list[i] =va_arg(vl, expr *);
   va_end(vl);
-  expr _new = recurse_expand(*first, list, &cnt);
-  return clone(&_new, sizeof(expr));
+  return recurse_expand(first, list, &cnt);
 }
 
 expr * get_recurse_sym(int id, int cnt){
@@ -566,7 +567,7 @@ bool recurse_expr(expr * ex, c_block * block, int id, int * cnt, var_def ** vars
   }else{
     bool ok = true;
     for(size_t i = 0; i < exp.cnt; i++)
-      ok = ok && recurse_expr(exp.exprs + i, block, id, cnt, vars);
+      ok = ok && recurse_expr(exp.exprs[i], block, id, cnt, vars);
     return ok;	
   }
 }
@@ -600,18 +601,18 @@ type_def * expr_macro(type_def * expected_type, c_block * block, c_value * val, 
       define_variable(expandname, ftype2,  expand_expr, true);
     }
 
-  expr callexprs[cnt + 2];
-  callexprs[0] = *expandname;
-  callexprs[1] = *tmp ;
+  expr * callexprs[cnt + 2];
+  callexprs[0] = expandname;
+  callexprs[1] = tmp ;
   for(int i = 0; i < cnt; i++)
-    callexprs[i + 2] = *get_recurse_sym(id, i);
+    callexprs[i + 2] = get_recurse_sym(id, i);
   expr sexp;
   sexp.type = EXPR;
   sexp.sub_expr.exprs = callexprs;
   sexp.sub_expr.cnt = cnt + 2;
   size_t vars_cnt = cnt;
   push_symbols(&vars, &vars_cnt);
-  type_def * td = compile_expr(expected_type, block, val,  sexp);
+  type_def * td = compile_expr(expected_type, block, val,  intern_expr(&sexp));
   pop_symbols();
   list_clean((void **) &vars, &vars_cnt);
   return td;
@@ -632,7 +633,7 @@ type_def * declare_macro_macro(type_def * expected_type, c_block * block, c_valu
   expr * macro_name = exprs[0];
   expr * function_name = exprs[1];
   macro_store * macro = alloc0(sizeof(macro_store));
-  macro->fcn = intern_expr(&function_name);
+  macro->fcn = intern_expr(function_name);
   macro->rest = cnt == 3;
   define_variable(intern_expr(macro_name), macro_store_type() , macro, false);
   return compile_value(expected_type, val, string_expr(read_symbol(macro_name)));
@@ -640,7 +641,7 @@ type_def * declare_macro_macro(type_def * expected_type, c_block * block, c_valu
 
 // Casts a variable to a new type.
 type_def * cast_macro(type_def * expected_type, c_block * block, c_value * value, 
-		      expr body, expr type){
+		      expr * body, expr * type){
 
   type_def * cast_to = expr2type(type);
   COMPILE_ASSERT(cast_to != error_def);
@@ -661,7 +662,7 @@ type_def * cast_macro(type_def * expected_type, c_block * block, c_value * value
 // Ensures that the type constraints knows which type this should become.
 // Kind of the opposite of what cast does.
 type_def * the_macro(type_def * expected_type, c_block * block, c_value * value, 
-		      expr body, expr type){
+		      expr * body, expr * type){
   type_def * type_constraint = expr2type(type);
   if(is_check_type_run())
     return type_constraint;
@@ -673,19 +674,19 @@ type_def * the_macro(type_def * expected_type, c_block * block, c_value * value,
   return td;
 }
 
-type_def * stringify_macro(type_def * expected_type, c_block * block, c_value * value, expr str){
+type_def * stringify_macro(type_def * expected_type, c_block * block, c_value * value, expr * str){
   if(!(is_keyword(str) || is_symbol(str))){
     if(!is_check_type_run()){
       loge("Expr cannot be stringifyed");
-      print_expr(&str);
+      print_expr(str);
     }
     ERROR("stringify");
   }
   
-  return compile_expr(expected_type, block, value, string_expr(str.value));
+  return compile_expr(expected_type, block, value, string_expr(str->value));
 }
 
-type_def * defun_macro(type_def * expected_type, c_block * block, c_value * value, expr * sub_exprs, size_t expr_cnt){
+type_def * defun_macro(type_def * expected_type, c_block * block, c_value * value, expr * * sub_exprs, size_t expr_cnt){
   UNUSED(block);
   u64 ts = timestamp();
   CHECK_TYPE(expected_type, &void_def);
@@ -698,25 +699,26 @@ type_def * defun_macro(type_def * expected_type, c_block * block, c_value * valu
   // it then registers the new function as a variable and returns the name of it.
   
   if(!(expr_cnt == 2 || expr_cnt == 3)){
-    print_expr(sub_exprs + 2);
+    print_expr(sub_exprs[2]);
     logd("\n");
     COMPILE_ERROR("Invalid number of arguments for defun %i, expected 2 or 3", expr_cnt);
   }
 
-  static expr subargs[] = {{.type = VALUE, .value = "void"}};
-  static expr args2 = {.type = EXPR, .sub_expr.cnt = 1, .sub_expr.exprs = subargs};
-  expr args;
-  expr body;
-  if(expr_cnt == 2 || sub_exprs[1].sub_expr.cnt == 0){
-    args = args2;
-    if(expr_cnt == 2)
-      body = sub_exprs[1];
-  }else{
+  //static expr subargs[] = {{.type = VALUE, .value = "void"}};
+  //static expr args2 = {.type = EXPR, .sub_expr.cnt = 1, .sub_expr.exprs = subargs};
+  expr * args;
+  expr * body;
+  ASSERT(expr_cnt != 2);
+  // if(expr_cnt == 2 || sub_exprs[1]->sub_expr.cnt == 0){
+  //   args = &args2;
+  //   if(expr_cnt == 2)
+  //     body = sub_exprs[1];
+  // }else{
     args = sub_exprs[1];
     body = sub_exprs[2];
-  }
-  COMPILE_ASSERT(args.type == EXPR || args.sub_expr.cnt > 0);
-  expr * fcnname = intern_expr(sub_exprs + 0);
+    //}
+  COMPILE_ASSERT(args->type == EXPR || args->sub_expr.cnt > 0);
+  expr * fcnname = intern_expr(sub_exprs[0]);
   logd("Defining function '%s'\n", symbol_name(fcnname));  
   c_root_code newfcn_root;
   newfcn_root.type = C_FUNCTION_DEF;
@@ -728,22 +730,22 @@ type_def * defun_macro(type_def * expected_type, c_block * block, c_value * valu
   // ** get function decleration ** //  
   f->name = fcnname;
   
-  type_def * arg_types[args.sub_expr.cnt - 1];
-  expr * arg_names[args.sub_expr.cnt - 1];
+  type_def * arg_types[args->sub_expr.cnt - 1];
+  expr * arg_names[args->sub_expr.cnt - 1];
   f->args = arg_names;
-  for(size_t i = 0; i < args.sub_expr.cnt - 1; i++){
-    expr arg = args.sub_expr.exprs[i + 1];
-    if(arg.type != EXPR || arg.sub_expr.cnt != 2){
+  for(size_t i = 0; i < args->sub_expr.cnt - 1; i++){
+    expr * arg = args->sub_expr.exprs[i + 1];
+    if(arg->type != EXPR || arg->sub_expr.cnt != 2){
       COMPILE_ERROR("Arguments must be of the format (name type). This is the case for %i.", i);
     }
-    expr namexpr = arg.sub_expr.exprs[0];
-    expr typexpr = arg.sub_expr.exprs[1];
+    expr * namexpr = arg->sub_expr.exprs[0];
+    expr * typexpr = arg->sub_expr.exprs[1];
     COMPILE_ASSERT(is_symbol(namexpr));
-    arg_names[i] = intern_expr(&namexpr);
+    arg_names[i] = intern_expr(namexpr);
     arg_types[i] = expr2type(typexpr);
   }
   
-  type_def * ret = expr2type(args.sub_expr.exprs[0]);
+  type_def * ret = expr2type(args->sub_expr.exprs[0]);
   type_def * fcnt = function_type(ret, array_count(arg_names), (type_def **) arg_types);
   f->type = fcnt;
   // ** register arguments as symbols ** //
@@ -795,7 +797,7 @@ type_def * defun_macro(type_def * expected_type, c_block * block, c_value * valu
   return &void_def;
 }
 
-type_def * math_operator(char * operator, type_def * expected_type, c_block * block, c_value * val, expr item1, expr item2){
+type_def * math_operator(char * operator, type_def * expected_type, c_block * block, c_value * val, expr * item1, expr * item2){
   if(expected_type != NULL){
     if(!is_number_type(expected_type)){
       return NULL;
@@ -832,7 +834,7 @@ type_def * math_operator(char * operator, type_def * expected_type, c_block * bl
   if(t1 != t2){
     if(!is_check_type_run()){
       loge("'%s' cannot handle the two different types:\n'", operator);
-      print_expr(&item1); logd(" "); print_expr(&item2); logd("\n");
+      print_expr(item1); logd(" "); print_expr(item2); logd("\n");
       print_decl(t1, get_symbol("t1"));logd("'\n and \n'");
       print_decl(t2, get_symbol("t2"));logd("'\n\n");
     }
@@ -848,39 +850,39 @@ type_def * math_operator(char * operator, type_def * expected_type, c_block * bl
   return t1;
 }
 
-type_def * plus_macro(type_def * expected_type, c_block * block, c_value * val, expr item1, expr item2){
+type_def * plus_macro(type_def * expected_type, c_block * block, c_value * val, expr * item1, expr * item2){
   return math_operator("+", expected_type, block, val, item1, item2);
 }
 
-type_def * minus_macro(type_def * expected_type, c_block * block, c_value * val, expr item1, expr item2){
+type_def * minus_macro(type_def * expected_type, c_block * block, c_value * val, expr * item1, expr * item2){
   return math_operator("-", expected_type, block, val, item1, item2);
 }
 
-type_def * multiply_macro(type_def * expected_type, c_block * block, c_value * val, expr item1, expr item2){
+type_def * multiply_macro(type_def * expected_type, c_block * block, c_value * val, expr * item1, expr * item2){
   return math_operator("*", expected_type, block, val, item1, item2);
 }
 
-type_def * divide_macro(type_def * expected_type, c_block * block, c_value * val, expr item1, expr item2){
+type_def * divide_macro(type_def * expected_type, c_block * block, c_value * val, expr * item1, expr * item2){
   return math_operator("/", expected_type, block, val, item1, item2);
 }
 
-type_def * modulus_macro(type_def * expected_type, c_block * block, c_value * val, expr item1, expr item2){
+type_def * modulus_macro(type_def * expected_type, c_block * block, c_value * val, expr * item1, expr * item2){
   return math_operator("%", expected_type, block, val, item1, item2);
 }
 
 
-type_def * comparison_macro(char * operator, type_def * expected_type, c_block * block, c_value * val, expr item1, expr item2){
+type_def * comparison_macro(char * operator, type_def * expected_type, c_block * block, c_value * val, expr * item1, expr * item2){
   if(is_check_type_run())
     return &bool_def;
   CHECK_TYPE(expected_type, &bool_def);
   c_value * val1 = alloc0(sizeof(c_value));
   c_value * val2 = alloc0(sizeof(c_value));
   c_value * comp = alloc0(sizeof(c_value));
-  type_def * t1 = type_of2(NULL,&item1);//
-  type_def * t2 = type_of2(t1,&item2);//compile_expr(t1, block, val2, item2);
+  type_def * t1 = type_of2(NULL,item1);//
+  type_def * t2 = type_of2(t1,item2);//compile_expr(t1, block, val2, item2);
   if(t2 != t1){
-    t2 = type_of2(NULL,&item2);    
-    t1 = type_of2(t2, &item1);
+    t2 = type_of2(NULL, item2);    
+    t1 = type_of2(t2, item1);
   }
   COMPILE_ASSERT(t1 != error_def && t1 != &void_def);
   if(t1 != t2){
@@ -904,27 +906,27 @@ type_def * comparison_macro(char * operator, type_def * expected_type, c_block *
   return val->cast.type;
 }
 
-type_def * eq_macro(type_def * expected_type, c_block * block, c_value * val, expr item1, expr item2){
+type_def * eq_macro(type_def * expected_type, c_block * block, c_value * val, expr * item1, expr * item2){
   return comparison_macro("==", expected_type, block, val, item1, item2);
 }
 
-type_def * less_than_macro(type_def * expected_type, c_block * block, c_value * val, expr item1, expr item2){
+type_def * less_than_macro(type_def * expected_type, c_block * block, c_value * val, expr * item1, expr * item2){
   return comparison_macro("<", expected_type, block, val, item1, item2);
 }
 
-type_def * bigger_than_macro(type_def * expected_type, c_block * block, c_value * val, expr item1, expr item2){
+type_def * bigger_than_macro(type_def * expected_type, c_block * block, c_value * val, expr * item1, expr * item2){
   return comparison_macro(">", expected_type, block, val, item1, item2);
 }
 
-type_def * leq_macro(type_def * expected_type, c_block * block, c_value * val, expr item1, expr item2){
+type_def * leq_macro(type_def * expected_type, c_block * block, c_value * val, expr * item1, expr * item2){
   return comparison_macro("<=", expected_type, block, val, item1, item2);
 }
 
-type_def * beq_macro(type_def * expected_type, c_block * block, c_value * val, expr item1, expr item2){
+type_def * beq_macro(type_def * expected_type, c_block * block, c_value * val, expr * item1, expr * item2){
   return comparison_macro(">=", expected_type, block, val, item1, item2);
 }
 
-type_def * if_atom_macro(type_def * expected_type, c_block * block, c_value * val, expr cnd, expr then, expr _else){
+type_def * if_atom_macro(type_def * expected_type, c_block * block, c_value * val, expr * cnd, expr * then, expr * _else){
   if(is_check_type_run())
     return &void_def;
   CHECK_TYPE(expected_type, &void_def);
@@ -961,7 +963,7 @@ type_def * if_atom_macro(type_def * expected_type, c_block * block, c_value * va
   return &void_def;
 }
 
-type_def * while_atom_macro(type_def * expected_type, c_block * block, c_value * val, expr cnd, expr body){
+type_def * while_atom_macro(type_def * expected_type, c_block * block, c_value * val, expr * cnd, expr * body){
   if(is_check_type_run())
     return &void_def;
   CHECK_TYPE(expected_type, &void_def);
@@ -989,7 +991,7 @@ type_def * while_atom_macro(type_def * expected_type, c_block * block, c_value *
   return &void_def;
 }
 
-type_def * deref_macro(type_def * expected_type, c_block * block, c_value * val, expr ptr){
+type_def * deref_macro(type_def * expected_type, c_block * block, c_value * val, expr * ptr){
   c_value * _val = new(c_value);
   if(expected_type != NULL)
     expected_type = make_ptr(expected_type);
@@ -1001,7 +1003,7 @@ type_def * deref_macro(type_def * expected_type, c_block * block, c_value * val,
   return td->ptr.inner;
 }
 
-type_def * addrof_macro(type_def * expected_type, c_block * block, c_value * val, expr value){
+type_def * addrof_macro(type_def * expected_type, c_block * block, c_value * val, expr * value){
   if(expected_type != NULL){
     COMPILE_ASSERT(expected_type->type == POINTER);
     expected_type = expected_type->ptr.inner;
@@ -1027,7 +1029,7 @@ i64 expr2number(expr * e){
   return strtoll(e->value, &endptr, 10);
 }
 
-type_def * boolean_operator(char * operator, type_def * expected_type, c_block * blk, c_value * val, expr left, expr right){
+type_def * boolean_operator(char * operator, type_def * expected_type, c_block * blk, c_value * val, expr * left, expr * right){
   c_value left_value, right_value;
   type_def * left_t = compile_expr(expected_type, blk,&left_value,left);
   type_def * right_t = compile_expr(expected_type, blk,&right_value,right);
@@ -1039,7 +1041,7 @@ type_def * boolean_operator(char * operator, type_def * expected_type, c_block *
   return left_t;
 }
 
-type_def * bitwise_operator(char * operator, type_def * expected_type, c_block * blk, c_value * val, expr left, expr right){
+type_def * bitwise_operator(char * operator, type_def * expected_type, c_block * blk, c_value * val, expr * left, expr * right){
   if(expected_type != NULL){
     COMPILE_ASSERT(is_integer_type(expected_type));
     // see math operator
@@ -1057,31 +1059,31 @@ type_def * bitwise_operator(char * operator, type_def * expected_type, c_block *
   return left_t;
 }
 
-type_def * bitor_operator(type_def * expected_type, c_block * blk, c_value * val, expr left, expr right){
+type_def * bitor_operator(type_def * expected_type, c_block * blk, c_value * val, expr * left, expr * right){
   return bitwise_operator("|", expected_type, blk, val, left, right);
 }
 
-type_def * bitand_operator(type_def * expected_type, c_block * blk, c_value * val, expr left, expr right){
+type_def * bitand_operator(type_def * expected_type, c_block * blk, c_value * val, expr * left, expr * right){
   return bitwise_operator("&", expected_type, blk, val, left, right);
 }
 
-type_def * bit_leftshift_operator(type_def * expected_type, c_block * blk, c_value * val, expr left, expr right){
+type_def * bit_leftshift_operator(type_def * expected_type, c_block * blk, c_value * val, expr * left, expr * right){
   return bitwise_operator("<<", expected_type, blk, val, left, right);
 }
 
-type_def * bit_rightshift_operator(type_def * expected_type, c_block * blk, c_value * val, expr left, expr right){
+type_def * bit_rightshift_operator(type_def * expected_type, c_block * blk, c_value * val, expr * left, expr * right){
   return bitwise_operator(">>", expected_type, blk, val, left, right);
 }
 
-type_def * and_macro(type_def * expected_type, c_block * blk, c_value * val, expr left, expr right){
+type_def * and_macro(type_def * expected_type, c_block * blk, c_value * val, expr * left, expr * right){
   return boolean_operator("&&", expected_type, blk, val, left, right);
 }
 
-type_def * or_macro(type_def * expected_type, c_block * blk, c_value * val, expr left, expr right){
+type_def * or_macro(type_def * expected_type, c_block * blk, c_value * val, expr * left, expr * right){
   return boolean_operator("||", expected_type, blk, val, left, right);
 }
 
-type_def * member_macro(type_def * expected_type, c_block * blk, c_value * val, expr object, expr member){
+type_def * member_macro(type_def * expected_type, c_block * blk, c_value * val, expr * object, expr * member){
   UNUSED(expected_type);
   ASSERT(is_symbol(member));
   val->type = C_MEMBER;
@@ -1143,18 +1145,16 @@ u64 get_sub_expr_cnt(expr * e){
 
 expr * get_sub_expr(expr * e, u64 idx){
   if(e->type == EXPR && e->sub_expr.cnt > idx)
-    return e->sub_expr.exprs + idx;
+    return e->sub_expr.exprs[idx];
   return NULL;
 }
 
 expr * make_sub_expr (expr ** exprs, u64 cnt){
-  expr * e = new(expr);
-  e->type = EXPR;
-  e->sub_expr.cnt = cnt;
-  e->sub_expr.exprs = alloc(sizeof(expr) * cnt);
-  for(u32 i = 0; i < cnt ; i++)
-    e->sub_expr.exprs[i] = *exprs[i];//clone_expr2(*exprs[i]);
-  return e;
+  expr e;
+  e.type = EXPR;
+  e.sub_expr.cnt = cnt;
+  e.sub_expr.exprs = exprs;
+  return intern_expr(&e);
 }
 
 expr * sub_expr_skip(expr * e){

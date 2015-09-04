@@ -103,7 +103,7 @@ type_def * compile_value(type_def * expected_type, c_value * val, expr * e){
 
 type_def * expr2type(expr * typexpr){
   typexpr = intern_expr(typexpr);
-  if(typexpr.type == EXPR){
+  if(typexpr->type == EXPR){
     sub_expr sexp = typexpr->sub_expr;
     COMPILE_ASSERT(sexp.cnt > 0);
     expr * kind = sexp.exprs[0];
@@ -118,9 +118,9 @@ type_def * expr2type(expr * typexpr){
       COMPILE_ASSERT(error_def != ret);
       type_def * args[sexp.cnt - 2];
       for(size_t i = 0; i < sexp.cnt - 2; i++){
-	expr arg = sexp.exprs[i + 2];
-	COMPILE_ASSERT(arg.type == EXPR && arg.sub_expr.cnt == 2 && is_symbol(arg.sub_expr.exprs + 0));
-	args[i] = expr2type(arg.sub_expr.exprs[1]);
+	expr * arg = sexp.exprs[i + 2];
+	COMPILE_ASSERT(arg->type == EXPR && arg->sub_expr.cnt == 2 && is_symbol(arg->sub_expr.exprs[0]));
+	args[i] = expr2type(arg->sub_expr.exprs[1]);
 	COMPILE_ASSERT(args[i] != NULL && args[i] != error_def);
       }
       out.fcn.ret = ret;
@@ -136,15 +136,15 @@ type_def * expr2type(expr * typexpr){
       return type_pool_get(&out);
     }else if (strcmp(kind->value, "struct") == 0){
       COMPILE_ASSERT(sexp.cnt >= 2);
-      expr * name = intern_expr(sexp.exprs + 1);
+      expr * name = intern_expr(sexp.exprs[1]);
       size_t memcnt = sexp.cnt - 2;
-      expr * sub = sexp.exprs + 2;
+      expr * sub = sexp.exprs[2];
       decl members[memcnt];
       for(size_t i = 0 ; i < memcnt; i++){
 	COMPILE_ASSERT(sub->type == EXPR && sub->sub_expr.cnt == 2);
 	sub_expr sx = sub->sub_expr;
-	COMPILE_ASSERT(sx.exprs[0].type == VALUE);
-	members[i].name = intern_expr(sx.exprs);
+	COMPILE_ASSERT(sx.exprs[0]->type == VALUE);
+	members[i].name = intern_expr(sx.exprs[0]);
 	members[i].type = expr2type(sx.exprs[1]);
 	sub++;
       }
@@ -160,13 +160,13 @@ type_def * expr2type(expr * typexpr){
       out.type = OPAQUE_STRUCT;
       out.cstruct.members = NULL;
       out.cstruct.cnt = 0;
-      out.cstruct.name = intern_expr(sexp.exprs + 1);
+      out.cstruct.name = intern_expr(sexp.exprs[1]);
       return type_pool_get(&out);
     }else if (strcmp(kind->value, "alias") == 0){
       COMPILE_ASSERT(sexp.cnt == 3);
       type_def out;
       out.type = TYPEDEF;
-      out.ctypedef.name = intern_expr(sexp.exprs + 2);
+      out.ctypedef.name = intern_expr(sexp.exprs[2]);
       out.ctypedef.inner = expr2type(sexp.exprs[1]);
       return type_pool_get(&out);
     }
@@ -187,7 +187,7 @@ type_def * expr2type(expr * typexpr){
 type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * value, expr * e){
   sub_expr * se = &e->sub_expr;
   COMPILE_ASSERT(se->cnt > 0);
-  expr * args = se->exprs[1];
+  expr ** args = se->exprs + 1;
   i64 argcnt = se->cnt - 1;
   {
     expr * name1 = intern_expr(e);
@@ -248,7 +248,7 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
 		      args[3], args[4], args[5]);
       break;
     case -1:
-      td = ((type_def *(*)(type_def * exp, c_block * block, c_value * value, expr *,size_t))macro->fcn)
+      td = ((type_def *(*)(type_def * exp, c_block * block, c_value * value, expr **,size_t))macro->fcn)
 	(expected_type, block,value,args, argcnt);
       break;
     default:
@@ -277,7 +277,7 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
     type_def * farg_types[argcnt];
     int err_arg = -1;
     for(i64 i = 0; i < argcnt; i++){
-      farg_types[i] = compile_expr(td->fcn.args[i], block, fargs + i, args + i);
+      farg_types[i] = compile_expr(td->fcn.args[i], block, fargs + i, args[i]);
       if(td->fcn.args[i] != farg_types[i]){
 	char buf[10];
 	sprintf(buf, "arg%i", i);
@@ -605,9 +605,9 @@ compile_status lisp_run_expr(expr * _ex){
     ex.sub_expr.cnt = 2;
     ex.sub_expr.exprs = exes;
   }
-
+  //logd("Compiling: ");print_expr(_ex);logd("\n");
   compile_status status = COMPILE_OK;
-  var_def * evaldef = lisp_compile_expr(&ex, &status);
+  var_def * evaldef = lisp_compile_expr(intern_expr(&ex), &status);
   if(COMPILE_ERROR == status || evaldef == NULL)
     return COMPILE_ERROR;
 
