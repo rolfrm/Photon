@@ -51,10 +51,10 @@ void set_compile_out(compiler_state * compiler, char * path);
 char * get_compile_out(compiler_state * compiler);
 
 // Compile expression return the new variable (result).
-var_def * lisp_compile_expr(expr ex, compile_status * opt_outstatus);
+var_def * lisp_compile_expr(expr * ex, compile_status * opt_outstatus);
 
 // same as above except it returns the result
-compile_status lisp_run_expr(expr ex);
+compile_status lisp_run_expr(expr * ex);
 
 // loads lisp base
 void lisp_load_base(char * init_directory);
@@ -116,14 +116,14 @@ type_def * str2type(char * str);
 
 // Compiles an expression and returns the type.
 // expected type can be NULL if unknown or dont care.
-type_def * compile_expr(type_def * expected_type, c_block * block, c_value * val,  expr e );
+type_def * compile_expr(type_def * expected_type, c_block * block, c_value * val,  expr * e );
 
 // Compiles the 'codes'. The newly available functions variables will be available in the compiler variables. returns the buffer for the code. This buffer can be removed unless any of the symbols defined are needed.
 void * compile_as_c(c_root_code * codes, size_t code_cnt);
 
 // Compiles a value expression. Returns the type.
 // expected type can be NULL if unknown or dont care.
-type_def * compile_value(type_def * expected_type, c_value * val, expr e);
+type_def * compile_value(type_def * expected_type, c_value * val, expr * e);
 
 // Defines a new function named 'sym', t and fcnptr should match. see example in builtin_functions.
 void defun(char * sym, char * type, void * fcnptr);
@@ -132,7 +132,7 @@ void defun(char * sym, char * type, void * fcnptr);
 type_def * macro_store_type();
 
 // Expand he macro as defined in exprs.
-type_def * expand_macro(type_def * expected_type, c_block * block, c_value * val, expr * exprs, size_t cnt);
+type_def * expand_macro(type_def * expected_type, c_block * block, c_value * val, expr ** exprs, size_t cnt);
 
 // Empty/null symbol
 extern const symbol symbol_empty;

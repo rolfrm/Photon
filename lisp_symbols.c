@@ -199,20 +199,23 @@ expr * alloc_interned(){
     size_t nv = 0;
     list_add((void **) &expr_taken, &expr_chunk_cnt, &nv, sizeof(size_t));
   }
+  logd("alloc: %i\n", expr_chunk_cnt * EXPR_CHUNK_SIZE + expr_taken[expr_chunk_cnt - 1] + 1);
   return expr_chunks[expr_chunk_cnt - 1] + expr_taken[expr_chunk_cnt - 1]++;
 }
 
 expr * intern_expr(expr * e){
   // check if this expression is already interned. 
   expr * interned = get_interned(e);
-  if(interned != NULL)
+  if(interned != NULL){
+    logd("found!\n");
     return interned;
+  }
   
   if(e->type == EXPR){
     
     expr * nexprs[e->sub_expr.cnt];
     for(size_t i = 0; i < e->sub_expr.cnt; i++){
-      nexprs[i] = intern_expr(e->sub_expr.exprs + i);
+      nexprs[i] = intern_expr(e->sub_expr.exprs[i]);
     }
     { // Find similar interned expression and return that
       for(size_t chunk_it = 0; chunk_it < expr_chunk_cnt; chunk_it++){
@@ -222,7 +225,7 @@ expr * intern_expr(expr * e){
 	  expr * e2 = chunk + i;
 	  if(e2->type == EXPR && e2->sub_expr.cnt == e->sub_expr.cnt){
 	    for(size_t j = 0; j< array_count(nexprs);j++){
-	      if(e2->sub_expr.exprs[j].payload != nexprs[j]->payload){
+	      if(e2->sub_expr.exprs[j] != nexprs[j]){
 		goto next_item;
 	      }
 	    }
@@ -236,9 +239,9 @@ expr * intern_expr(expr * e){
     { // Allocate new interned expression
 
       expr * out = alloc_interned();
-      out->sub_expr.exprs = alloc0(sizeof(expr) * e->sub_expr.cnt);
+      out->sub_expr.exprs = alloc0(sizeof(expr *) * e->sub_expr.cnt);
       for(size_t i = 0; i < e->sub_expr.cnt; i++)
-	out->sub_expr.exprs[i] = *nexprs[i];
+	out->sub_expr.exprs[i] = nexprs[i];
       out->sub_expr.cnt = e->sub_expr.cnt;
       out->type = EXPR;
       return out;
@@ -251,6 +254,7 @@ expr * intern_expr(expr * e){
 	for(size_t i = 0; i < size; i++){
 	  expr * e2 = chunk + i;
 	  if(e2->type == VALUE && strcmp(e2->value, e->value) == 0){
+
 	    return e2;
 	  }
 	}

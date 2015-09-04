@@ -13,7 +13,7 @@ typedef struct _expr expr;
 //Sub expression type.
 typedef struct{
   // Elements. Might be null if cnt == 0.
-  expr * exprs;
+  expr ** exprs;
   // Number of elements in exprs.
   size_t cnt;  
 }sub_expr;

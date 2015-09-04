@@ -21,15 +21,15 @@ var_def * get_any_variable(expr * s){
 #include <stdbool.h>
 #include <ctype.h>
 
-type_def * compile_value(type_def * expected_type, c_value * val, expr e){
-  ASSERT(e.type == VALUE);
+type_def * compile_value(type_def * expected_type, c_value * val, expr * e){
+  ASSERT(e->type == VALUE);
   val->type = C_INLINE_VALUE;
   var_def * vdef = NULL;
-  if(e.value[0] == '\"')
+  if(e->value[0] == '\"')
     {
       CHECK_TYPE(expected_type, char_ptr_def);
-      int len = strlen(e.value);
-      char * chr = fmtstr("%.*s",len-2,e.value + 1);
+      int len = strlen(e->value);
+      char * chr = fmtstr("%.*s",len-2,e->value + 1);
       expr * s = get_symbol(chr);
       char buf[100];
       sprintf(buf, "__istr_%i", interned_index(s));
@@ -40,8 +40,8 @@ type_def * compile_value(type_def * expected_type, c_value * val, expr e){
       return type_pool_get(char_ptr_def);
     }
   bool all_alphanum = true;
-  char * number_test = e.value;
-  u64 number_len = strlen(e.value);
+  char * number_test = e->value;
+  u64 number_len = strlen(e->value);
   if(number_len > 0 && number_test[0] == '-'){
     number_len -= 1;
     number_test += 1;
@@ -61,7 +61,7 @@ type_def * compile_value(type_def * expected_type, c_value * val, expr e){
     }else{
       for(u64 i = 0; i<number_len; i++){
 	fits_alphas &= isdigit(number_test[i]) || number_test[i] == '.';
-	if(e.value[i] == '.')
+	if(e->value[i] == '.')
 	  dots++;
 	if(dots > 1)
 	  fits_alphas = false;
@@ -69,7 +69,7 @@ type_def * compile_value(type_def * expected_type, c_value * val, expr e){
     }
     bool isfloat = dots == 1;
     if(fits_hex || fits_alphas){
-      val->raw.value = fmtstr("%s", e.value);
+      val->raw.value = fmtstr("%s", e->value);
       if(expected_type != NULL){
 	if( !isfloat && is_integer_type(expected_type)){
 	  val->raw.type = expected_type;
@@ -78,7 +78,7 @@ type_def * compile_value(type_def * expected_type, c_value * val, expr e){
 	}else{
 	  if(!is_check_type_run()){
 	    loge("Unable to convert %s literal '%s' to '", 
-		 isfloat? "float" : "integer", e.value);
+		 isfloat? "float" : "integer", e->value);
 	    print_decl(expected_type, get_symbol("b")); logd("'.\n");
 	  }
 	  COMPILE_ERROR("Unable to convert literal.");
@@ -93,7 +93,7 @@ type_def * compile_value(type_def * expected_type, c_value * val, expr e){
     }
   }
   val->type = C_SYMBOL;
-  val->symbol = intern_expr(&e);
+  val->symbol = intern_expr(e);
   vdef = get_any_variable(val->symbol);
   if(vdef == NULL){
     COMPILE_ERROR("Unknown variable 's'");//, symbol_name(val->symbol));
@@ -101,15 +101,15 @@ type_def * compile_value(type_def * expected_type, c_value * val, expr e){
   return type_pool_get(vdef->type);
 }
 
-type_def * expr2type(expr typexpr){
-  typexpr = *intern_expr(&typexpr);
+type_def * expr2type(expr * typexpr){
+  typexpr = intern_expr(typexpr);
   if(typexpr.type == EXPR){
-    sub_expr sexp = typexpr.sub_expr;
+    sub_expr sexp = typexpr->sub_expr;
     COMPILE_ASSERT(sexp.cnt > 0);
-    expr kind = sexp.exprs[0];
-    COMPILE_ASSERT(kind.type == VALUE);
+    expr * kind = sexp.exprs[0];
+    COMPILE_ASSERT(kind->type == VALUE);
 
-    if(strcmp(kind.value, "fcn") == 0){
+    if(strcmp(kind->value, "fcn") == 0){
       type_def out;
       out.type = FUNCTION;
       COMPILE_ASSERT(sexp.cnt > 1);
@@ -119,7 +119,7 @@ type_def * expr2type(expr typexpr){
       type_def * args[sexp.cnt - 2];
       for(size_t i = 0; i < sexp.cnt - 2; i++){
 	expr arg = sexp.exprs[i + 2];
-	COMPILE_ASSERT(arg.type == EXPR && arg.sub_expr.cnt == 2 && is_symbol(arg.sub_expr.exprs[0]));
+	COMPILE_ASSERT(arg.type == EXPR && arg.sub_expr.cnt == 2 && is_symbol(arg.sub_expr.exprs + 0));
 	args[i] = expr2type(arg.sub_expr.exprs[1]);
 	COMPILE_ASSERT(args[i] != NULL && args[i] != error_def);
       }
@@ -128,13 +128,13 @@ type_def * expr2type(expr typexpr){
       out.fcn.cnt = array_count(args);
       return type_pool_get(&out);
 
-    }else if (strcmp(kind.value,"ptr") == 0){
+    }else if (strcmp(kind->value,"ptr") == 0){
       COMPILE_ASSERT(sexp.cnt == 2);
       type_def out;
       out.type = POINTER;
       out.ptr.inner = expr2type(sexp.exprs[1]);
       return type_pool_get(&out);
-    }else if (strcmp(kind.value, "struct") == 0){
+    }else if (strcmp(kind->value, "struct") == 0){
       COMPILE_ASSERT(sexp.cnt >= 2);
       expr * name = intern_expr(sexp.exprs + 1);
       size_t memcnt = sexp.cnt - 2;
@@ -154,7 +154,7 @@ type_def * expr2type(expr typexpr){
       out.cstruct.cnt = memcnt;
       out.cstruct.name = name;
       return type_pool_get(&out);
-    }else if(strcmp(kind.value, "opaque-struct") == 0){
+    }else if(strcmp(kind->value, "opaque-struct") == 0){
       COMPILE_ASSERT(sexp.cnt == 2);
       type_def out;
       out.type = OPAQUE_STRUCT;
@@ -162,7 +162,7 @@ type_def * expr2type(expr typexpr){
       out.cstruct.cnt = 0;
       out.cstruct.name = intern_expr(sexp.exprs + 1);
       return type_pool_get(&out);
-    }else if (strcmp(kind.value, "alias") == 0){
+    }else if (strcmp(kind->value, "alias") == 0){
       COMPILE_ASSERT(sexp.cnt == 3);
       type_def out;
       out.type = TYPEDEF;
@@ -171,26 +171,26 @@ type_def * expr2type(expr typexpr){
       return type_pool_get(&out);
     }
     else{
-      return type_pool_simple(intern_expr(&typexpr));
+      return type_pool_simple(typexpr);
     }
   }else{
-    type_def * td = type_pool_simple(intern_expr(&typexpr));
+    type_def * td = type_pool_simple(typexpr);
     if(td != error_def)
       return td;
   }
   logd("Unable to understand type: ");
-  print_expr(&typexpr);
+  print_expr(typexpr);
   ERROR("\n");
   return error_def;
 }
 
-type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * value, expr e){
-  sub_expr * se = &e.sub_expr;
+type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * value, expr * e){
+  sub_expr * se = &e->sub_expr;
   COMPILE_ASSERT(se->cnt > 0);
-  expr * args = se->exprs + 1;
+  expr * args = se->exprs[1];
   i64 argcnt = se->cnt - 1;
   {
-    expr * name1 = intern_expr(&e);
+    expr * name1 = intern_expr(e);
     var_def * var1 = get_any_variable(name1);
     if(var1 != NULL){
       value->type = C_SYMBOL;
@@ -201,7 +201,7 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
       return type_pool_get(var1->type);
     }
   }
-  expr * name = intern_expr(se->exprs);
+  expr * name = intern_expr(se->exprs[0]);
   ASSERT(name != NULL);
   void * var_data;
   type_def * var_type;
@@ -277,7 +277,7 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
     type_def * farg_types[argcnt];
     int err_arg = -1;
     for(i64 i = 0; i < argcnt; i++){
-      farg_types[i] = compile_expr(td->fcn.args[i], block, fargs + i, args[i]);
+      farg_types[i] = compile_expr(td->fcn.args[i], block, fargs + i, args + i);
       if(td->fcn.args[i] != farg_types[i]){
 	char buf[10];
 	sprintf(buf, "arg%i", i);
@@ -313,9 +313,9 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
   return error_def;
 }
 
-type_def * compile_expr(type_def * expected_type, c_block * block, c_value * val,  expr e ){
+type_def * compile_expr(type_def * expected_type, c_block * block, c_value * val,  expr * e ){
 
-  switch(e.type){
+  switch(e->type){
   case EXPR:
     return _compile_expr(expected_type, block, val, e);
     break;
@@ -328,7 +328,7 @@ type_def * compile_expr(type_def * expected_type, c_block * block, c_value * val
   return error_def;
 }
 
-c_root_code compile_lisp_to_eval(expr exp, compile_status * status){
+c_root_code compile_lisp_to_eval(expr * exp, compile_status * status){
   static int eval_id = 0;
   eval_id++;
   c_root_code r;
@@ -558,7 +558,7 @@ void print_current_mem(int id){
   if(current_allocator != NULL)
     logd("MEM%i: %i\n", id, trace_allocator_allocated_pointers(current_allocator));
 }
-var_def * lisp_compile_expr(expr ex, compile_status * optout_status){
+var_def * lisp_compile_expr(expr * ex, compile_status * optout_status){
   //allocator * trace_alloc = trace_allocator_make();
   expr * name = NULL;
   with_allocator(/*trace_alloc*/ NULL, lambda(void,(){
@@ -593,22 +593,21 @@ var_def * lisp_compile_expr(expr ex, compile_status * optout_status){
 
 expr * printer = NULL;
 
-compile_status lisp_run_expr(expr ex){
+compile_status lisp_run_expr(expr * _ex){
   static int run_level = 0;
   run_level++;
-  expr exes[3];
-  expr _ex;
+  expr * exes[3];
+  expr ex = *_ex;
   if(printer != NULL){
-    _ex.type = EXPR;
-    exes[0] = *printer;
-    exes[1] = ex;
-    _ex.sub_expr.cnt = 2;
-    _ex.sub_expr.exprs = exes;
-    ex = _ex;
+    ex.type = EXPR;
+    exes[0] = printer;
+    exes[1] = _ex;
+    ex.sub_expr.cnt = 2;
+    ex.sub_expr.exprs = exes;
   }
 
   compile_status status = COMPILE_OK;
-  var_def * evaldef = lisp_compile_expr(ex, &status);
+  var_def * evaldef = lisp_compile_expr(&ex, &status);
   if(COMPILE_ERROR == status || evaldef == NULL)
     return COMPILE_ERROR;
 
@@ -682,12 +681,12 @@ compile_status lisp_run_expr(expr ex){
 
 compile_status lisp_run_exprs(expr * exprs, size_t exprcnt){
   for(u32 i = 0; i < exprcnt; i++){
-    expr e = exprs[i];
+    expr * e = exprs + i;
     compile_status s = lisp_run_expr(e);
     if(COMPILE_ERROR == s){
 
       loge("Error at: ");
-      print_expr(&e);
+      print_expr(e);
       logd("\n");
       return COMPILE_ERROR;
     }

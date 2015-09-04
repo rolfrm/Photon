@@ -110,7 +110,7 @@ char * parse_value(char * code, expr * val){
 }
 
 char * parse_subexpr(char * code, sub_expr * subexpr){
-  expr exprs[100];
+  expr * exprs[100];
   if(code[0] != '(')
     return NULL;
   code++;
@@ -129,7 +129,7 @@ char * parse_subexpr(char * code, sub_expr * subexpr){
   }
 
   if(*code == ')') {
-    subexpr->exprs = clone(exprs,sizeof(expr) * len);
+    subexpr->exprs = clone(exprs,sizeof(expr *) * len);
     subexpr->cnt = len;
     return code + 1;
   }  
@@ -141,7 +141,7 @@ char * parse_subexpr(char * code, sub_expr * subexpr){
     return NULL;
   }
 
-  exprs[len] = e;
+  exprs[len] = clone(&e,sizeof(expr));
   len++;
   
   goto next_part;
@@ -178,7 +178,8 @@ void delete_expr(expr * expr){
   if(expr->type == EXPR){
     sub_expr sexpr = expr->sub_expr;
     for(size_t i = 0 ; i < sexpr.cnt; i++){
-      delete_expr(sexpr.exprs + i);
+      delete_expr(sexpr.exprs[i]);
+      dealloc(sexpr.exprs[i]);
     }
     dealloc(sexpr.exprs);
   }else if(expr->type == VALUE){
@@ -225,15 +226,16 @@ char * expr_to_string(expr e){
   return data;
 }
 
+expr * clone_expr(expr * tree);
 expr clone_expr2(expr body){
   if(body.type == VALUE){
     body.value = clone(body.value,strlen(body.value) + 1);
     return body;
   }
   sub_expr exp = body.sub_expr;
-  expr * sub = alloc0(sizeof(expr) * exp.cnt);
+  expr ** sub = alloc0(sizeof(expr *) * exp.cnt);
   for(size_t i = 0; i < exp.cnt; i++)
-    sub[i] = clone_expr2(exp.exprs[i]);
+    sub[i] = clone_expr(exp.exprs[i]);
   
   expr nexpr;
   nexpr.type = EXPR;

@@ -27,7 +27,7 @@ type_def * no_op(type_def * expected_type, c_block * block, c_value * val){
   return &void_def;
 }
 
-type_def * type_macro(type_def * expected_type, c_block * block, c_value * value, expr e){
+type_def * type_macro(type_def * expected_type, c_block * block, c_value * value, expr * e){
   CHECK_TYPE(expected_type, &type_def_ptr_def);
   static int typevarid = 0;
   type_def * t = expr2type(e);
@@ -71,13 +71,13 @@ bool check_decl(expr * name, type_def * type){
   return true;
 }
 
-type_def * var_atom_macro(type_def * expected_type, c_block * block, c_value * val, expr vars, expr body){
+type_def * var_atom_macro(type_def * expected_type, c_block * block, c_value * val, expr * vars, expr * body){
   if(is_check_type_run())
     return &void_def;
 
   CHECK_TYPE(expected_type, &void_def);
-  COMPILE_ASSERT(vars.type == EXPR);
-  sub_expr sexpr = vars.sub_expr;
+  COMPILE_ASSERT(vars->type == EXPR);
+  sub_expr sexpr = vars->sub_expr;
   c_expr cvars[sexpr.cnt];
 
   var_def * lisp_vars = alloc(sizeof(var_def) * (sexpr.cnt + 1));
@@ -134,34 +134,34 @@ type_def * var_atom_macro(type_def * expected_type, c_block * block, c_value * v
 }
 
 
-type_def * var_macro(type_def * expected_type, c_block * block, c_value * val, expr vars, expr body){
+type_def * var_macro(type_def * expected_type, c_block * block, c_value * val, expr * vars, expr * body){
 
-  COMPILE_ASSERT(vars.type == EXPR);
-  sub_expr sexpr = vars.sub_expr;
+  COMPILE_ASSERT(vars->type == EXPR);
+  sub_expr sexpr = vars->sub_expr;
   c_expr cvars[sexpr.cnt];
 
   var_def * lisp_vars = alloc(sizeof(var_def) * (sexpr.cnt + 1));
   for(size_t i = 0; i < sexpr.cnt; i++){
     c_value * cval = NULL;
-    COMPILE_ASSERT(sexpr.exprs[i].type == EXPR);
-    sub_expr var_expr = sexpr.exprs[i].sub_expr;
+    COMPILE_ASSERT(sexpr.exprs[i]->type == EXPR);
+    sub_expr var_expr = sexpr.exprs[i]->sub_expr;
     
     c_var var;
     if(var_expr.cnt == 2){
-      COMPILE_ASSERT(var_expr.exprs[0].type == VALUE );
+      COMPILE_ASSERT(var_expr.exprs[0]->type == VALUE );
       cval = alloc0(sizeof(c_value));
       var.var.type = compile_expr(NULL, block, cval, var_expr.exprs[1]);
       
     }else if(var_expr.cnt == 3){
-      COMPILE_ASSERT(var_expr.exprs[0].type == VALUE 
-		     && var_expr.exprs[1].type == VALUE );
+      COMPILE_ASSERT(var_expr.exprs[0]->type == VALUE 
+		     && var_expr.exprs[1]->type == VALUE );
       var.var.type = expr2type(var_expr.exprs[2]);
       COMPILE_ASSERT(var.var.type != error_def);
     }else{
       COMPILE_ERROR("Invalid var form");
     }
     
-    var.var.name = intern_expr(var_expr.exprs + 0);
+    var.var.name = intern_expr(var_expr.exprs[0]);
     
     if(!check_decl(var.var.name, var.var.type))
       return error_def;
@@ -225,9 +225,9 @@ type_def * var_macro(type_def * expected_type, c_block * block, c_value * val, e
 }
 
 type_def * defvar_macro(type_def * expected_type, c_block * block, 
-			c_value * val, expr * exprs, size_t cnt){
+			c_value * val, expr ** exprs, size_t cnt){
   COMPILE_ASSERT(cnt == 2 || cnt == 3);
-  expr * name = intern_expr(exprs + 0);
+  expr * name = exprs[0];
   if(!is_check_type_run())
     logd("Defining variable '%s'.\n", symbol_name(name));
   type_def * t;
@@ -269,7 +269,7 @@ type_def * defvar_macro(type_def * expected_type, c_block * block,
   return t;
 }
 
-type_def * setf_macro(type_def * expected_type, c_block * block, c_value * val, expr name, expr body){
+type_def * setf_macro(type_def * expected_type, c_block * block, c_value * val, expr * name, expr * body){
   c_value * vr = alloc0(sizeof(c_value));
   c_value * vl = alloc0(sizeof(c_value));
   type_def * t1 = compile_expr(expected_type, block, vl, name);
@@ -283,9 +283,9 @@ type_def * setf_macro(type_def * expected_type, c_block * block, c_value * val, 
     loge("'.\n");
     
     logd("at:\n");
-    print_expr(&name);
+    print_expr(name);
     logd("\nexpr:\n");
-    print_expr(&body);
+    print_expr(body);
     logd("\n");
     COMPILE_ERROR("cannot implicitly convert type");
   }
@@ -296,7 +296,7 @@ type_def * setf_macro(type_def * expected_type, c_block * block, c_value * val, 
   return t;
 }
 
-type_def * load_macro(type_def * expected_type, c_block * block, c_value * val, expr file_name){
+type_def * load_macro(type_def * expected_type, c_block * block, c_value * val, expr * file_name){
   COMPILE_ASSERT(is_string(file_name));
   char * filename = read_symbol(file_name);
   logd("Loading: '%s'\n", filename); 
@@ -309,7 +309,7 @@ type_def * load_macro(type_def * expected_type, c_block * block, c_value * val, 
   return compile_expr(expected_type, block, val, file_name);
 }
 
-type_def * progn_macro(type_def * expected_type, c_block * block, c_value * val, expr * expressions, size_t expr_cnt){
+type_def * progn_macro(type_def * expected_type, c_block * block, c_value * val, expr ** expressions, size_t expr_cnt){
   if(is_check_type_run()){
     if(expr_cnt == 0)
       return &void_def;
@@ -351,7 +351,7 @@ void print_macro_store(macro_store * ms){
   logd("symbol : %s, is rest?: %i\n", symbol_name(ms->fcn), ms->rest);
 }
 
-expr * expand_macro_store(type_def * expected_type, macro_store * ms, expr * exprs, size_t cnt){
+expr * expand_macro_store(type_def * expected_type, macro_store * ms, expr ** exprs, size_t cnt){
   var_def * v = get_global(ms->fcn);
   type_def * t = v->type;
   ASSERT(t->type == FUNCTION);
@@ -362,7 +362,7 @@ expr * expand_macro_store(type_def * expected_type, macro_store * ms, expr * exp
     expr * (* d)(type_def * ex, expr * expr) = v->data;
     expr last_sub_expr;
     last_sub_expr.type = EXPR;
-    last_sub_expr.sub_expr.exprs = exprs ;
+    last_sub_expr.sub_expr.exprs = exprs;
     last_sub_expr.sub_expr.cnt = cnt;
     return d(expected_type, &last_sub_expr);
   }
@@ -379,28 +379,28 @@ expr * expand_macro_store(type_def * expected_type, macro_store * ms, expr * exp
     case 0:
       return d0();
     case 1:
-      return d(exprs);
+      return d(exprs[0]);
     case 2:
-      return d(exprs, exprs + 1);
+      return d(exprs[0], exprs[1]);
     case 3:
-      return d(exprs, exprs + 1, exprs + 2);
+      return d(exprs[0], exprs[1], exprs[2]);
     case 4:
-      return d(exprs, exprs + 1, exprs + 2, exprs + 3);
+      return d(exprs[0], exprs[1], exprs[2], exprs[3]);
     case 5:
-      return d(exprs, exprs + 1, exprs + 2, exprs + 3, exprs + 4);
+      return d(exprs[0], exprs[1], exprs[2], exprs[3], exprs[4]);
     case 6:
-      return d(exprs, exprs + 1, exprs + 2, exprs + 3, exprs + 4, exprs + 5);
+      return d(exprs[0], exprs[1], exprs[2], exprs[3], exprs[4], exprs[5]);
     case 7:
-      return d(exprs, exprs + 1, exprs + 2, exprs + 3, exprs + 4, exprs + 5, exprs + 6);
+      return d(exprs[0], exprs[1], exprs[2], exprs[3], exprs[4], exprs[5], exprs[6]);
     case 8:
-      return d(exprs, exprs + 1, exprs + 2, exprs + 3, exprs + 4, exprs + 5, exprs + 6, exprs + 7);
+      return d(exprs[0], exprs[1], exprs[2], exprs[3], exprs[4], exprs[5], exprs[6], exprs[7]);
     default:
       ERROR("Unsupported number of macro args");
     }
   }else{
     size_t extra_args = cnt - t->fcn.cnt + 1;
     size_t offset = t->fcn.cnt - 1;
-    expr last_sub_expr;
+    expr * last_sub_expr;
     last_sub_expr.type = EXPR;
     last_sub_expr.sub_expr.exprs = exprs + offset;
     last_sub_expr.sub_expr.cnt = extra_args;
@@ -409,19 +409,19 @@ expr * expand_macro_store(type_def * expected_type, macro_store * ms, expr * exp
     case 1:
       return d(&last_sub_expr);
     case 2:
-      return d(exprs, &last_sub_expr);
+      return d(exprs[0], &last_sub_expr);
     case 3:
-      return d(exprs, exprs + 1, &last_sub_expr);
+      return d(exprs[0], exprs[1], &last_sub_expr);
     case 4:
-      return d(exprs, exprs + 1, exprs + 2, &last_sub_expr);
+      return d(exprs[0], exprs[1], exprs[2], &last_sub_expr);
     case 5:
-      return d(exprs, exprs + 1, exprs + 2, exprs + 3, &last_sub_expr);
+      return d(exprs[0], exprs[1], exprs[2], exprs[3], &last_sub_expr);
     case 6:
-      return d(exprs, exprs + 1, exprs + 2, exprs + 3, exprs + 4, &last_sub_expr);
+      return d(exprs[0], exprs[1], exprs[2], exprs[3], exprs[4], &last_sub_expr);
     case 7:
-      return d(exprs, exprs + 1, exprs + 2, exprs + 3, exprs + 4, exprs + 5, &last_sub_expr);
+      return d(exprs[0], exprs[1], exprs[2], exprs[3], exprs[4], exprs[5], &last_sub_expr);
     case 8:
-      return d(exprs, exprs + 1, exprs + 2, exprs + 3, exprs + 4, exprs + 5, exprs + 6, &last_sub_expr);
+      return d(exprs[0], exprs[1], exprs[2], exprs[3], exprs[4], exprs[5], exprs[6], &last_sub_expr);
     default:
       ERROR("Unsupported number of macro args");
     }
@@ -445,16 +445,15 @@ expr * expand_macro2(expr * e){
 }
 
 type_def * expand_macro(type_def * expected_type, c_block * block, c_value * val, 
-			expr * exprs, size_t cnt){
+			expr ** exprs, size_t cnt){
   COMPILE_ASSERT(cnt > 0);
-  //COMPILE_ASSERT(is_symbol(exprs[0]));  
   type_def * exprtd = macro_store_type();
 
-  expr * name = intern_expr(exprs + 0);
+  expr * name = intern_expr(exprs[0]);
   var_def * fcn_var = get_any_variable(name);
   COMPILE_ASSERT(fcn_var != NULL);
   COMPILE_ASSERT(fcn_var->type == exprtd);
-  expr * outexpr = expand_macro_store(expected_type, fcn_var->data, exprs + 1, cnt - 1);
+  expr * outexpr = expand_macro_store(expected_type, fcn_var->data, exprs[1], cnt - 1);
   // Note: nothing going in or out from expand_macro_store can be deleted. 
   // Anything going in is already deleted later, stuff going out might be. 
   // The rest could be deleted, but user has to mark for deletion.
@@ -463,7 +462,7 @@ type_def * expand_macro(type_def * expected_type, c_block * block, c_value * val
   if(outexpr == NULL)
     COMPILE_ERROR("Unable to expand macro '%s'.", symbol_name(name));
   
-  return compile_expr(expected_type, block, val, *outexpr);
+  return compile_expr(expected_type, block, val, outexpr);
 }
 
 int recurse_count(expr ex){
@@ -572,14 +571,14 @@ bool recurse_expr(expr * ex, c_block * block, int id, int * cnt, var_def ** vars
   }
 }
 
-type_def * expr_macro(type_def * expected_type, c_block * block, c_value * val, expr body){
+type_def * expr_macro(type_def * expected_type, c_block * block, c_value * val, expr * body){
   static int _id = 0;
   _id++;
   int id = _id; 
   type_def * exprtd = opaque_expr();	  
   
   expr * tmp = get_symbol_fmt("_tmp_symbol_%i", id);
-  expr * ex = intern_expr(&body);
+  expr * ex = intern_expr(body);
   int cnt = 0;
   var_def * vars = NULL;
   bool ok = recurse_expr(ex, block, id, &cnt, &vars);
@@ -619,26 +618,23 @@ type_def * expr_macro(type_def * expected_type, c_block * block, c_value * val, 
 }
 
 // Just a code sanity check. Will generate an error if unexpr is used outside expr.
-type_def * unexpr_macro(type_def * expected_type, c_block * block, c_value * val, expr body){
+type_def * unexpr_macro(type_def * expected_type, c_block * block, c_value * val, expr * body){
   UNUSED(expected_type);
   UNUSED(block);UNUSED(val);UNUSED(body);
   COMPILE_ERROR("Calls to unexpr must be nested inside an expr body\n");
 }
 
 type_def * declare_macro_macro(type_def * expected_type, c_block * block, c_value * val, 
-			       expr * exprs, size_t cnt){
+			       expr ** exprs, size_t cnt){
   CHECK_TYPE(expected_type, char_ptr_def);
   UNUSED(block);
   ASSERT(cnt == 2 || cnt == 3);
-  expr macro_name = exprs[0];
-  expr function_name = exprs[1];
-  ASSERT(is_symbol(macro_name));
-  //ASSERT(is_symbol(function_name));
-  
+  expr * macro_name = exprs[0];
+  expr * function_name = exprs[1];
   macro_store * macro = alloc0(sizeof(macro_store));
   macro->fcn = intern_expr(&function_name);
   macro->rest = cnt == 3;
-  define_variable(intern_expr(&macro_name), macro_store_type() , macro, false);
+  define_variable(intern_expr(macro_name), macro_store_type() , macro, false);
   return compile_value(expected_type, val, string_expr(read_symbol(macro_name)));
 }
 
