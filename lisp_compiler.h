@@ -103,7 +103,7 @@ void format_c_name(expr * s);
 i64 interned_index(expr * e);
 
 // Gets the type from typexprs.
-type_def * expr2type(expr typexpr);
+type_def * expr2type(expr * typexpr);
 
 // Gets the return type of an expression.
 type_def * type_of(expr * ex);

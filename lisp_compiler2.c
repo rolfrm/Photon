@@ -359,7 +359,7 @@ type_def * str2type(char * str){
   expr e;
   if(lisp_parse(str, &e) == NULL)
     return error_def;
-  type_def * td = expr2type(e);
+  type_def * td = expr2type(&e);
   delete_expr(&e);
   return td;
 }
