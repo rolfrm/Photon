@@ -82,7 +82,7 @@
 
 
 (defmacro vec2op (operator)
-  (let ((name (symbol2expr (symbol-combine (quote vec2) (expr2symbol operator)))))
+  (let ((name (expr (vec2 (unexpr operator)))))
     (let ((r (expr
 	     (progn
 	       (defun (unexpr name) (vec2 (a vec2) (b vec2))
@@ -93,8 +93,6 @@
 			 ((unexpr operator) (member a y) (member b y)))
 		   out))
 	       (overload (unexpr operator) (unexpr name))))))
-      (print-expr r)
-      (printstr "\n")
       r)))
 (vec2op *)
 (vec2op +) (vec2op /) (vec2op -)
@@ -181,7 +179,7 @@
 (setf (member mat4-eye m33) 1)
 
 (defmacro matop (op)
-  (let ((fcn-name (symbol2expr (symbol-combine (quote mat4) (expr2symbol op) ))))
+  (let ((fcn-name (expr (mat4 (unexpr op)))))
     (expr 
      (progn
        (defun (unexpr fcn-name) (mat4 (a mat4) (b mat4))
