@@ -138,15 +138,14 @@ type_def * expr2type(expr * typexpr){
       COMPILE_ASSERT(sexp.cnt >= 2);
       expr * name = intern_expr(sexp.exprs[1]);
       size_t memcnt = sexp.cnt - 2;
-      expr * sub = sexp.exprs[2];
       decl members[memcnt];
       for(size_t i = 0 ; i < memcnt; i++){
+	expr * sub = sexp.exprs[i + 2];
 	COMPILE_ASSERT(sub->type == EXPR && sub->sub_expr.cnt == 2);
 	sub_expr sx = sub->sub_expr;
 	COMPILE_ASSERT(sx.exprs[0]->type == VALUE);
 	members[i].name = intern_expr(sx.exprs[0]);
 	members[i].type = expr2type(sx.exprs[1]);
-	sub++;
       }
       type_def out;
       out.type = STRUCT;
