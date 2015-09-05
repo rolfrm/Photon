@@ -143,6 +143,8 @@ expr * get_symbol(char * name);
 // Interns the formatted string as a new symbol.
 expr * get_symbol_fmt(char * fmt, ...);
 
+expr * symbol_fmt(char * fmt, ...);
+
 // Interns the string 'name' as a new symbol.
 //symbol * get_symbol2(char * name);
 

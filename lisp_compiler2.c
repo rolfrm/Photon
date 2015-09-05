@@ -28,15 +28,9 @@ type_def * compile_value(type_def * expected_type, c_block * block, c_value * va
   if(e->value[0] == '\"')
     {
       CHECK_TYPE(expected_type, char_ptr_def);
-      int len = strlen(e->value);
-      char * chr = fmtstr("%.*s",len-2,e->value + 1);
-      expr * s = get_symbol(chr);
-      dealloc(chr);
-      char buf[100];
-      sprintf(buf, "__istr_%i", interned_index(s));
-      expr * bufsym = get_symbol(buf);
+      expr * s = symbol_fmt("%.*s",strlen(e->value)-2,e->value + 1);
+      expr * bufsym = symbol_fmt("__istr_%i", interned_index(s));
       define_variable(bufsym, type_pool_get(char_ptr_def), s->value, false);
-
       val->type = C_SYMBOL;
       val->symbol = bufsym;
       return type_pool_get(char_ptr_def);

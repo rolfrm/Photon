@@ -31,6 +31,25 @@ expr * get_symbol_fmt(char * fmt, ...){
   return get_symbol(buf);
 }
 
+
+expr * symbol_fmt(char * fmt, ...){
+  ASSERT(fmt != NULL);
+  va_list args;
+  va_start(args, fmt);
+  va_list args2;
+  va_copy(args2, args);
+  size_t size = vsnprintf (NULL, 0, fmt, args2) + 1;
+  va_end(args2);
+  char buf[size];
+  vsprintf (buf, fmt, args);
+  va_end(args);
+  expr e;
+  e.type = VALUE;
+  e.value = buf;
+  return intern_expr(&e);
+
+}
+
 typedef struct _symbol_stack symbol_stack;
 struct _symbol_stack{
   var_def ** vars;
@@ -199,7 +218,6 @@ expr * alloc_interned(){
     size_t nv = 0;
     list_add((void **) &expr_taken, &expr_chunk_cnt, &nv, sizeof(size_t));
   }
-  //logd("alloc: %i\n", expr_chunk_cnt * EXPR_CHUNK_SIZE + expr_taken[expr_chunk_cnt - 1] + 1);
   return expr_chunks[expr_chunk_cnt - 1] + expr_taken[expr_chunk_cnt - 1]++;
 }
 
@@ -254,7 +272,6 @@ expr * intern_expr(expr * e){
 	for(size_t i = 0; i < size; i++){
 	  expr * e2 = chunk + i;
 	  if(e2->type == VALUE && strcmp(e2->value, e->value) == 0){
-
 	    return e2;
 	  }
 	}
@@ -263,7 +280,6 @@ expr * intern_expr(expr * e){
     expr * out = alloc_interned();
     out->type = VALUE;
     out->value = clone(e->value,strlen(e->value) + 1);
-      // Find similar interned symbol
     return out;
   }
   UNREACHABLE();
