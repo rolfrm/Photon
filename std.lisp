@@ -338,15 +338,13 @@
 
 (defun add-to-list (void (list (ptr (ptr void)))
 		    (cnt (ptr u64)) (data (ptr void)) (elem-size u64))
-  (progn
-    (setf (deref list) 
-	  (realloc (deref list) (.* elem-size (.+ (deref cnt) 1))))
-    (memcpy (cast
-	     (.+ (cast (deref list) u64) (.* (deref cnt) elem-size))
-	     (ptr void))
+  (macrolet ((lst (deref list))
+	     (cnt2 (deref cnt)))
+    (setf lst (realloc lst (.* elem-size (.+ (deref cnt) 1))))
+    (memcpy (cast (.+ (cast lst u64) (.* cnt2 elem-size)) (ptr void))
 	    data
 	    elem-size)
-    (setf (deref cnt) (.+ (deref cnt) 1))
+    (setf cnt2 (.+ cnt2 1))
     ))
 
 (defmacro add-to-list+ (lst cnt item)
@@ -397,41 +395,18 @@
 	    (exit 1)
 	    )))))
 
-(defun +vararg2 ((ptr expr) (a (ptr expr)) (b (ptr expr)) (c (ptr expr)))
-  (progn
-    (sub-expr.expr c 1)))
-
-(declare-macro vararg2 +vararg2 :rest)
-
-(vararg2 1 2 3 4 5)
-
-(defmacro vararg-test (a b &rest c)
-  (progn
-    (sub-expr.expr c 1)))
-
-(assert (eq 4 (vararg-test 1 2 3 4 5)))
-(for it 0 (not (eq it 10)) (.+ it 1)
-     (setf it (.+ it 1))
-     (printi64 it)
-     print-newline)
-
-(unless false
-  (write-line "hej!"))
+(defmacro std:ext (a b selector)
+  (let ((as (gensym)) (bs (gensym)))
+      (expr (var (((unexpr as) (unexpr a)) ((unexpr bs) (unexpr b)))
+		 (if ((unexpr selector) (unexpr as) (unexpr bs))
+		     (unexpr bs)
+		     (unexpr as))))))
 
 (defmacro max (a b)
-  (let ((as (gensym)) (bs (gensym)))
-    (expr (var (((unexpr as) (unexpr a)) ((unexpr bs) (unexpr b)))
-	    (if (< (unexpr as) (unexpr bs))
-		(unexpr bs)
-		(unexpr as))))))
-
+  (expr (std:ext (unexpr a) (unexpr b) <)))
 
 (defmacro min (a b)
-  (let ((as (gensym)) (bs (gensym)))
-    (expr (var (((unexpr as) (unexpr a)) ((unexpr bs) (unexpr b)))
-	    (if (> (unexpr as) (unexpr bs))
-		(unexpr bs)
-		(unexpr as))))))
+  (expr (std:ext (unexpr a) (unexpr b) >)))
 
 (defmacro lambda (args body)
   (let ((s (gensym)))
