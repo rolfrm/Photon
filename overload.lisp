@@ -53,9 +53,9 @@
 (defun find-overload ((ptr expr) (ol overload)
 		      (return-type (ptr type_def))
 		      (exprs (ptr expr)))
-  (let ((i 0) (out (cast null (ptr expr)))
-	(cnt (member ol member-cnt))
-	(mems (member ol members)))
+  (macrolet ((cnt (member ol member-cnt))
+	     (mems (member ol members)))
+    (let ((i 0) (out (cast null (ptr expr))))
     (assert (is-sub-expr exprs))
     (while (and (eq out (cast null (ptr expr)))
 		(not (eq i cnt)))
@@ -87,7 +87,7 @@
 		(setf out (member mem sym))
 		)))))
       (setf i (.+ i 1)))
-    out))
+    out)))
 
 (defun expand-macro2 ((ptr expr) (sym (ptr expr)) (expr2 (ptr expr)))
   (let ((v (cast (get-var sym) (ptr macro_store))))
@@ -116,7 +116,7 @@
 	    (if (eq maco (cast null (ptr expr)))
 		(let ((def (member ol-info default)))
 		  (if (eq def (cast null (ptr expr)))
-		      ;(progn
+		      ;(progn ;; Consider enabling error msg.
 			;(print-type return-type)
 			;(print-expr d)
 			;(printstr "Error no matching  overload found for '")
@@ -129,7 +129,7 @@
 			;	(printstr " ")
 			;	(setf j (u64+ j 1)))))
 			;  (printstr "\n")
-			  null-expr;)
+			  null-expr
 		      (unfold-body def d)))
 		maco))
 	  

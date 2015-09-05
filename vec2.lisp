@@ -106,8 +106,9 @@
 	 (+ (* y cosr) (* x sinr)))))
 
 (defun vec2:eq (bool (a vec2) (b vec2))
-  (and (eq (member a x) (member b x))
-       (eq (member a y) (member b y))))
+  (macrolet ((ax (member a x)) (ay (member a y))
+	     (bx (member b x)) (by (member b y)))
+    (and (eq ax bx) (eq ay by))))
 
 ;(let (( a (vec2turn (vec2 1 1) pi)) (b (vec2:rot90 (vec2:rot90 (vec2 1 1)))))
 ;  (assert (eq 

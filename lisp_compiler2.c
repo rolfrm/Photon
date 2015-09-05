@@ -31,10 +31,12 @@ type_def * compile_value(type_def * expected_type, c_block * block, c_value * va
       int len = strlen(e->value);
       char * chr = fmtstr("%.*s",len-2,e->value + 1);
       expr * s = get_symbol(chr);
+      dealloc(chr);
       char buf[100];
       sprintf(buf, "__istr_%i", interned_index(s));
       expr * bufsym = get_symbol(buf);
-      define_variable(bufsym, type_pool_get(char_ptr_def), chr, false);
+      define_variable(bufsym, type_pool_get(char_ptr_def), s->value, false);
+
       val->type = C_SYMBOL;
       val->symbol = bufsym;
       return type_pool_get(char_ptr_def);
