@@ -20,8 +20,8 @@ var_def * get_any_variable(expr * s){
 
 #include <stdbool.h>
 #include <ctype.h>
-
-type_def * compile_value(type_def * expected_type, c_value * val, expr * e){
+type_def * macrolet_type();
+type_def * compile_value(type_def * expected_type, c_block * block, c_value * val, expr * e){
   ASSERT(e->type == VALUE);
   val->type = C_INLINE_VALUE;
   var_def * vdef = NULL;
@@ -93,10 +93,16 @@ type_def * compile_value(type_def * expected_type, c_value * val, expr * e){
     }
   }
   val->type = C_SYMBOL;
-  val->symbol = intern_expr(e);
-  vdef = get_any_variable(val->symbol);
+  val->symbol = e;
+  vdef = get_any_variable(e);
   if(vdef == NULL){
-    COMPILE_ERROR("Unknown variable 's'");//, symbol_name(val->symbol));
+    COMPILE_ERROR("Unknown variable '%s'", symbol_name(val->symbol));
+  }
+  if(vdef->type == macro_store_type() && vdef->data != NULL){
+    return expand_macro(expected_type, block, val, &e, 1);
+  }
+  if(vdef->type == macrolet_type() && vdef->data != NULL){
+    return compile_expr(expected_type, block, val, vdef->data);
   }
   return type_pool_get(vdef->type);
 }
@@ -306,8 +312,13 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
     return td->fcn.ret;
   }else if(var_type == macro_store_type()){
     return expand_macro(expected_type, block, value, se->exprs, se->cnt);
-  }else{
-    COMPILE_ERROR("Not supported.. %i\n", var_type->type);
+  }
+  /*else if(var_type == macrolet_type() && var_data != NULL){
+    return compile_expr(expected_type, block, value, var_data);
+    }*/
+  else{
+    print_decl(var_type, get_symbol("t"));logd("\n");
+    COMPILE_ERROR("Not supported\n");
   }
   return error_def;
 }
@@ -319,7 +330,7 @@ type_def * compile_expr(type_def * expected_type, c_block * block, c_value * val
     return _compile_expr(expected_type, block, val, e);
     break;
   case VALUE:
-    return compile_value(expected_type, val,e);
+    return compile_value(expected_type, block,  val,e);
     break;
   case ERROR:
     return error_def;

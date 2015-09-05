@@ -213,7 +213,7 @@ type_def * var_macro(type_def * expected_type, c_block * block, c_value * val, e
   }
   block_add(block, sblk_expr);
   if(!is_void){
-    type_def * ret = compile_value(expected_type, val, tmpvar.var.var.name);
+    type_def * ret = compile_value(expected_type, block, val, tmpvar.var.var.name);
     COMPILE_ASSERT(ret == ret_type);
   }else{
     val->type = C_NOTHING;
@@ -636,7 +636,7 @@ type_def * declare_macro_macro(type_def * expected_type, c_block * block, c_valu
   macro->fcn = intern_expr(function_name);
   macro->rest = cnt == 3;
   define_variable(intern_expr(macro_name), macro_store_type() , macro, false);
-  return compile_value(expected_type, val, string_expr(read_symbol(macro_name)));
+  return compile_value(expected_type, block, val, string_expr(read_symbol(macro_name)));
 }
 
 // Casts a variable to a new type.
@@ -1114,6 +1114,32 @@ type_def * member_macro(type_def * expected_type, c_block * blk, c_value * val, 
   return memtype;
 }
 
+type_def * macrolet_type(){
+  static type_def * macrolet_t = NULL;
+  if(macrolet_t == NULL)
+    macrolet_t = str2type("(alias (ptr expr) macrolet)");
+  return macrolet_t;
+}
+type_def * macrolet_macro(type_def * expected_type, c_block * blk, c_value * val, expr ** body, size_t cnt){
+  COMPILE_ASSERT(cnt > 0 );
+  expr * args = body[0];
+  body++;
+  cnt--;
+  var_def macro_vars[args->sub_expr.cnt];
+  size_t macro_vars_cnt = array_count(macro_vars);
+  for(size_t i = 0; i < array_count(macro_vars); i++){
+    expr * e = args->sub_expr.exprs[i];
+    COMPILE_ASSERT(e->type == EXPR && e->sub_expr.cnt == 2);
+    macro_vars[i].name = e->sub_expr.exprs[0];
+    macro_vars[i].type = macrolet_type();
+    macro_vars[i].data = e->sub_expr.exprs[1];
+  }
+  var_def * vars = macro_vars;
+  push_symbols(&vars, &macro_vars_cnt);
+  type_def * rt = progn_macro(expected_type, blk, val, body, cnt);
+  pop_symbols();
+  return rt;
+}
 /*symbol * expr2symbol(expr * e){
   if(e->type == VALUE){
     return get_symbol2(e->value);
@@ -1230,7 +1256,7 @@ void builtin_macros_load(){
   define_macro(".*", 2, multiply_macro);  
   define_macro("./", 2, divide_macro);
   define_macro(".%", 2, modulus_macro);
-
+  define_macro("macrolet", -1, macrolet_macro);
   opaque_expr();
   defun("number2expr",("(fcn (ptr expr) (a i64))"), number2expr);
   defun("expr2number",("(fcn i64 (a (ptr expr)))"), expr2number);
@@ -1248,4 +1274,5 @@ void builtin_macros_load(){
   defun("gensym",("(fcn (ptr expr))"), gensym);
   defun("free-expr", ("(fcn void (e (ptr expr)))"), free_expr);
   defun("expand", "(fcn (ptr expr) (e (ptr expr)))", expand_macro2);
+  
 }

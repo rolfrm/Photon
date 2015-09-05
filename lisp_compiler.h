@@ -123,7 +123,7 @@ void * compile_as_c(c_root_code * codes, size_t code_cnt);
 
 // Compiles a value expression. Returns the type.
 // expected type can be NULL if unknown or dont care.
-type_def * compile_value(type_def * expected_type, c_value * val, expr * e);
+type_def * compile_value(type_def * expected_type, c_block * block, c_value * val, expr * e);
 
 // Defines a new function named 'sym', t and fcnptr should match. see example in builtin_functions.
 void defun(char * sym, char * type, void * fcnptr);
