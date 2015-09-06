@@ -324,8 +324,9 @@
 (declare-macro defmacro *defmacro)
 
 (defmacro test1 (&type a d)
-  (sub-expr.expr d 0))
-(test1 5)
+  (sub-expr.expr d 2))
+(test1 5 3 4 2)
+
 (defmacro test2 (a d)
   d)
 (defvar test3 :type f64)

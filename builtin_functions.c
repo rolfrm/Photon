@@ -74,8 +74,8 @@ void * load_lib(char * path){
   return handle;
 }
 
-void * load_symbol(void * lib, symbol * name){
-  return GetProcAddress((HMODULE)lib, get_c_name(*name));
+void * load_symbol(void * lib, char * name){
+  return GetProcAddress((HMODULE)lib, name);
 }
 #define ASSERT(x)
 #else
@@ -116,10 +116,6 @@ type_def * type_of2(type_def * expected_type, expr * ex){
 type_def * type_of(expr * ex){
   return type_of2(NULL, ex);
 }
-
-/*char * symbol_name2(symbol * sym){
-  return symbol_name(*sym);
-  }*/
 
 bool is_fcn_type(type_def * t){
   return t->type == FUNCTION;
@@ -204,7 +200,6 @@ void load_functions(){
   defun("eval!", ("(fcn void (expr (ptr expr)))"), eval);
   defun("load", ("(fcn void (file (ptr char)))"), load_builtin);
   defun("builtin-print-str", ("(fcn void (str (ptr char)))"), builtin_print_string);
-  //defun("get-symbol", ("(fcn (ptr symbol) (a (ptr char)))"), get_symbol2);
   defun("size-of",("(fcn u64 (type (ptr type_def)))"), size_of);
   defun("defun!", ("(fcn void (name (ptr char)) (t (ptr type_def)) (p (ptr void)))"), defun2);
   str2type("(alias (ptr (opaque-struct _lib)) lib)"); // declare the lib tyoedef
@@ -220,7 +215,6 @@ void load_functions(){
   defun("print-expr", ("(fcn void (theexpr (ptr expr)))"), print_expr);
   defun("ptr-inner", ("(fcn (ptr type_def) (ptr (ptr type_def)))"),  ptr_inner);
   defun("type2expr", ("(fcn (ptr expr) (t (ptr type_def)))"), type2expr);
-  //  defun("symbol-name", ("(fcn (ptr char) (sym (ptr symbol)))"), symbol_name2);
   defun("var-type", ("(fcn (ptr type_def) (variable (ptr expr)))"), var_type);
   defun("get-var", ("(fcn (ptr void) (sym (ptr expr)))"), get_var);
   defun("is-fcn-type?", ("(fcn bool (type (ptr type_def)))"), is_fcn_type);

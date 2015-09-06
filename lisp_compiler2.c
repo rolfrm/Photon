@@ -103,6 +103,8 @@ type_def * compile_value(type_def * expected_type, c_block * block, c_value * va
   return type_pool_get(vdef->type);
 }
 
+expr * expand_macro_store2(void * ms, expr * expr);
+
 type_def * expr2type(expr * typexpr){
   typexpr = intern_expr(typexpr);
   if(typexpr->type == EXPR){
@@ -172,7 +174,25 @@ type_def * expr2type(expr * typexpr){
       return type_pool_get(&out);
     }
     else{
-      return type_pool_simple(typexpr);
+      
+      type_def * td = type_pool_simple(typexpr);
+      if(td == NULL){
+	expr * name = intern_expr(sexp.exprs[0]);
+	expr e;
+	e.type = EXPR;
+	e.sub_expr.exprs = sexp.exprs + 1;
+	e.sub_expr.cnt = sexp.cnt -1;
+	
+	var_def * var = get_any_variable(name);
+	if(var != NULL && var->type == macro_store_type()){
+	  expr * e2 = expand_macro_store2(var->data, &e);
+	  print_expr(e2);logd("\n");
+	  return expr2type(e2);
+	}
+      }else{
+	return td;
+      }
+
     }
   }else{
     type_def * td = type_pool_simple(typexpr);

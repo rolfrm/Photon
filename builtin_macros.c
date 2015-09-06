@@ -742,6 +742,7 @@ type_def * defun_macro(type_def * expected_type, c_block * block, c_value * valu
     expr * typexpr = arg->sub_expr.exprs[1];
     COMPILE_ASSERT(is_symbol(namexpr));
     arg_names[i] = intern_expr(namexpr);
+    print_expr(namexpr);logd("\n");
     arg_types[i] = expr2type(typexpr);
   }
   
@@ -1140,22 +1141,6 @@ type_def * macrolet_macro(type_def * expected_type, c_block * blk, c_value * val
   pop_symbols();
   return rt;
 }
-/*symbol * expr2symbol(expr * e){
-  if(e->type == VALUE){
-    return get_symbol2(e->value);
-  }
-  char * namebuf =  expr_to_string(*e);
-  expr * s = get_symbol(namebuf);
-  dealloc(namebuf);
-  return s;
-  }*/
-
-/*expr * symbol2expr(symbol * s){
-  expr * out = alloc(sizeof(expr));
-  out->type = VALUE;
-  out->value = symbol_name(*s);
-  return out;
-  }*/
 
 bool is_expr_symbol(expr * e){
   return e->type == VALUE;
@@ -1260,8 +1245,6 @@ void builtin_macros_load(){
   opaque_expr();
   defun("number2expr",("(fcn (ptr expr) (a i64))"), number2expr);
   defun("expr2number",("(fcn i64 (a (ptr expr)))"), expr2number);
-  //defun("expr2symbol", ("(fcn (ptr symbol) (a (ptr expr)))"), expr2symbol);
-  //defun("symbol2expr", ("(fcn (ptr expr) (a (ptr symbol)))"), symbol2expr);
   defun("is-sub-expr", ("(fcn bool (expr (ptr expr)))"), is_sub_expr);
   defun("sub-expr.cnt", ("(fcn u64 (expr (ptr expr)))"), get_sub_expr_cnt);
   defun("sub-expr.expr", ("(fcn (ptr expr) (expr (ptr expr)) (idx u64))"), get_sub_expr);
