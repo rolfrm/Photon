@@ -186,13 +186,12 @@ type_def * expr2type(expr * typexpr){
 	var_def * var = get_any_variable(name);
 	if(var != NULL && var->type == macro_store_type()){
 	  expr * e2 = expand_macro_store2(var->data, &e);
-	  print_expr(e2);logd("\n");
+	  logd("::"); print_expr(e2);logd("\n");
 	  return expr2type(e2);
 	}
       }else{
 	return td;
       }
-
     }
   }else{
     type_def * td = type_pool_simple(typexpr);
@@ -624,6 +623,7 @@ compile_status lisp_run_expr(expr * _ex){
   run_level++;
   expr * exes[3];
   expr ex = *_ex;
+
   if(printer != NULL){
     ex.type = EXPR;
     exes[0] = printer;
@@ -634,6 +634,7 @@ compile_status lisp_run_expr(expr * _ex){
   //logd("Compiling: ");print_expr(_ex);logd("\n");
   compile_status status = COMPILE_OK;
   var_def * evaldef = lisp_compile_expr(intern_expr(&ex), &status);
+
   if(COMPILE_ERROR == status || evaldef == NULL)
     return COMPILE_ERROR;
 
@@ -642,6 +643,7 @@ compile_status lisp_run_expr(expr * _ex){
   size_t ret_size = size_of(ret);
 
   if(printer != NULL){
+
     if(ret != &void_def)
       log("Printer should return &void def");
   }else{

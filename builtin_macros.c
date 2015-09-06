@@ -529,12 +529,19 @@ expr * get_recurse_sym(int id, int cnt){
   return get_symbol_fmt("_tmp_%i__%i_", id, cnt);
 }
 
+expr * get_unexpr_symbol(){
+  static expr * unexpr = NULL;
+  if(unexpr == NULL)
+    unexpr = get_symbol("unexpr");
+  return unexpr;
+}
+
 bool recurse_expr(expr * ex, c_block * block, int id, int * cnt, var_def ** vars){
   if(ex->type == VALUE)
     return true;
   sub_expr exp = ex->sub_expr;
   if(exp.cnt > 0 && is_symbol(exp.exprs[0]) 
-     && expr_symbol(exp.exprs[0]) == get_symbol("unexpr")){
+     && expr_symbol(exp.exprs[0]) == get_unexpr_symbol()){
     if(exp.cnt != 2)
       return false;
     

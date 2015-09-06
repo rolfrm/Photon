@@ -125,6 +125,18 @@ bool is_ptr_type(type_def * t){
   return t != NULL && t->type == POINTER;
 }
 
+bool is_alias_type(type_def * t){
+  return t->type == TYPEDEF;
+}
+
+expr * alias_name(type_def * t){
+  return t->ctypedef.name;
+}
+
+type_def * alias_inner_type(type_def * t){
+  return t->ctypedef.inner;
+}
+
 type_def ** fcn_arg_types(type_def * td){
   if(td->type != FUNCTION) return NULL;
   return td->fcn.args;
@@ -163,7 +175,13 @@ void * get_var(expr * sym){
 }
 
 void eval(expr * e){
-  lisp_run_expr(e);
+  //log("Compiling ");print_expr(e);logd("\n");
+  compile_status cs = lisp_run_expr(e);
+  if(cs == COMPILE_ERROR){
+    loge("Error during compiling ");
+    print_expr(e);logd("\n");
+
+  }
 }
 
 void builtin_print_string(char * str){
@@ -221,6 +239,9 @@ void load_functions(){
   defun("is-ptr-type?", ("(fcn bool (type (ptr type_def)))"), is_ptr_type);
   defun("is-integer-type?", ("(fcn bool (type (ptr type_def)))"), is_integer_type);
   defun("is-float-type?", ("(fcn bool (type (ptr type_def)))"), is_float_type);
+  defun("is-alias-type?", "(fcn bool (type (ptr type_def)))", is_alias_type);
+  defun("alias-name", "(fcn (ptr expr) (type (ptr type_def)))", alias_name);
+  defun("alias-inner-type", "(fcn (ptr type_def) (type (ptr type_def)))", alias_inner_type);
   defun("fcn-arg-types", ("(fcn (ptr (ptr type_def)) (t (ptr type_def)))"), fcn_arg_types);
   defun("fcn-ret-type", ("(fcn (ptr type_def) (t (ptr type_def)))"), fcn_ret_type);
   defun("fcn-arg-cnt", ("(fcn u64 (t (ptr type_def)))"), fcn_arg_cnt);
