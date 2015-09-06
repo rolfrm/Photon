@@ -314,6 +314,9 @@ type_def * progn_macro(type_def * expected_type, c_block * block, c_value * val,
   if(is_check_type_run()){
     if(expr_cnt == 0)
       return &void_def;
+    for(size_t i = 0; i < expr_cnt - 1; i++){
+      compile_expr(expected_type, block, val, expressions[i]);
+    }
     return compile_expr(expected_type, block, val, expressions[expr_cnt-1]);
   }
   type_def * d;

@@ -198,6 +198,8 @@ type_def * expr2type(expr * typexpr){
     if(td != error_def)
       return td;
   }
+  if(is_check_type_run())
+    return error_def;
   logd("Unable to understand type: ");
   print_expr(typexpr);
   ERROR("\n");

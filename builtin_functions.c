@@ -249,4 +249,5 @@ void load_functions(){
   defun("intern", "(fcn (ptr expr) (e (ptr expr)))", intern_expr);
   str2type("(alias (opaque-struct _ccdispatch) ccdispatch)");
   defun("timestamp", ("(fcn i64)"), timestamp);
+  defun("expr2type", "(fcn (ptr type_def) (e (ptr expr)))", expr2type);
 }
