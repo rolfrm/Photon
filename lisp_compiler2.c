@@ -186,7 +186,6 @@ type_def * expr2type(expr * typexpr){
 	var_def * var = get_any_variable(name);
 	if(var != NULL && var->type == macro_store_type()){
 	  expr * e2 = expand_macro_store2(var->data, &e);
-	  logd("::"); print_expr(e2);logd("\n");
 	  return expr2type(e2);
 	}
       }else{
@@ -586,33 +585,27 @@ void print_current_mem(int id){
     logd("MEM%i: %i\n", id, trace_allocator_allocated_pointers(current_allocator));
 }
 var_def * lisp_compile_expr(expr * ex, compile_status * optout_status){
-  //allocator * trace_alloc = trace_allocator_make();
   expr * name = NULL;
-  with_allocator(/*trace_alloc*/ NULL, lambda(void,(){
-	//allocator * prev = current_allocator;
-	//current_allocator = trace_alloc;
-	c_root_code cl = compile_lisp_to_eval(ex, optout_status);
-	if(*optout_status == COMPILE_ERROR)
-	  return;
-	//print_current_mem(1);
-	if(cl.fcndef.type->fcn.ret == error_def){
-	  if(optout_status != NULL)*optout_status = COMPILE_ERROR;
-	  return;
-	}
+  c_root_code cl = compile_lisp_to_eval(ex, optout_status);
+  if(*optout_status == COMPILE_ERROR)
+    return NULL;
+  if(cl.fcndef.type->fcn.ret == error_def){
+    if(optout_status != NULL)
+      *optout_status = COMPILE_ERROR;
+    return NULL;
+  }
+  
+  void * codebuf = compile_as_c(&cl,1);
+  if(codebuf == NULL)
+    *optout_status = COMPILE_ERROR;
+  
+  name = cl.fcndef.name;
+  c_root_code_delete(cl);
+  
+  
+  if(codebuf != NULL)
+    add_delete_soon(codebuf);
 
-	void * codebuf = compile_as_c(&cl,1);
-	if(codebuf == NULL)
-	  *optout_status = COMPILE_ERROR;
-	//print_current_mem(2);
-	name = cl.fcndef.name;
-	c_root_code_delete(cl);
-
-	//print_current_mem(3);
-	if(codebuf != NULL)
-	  add_delete_soon(codebuf);
-	//current_allocator = prev;
-	//logd("Delete soon count: %i\n", delete_soon_cnt);
-      }));
   if(*optout_status == COMPILE_ERROR)
     return NULL;
   return get_global(name);
@@ -633,7 +626,6 @@ compile_status lisp_run_expr(expr * _ex){
     ex.sub_expr.cnt = 2;
     ex.sub_expr.exprs = exes;
   }
-  //logd("Compiling: ");print_expr(_ex);logd("\n");
   compile_status status = COMPILE_OK;
   var_def * evaldef = lisp_compile_expr(intern_expr(&ex), &status);
 
@@ -671,7 +663,6 @@ compile_status lisp_run_expr(expr * _ex){
     symbol * (* fcn)() = evaldef->data;
     symbol * s = fcn();
     UNUSED(s);
-    //logd("'%s\n", symbol_name(*s));
 
   }else if(ret->type == POINTER || ret->type == FUNCTION){
     void * (* fcn)() = evaldef->data;
