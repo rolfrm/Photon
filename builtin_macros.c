@@ -228,7 +228,6 @@ type_def * defvar_macro(type_def * expected_type, c_block * block,
 			c_value * val, expr ** exprs, size_t cnt){
   COMPILE_ASSERT(cnt == 2 || cnt == 3);
   expr * name = exprs[0];
-  print_expr(name);logd("\n");
   if(!is_check_type_run())
     logd("Defining variable '%s'.\n", symbol_name(name));
   type_def * t;
@@ -752,7 +751,7 @@ type_def * defun_macro(type_def * expected_type, c_block * block, c_value * valu
     expr * typexpr = arg->sub_expr.exprs[1];
     COMPILE_ASSERT(is_symbol(namexpr));
     arg_names[i] = intern_expr(namexpr);
-    print_expr(namexpr);logd("\n");
+    //print_expr(namexpr);logd("\n");
     arg_types[i] = expr2type(typexpr);
   }
   

@@ -139,16 +139,14 @@
 (defvar overload:current :type (ptr expr))
 (defmacro defoverloaded (fcn-name)
   (let ((s (expr ((unexpr fcn-name) info))))
-    (setf overload:current (intern  fcn-name))
-    (if (eq null (get-var s))
-	(expr 
-	 (progn
-	   (defvar (unexpr s) prototype)
-	   (setf (member (unexpr s) name) overload:current)
-	   (defmacro (unexpr fcn-name) (&type a d)
-	     (get-overloaded-expr a (unexpr s) d))
-	   ))
-	(expr (noop)))))
+    (when (eq null (get-var s))
+      (setf overload:current (intern fcn-name))
+      (eval! (expr (progn
+		     (defvar (unexpr s) prototype)
+		     (setf (member (unexpr s) name) overload:current)
+		     (defmacro (unexpr fcn-name) (&type a d)
+		       (get-overloaded-expr a (unexpr s) d))))))
+    (expr (noop))))
 
 (defmacro overload (&type t namefcn)
   (progn
@@ -159,9 +157,7 @@
   
       (let ((s (expr ((unexpr name) info))))
 	(let ((fcn-type (var-type fcn)))
-	  (print-expr fcn)
-		(builtin-print-str "gets here
-")
+	  (assert (not (eq (cast fcn-type (ptr void)) null)))
 	  (if (is-fcn-type? fcn-type)
 	      (expr 
 	       (let ((item (mk-ol-item overload:current)))

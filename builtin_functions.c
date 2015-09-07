@@ -7,6 +7,10 @@
 
 #include "lisp_std_types.h"
 
+void def_var(expr * name, type_def * t, void * v){
+  define_variable(name, t, v, true);
+}
+
 void defun2(char * name, type_def * t, void * fcn){
 
   define_variable(get_symbol(name), t, fcn, true);
@@ -161,8 +165,6 @@ type_def * var_type(expr * sym){
   var_def * var = get_any_variable(intern_expr(sym));
   if(var != NULL)
     return var->type;
-  print_expr(sym);
-  logd("Var is null!\n");
   return NULL;
 }
 
@@ -175,7 +177,6 @@ void * get_var(expr * sym){
 }
 
 void eval(expr * e){
-  //log("Compiling ");print_expr(e);logd("\n");
   compile_status cs = lisp_run_expr(e);
   if(cs == COMPILE_ERROR){
     loge("Error during compiling ");
@@ -220,6 +221,7 @@ void load_functions(){
   defun("builtin-print-str", ("(fcn void (str (ptr char)))"), builtin_print_string);
   defun("size-of",("(fcn u64 (type (ptr type_def)))"), size_of);
   defun("defun!", ("(fcn void (name (ptr char)) (t (ptr type_def)) (p (ptr void)))"), defun2);
+  defun("def", "(fcn void (name (ptr expr)) (t (ptr type_def)) (p (ptr void)))", def_var);
   str2type("(alias (ptr (opaque-struct _lib)) lib)"); // declare the lib tyoedef
   defun("is-linux?",("(fcn bool)"), &is_linux);
   defun("load-lib",("(fcn lib (libname (ptr char)))"), load_lib);
@@ -250,4 +252,5 @@ void load_functions(){
   str2type("(alias (opaque-struct _ccdispatch) ccdispatch)");
   defun("timestamp", ("(fcn i64)"), timestamp);
   defun("expr2type", "(fcn (ptr type_def) (e (ptr expr)))", expr2type);
+  
 }
