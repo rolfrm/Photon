@@ -432,6 +432,19 @@ expr * expand_macro_store(type_def * expected_type, macro_store * ms, expr ** ex
   }
   return NULL;
 }
+expr * get_unexpr_symbol(){
+  static expr * unexpr = NULL;
+  if(unexpr == NULL)
+    unexpr = get_symbol("unexpr");
+  return unexpr;
+}
+
+expr * get_expr_symbol(){
+  static expr * unexpr = NULL;
+  if(unexpr == NULL)
+    unexpr = get_symbol("expr");
+  return unexpr;
+}
 
 expr * expand_macro_store2(macro_store * ms, expr * expr){
   return expand_macro_store(opaque_expr(), ms, expr->sub_expr.exprs, expr->sub_expr.cnt);
@@ -474,12 +487,12 @@ int recurse_count(expr ex){
     return 0;
   sub_expr exp = ex.sub_expr;
   if(exp.cnt > 0 && is_symbol(exp.exprs[0]) 
-     && expr_symbol(exp.exprs[0]) == get_symbol("unexpr")){
+     && expr_symbol(exp.exprs[0]) == get_unexpr_symbol()){
     return 1;
   }
   
   if(exp.cnt > 0 && is_symbol(exp.exprs[0]) 
-     && expr_symbol(exp.exprs[0]) == get_symbol("expr")){
+     && expr_symbol(exp.exprs[0]) == get_expr_symbol()){
     //ASSERT(exp.cnt == 2);
     return 0;
   }
@@ -495,13 +508,13 @@ expr * recurse_expand(expr * ex, expr ** exprs, int * cnt){
     return ex;
   sub_expr exp = ex->sub_expr;
   if(exp.cnt > 0 && is_symbol(exp.exprs[0]) 
-     && exp.exprs[0] == get_symbol("unexpr")){
+     && exp.exprs[0] == get_unexpr_symbol()){
     ASSERT(exp.cnt == 2);
     int idx = *cnt;
     (*cnt)++;
     return exprs[idx];
   }else if(exp.cnt > 0 && is_symbol(exp.exprs[0]) 
-	   && (exp.exprs[0] == get_symbol("expr"))){
+	   && (exp.exprs[0] == get_expr_symbol())){
     return ex;
   }
   expr * sexp[exp.cnt];
@@ -531,12 +544,7 @@ expr * get_recurse_sym(int id, int cnt){
   return get_symbol_fmt("_tmp_%i__%i_", id, cnt);
 }
 
-expr * get_unexpr_symbol(){
-  static expr * unexpr = NULL;
-  if(unexpr == NULL)
-    unexpr = get_symbol("unexpr");
-  return unexpr;
-}
+
 
 bool recurse_expr(expr * ex, c_block * block, int id, int * cnt, var_def ** vars){
   if(ex->type == VALUE)
@@ -571,7 +579,7 @@ bool recurse_expr(expr * ex, c_block * block, int id, int * cnt, var_def ** vars
     block_add(block, exp);
     return true;
   }else if(exp.cnt > 0 && is_symbol(exp.exprs[0]) 
-	   && expr_symbol(exp.exprs[0]) == get_symbol("expr")){
+	   && expr_symbol(exp.exprs[0]) == get_expr_symbol()){
     return true;
   }else{
     bool ok = true;
@@ -588,7 +596,7 @@ type_def * expr_macro(type_def * expected_type, c_block * block, c_value * val, 
   type_def * exprtd = opaque_expr();	  
   
   expr * tmp = get_symbol_fmt("_tmp_symbol_%i", id);
-  expr * ex = intern_expr(body);
+  expr * ex = body;
   int cnt = 0;
   var_def * vars = NULL;
   bool ok = recurse_expr(ex, block, id, &cnt, &vars);
