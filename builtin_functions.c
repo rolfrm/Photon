@@ -177,12 +177,20 @@ void * get_var(expr * sym){
 }
 
 void eval(expr * e){
+  logd("Evaling: "); print_expr(e); logd("\n");
   compile_status cs = lisp_run_expr(e);
   if(cs == COMPILE_ERROR){
     loge("Error during compiling ");
     print_expr(e);logd("\n");
-
   }
+}
+
+void evalimeanit(expr * e){
+  bool prev = lisp_print_errors;
+  lisp_print_errors = false;
+  eval(e);
+  lisp_print_errors = prev;
+  
 }
 
 void builtin_print_string(char * str){
@@ -217,6 +225,7 @@ bool start_read_eval_print_loop();
 void load_functions(){
   defun("print-type", ("(fcn void (a (ptr type_def)))"), print_type);
   defun("eval!", ("(fcn void (expr (ptr expr)))"), eval);
+  defun("eval!!", "(fcn void (expr (ptr expr)))", evalimeanit);
   defun("load", ("(fcn void (file (ptr char)))"), load_builtin);
   defun("builtin-print-str", ("(fcn void (str (ptr char)))"), builtin_print_string);
   defun("size-of",("(fcn u64 (type (ptr type_def)))"), size_of);

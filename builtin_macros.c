@@ -458,6 +458,7 @@ expr * expand_macro2(expr * e){
   size_t cnt = e->sub_expr.cnt;
   expr * name = intern_expr(exprs[0]);
   var_def * fcn_var = get_any_variable(name);
+  
   return expand_macro_store(NULL, fcn_var->data, exprs + 1, cnt - 1);
 }
 
@@ -1212,7 +1213,6 @@ i64 macro_store_args(macro_store * ms){
   ASSERT(v->type->type == FUNCTION);
   return ms->rest ? -1 : v->type->fcn.cnt;
 }
-
 
 void builtin_macros_load(){
   // Macros
