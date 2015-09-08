@@ -393,7 +393,7 @@
 	    (print-expr (deref (ptr+ asserts (unexpr n))))	
 	    (printstr "\n")
 	    (write-line "****  *****\n")	
-	    (exit 1)
+	    (signal-error (stringify (unexpr _expr)))
 	    )))))
 
 (defmacro std:ext (a b selector)

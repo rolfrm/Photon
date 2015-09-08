@@ -94,9 +94,9 @@ type_def * compile_value(type_def * expected_type, c_block * block, c_value * va
   if(vdef == NULL){
     COMPILE_ERROR("Unknown variable '%s'", symbol_name(val->symbol));
   }
-  if(vdef->type == macro_store_type() && vdef->data != NULL){
-    return expand_macro(expected_type, block, val, &e, 1);
-  }
+  //if(vdef->type == macro_store_type() && vdef->data != NULL){
+  //  return expand_macro(expected_type, block, val, &e, 1);
+  //}
   if(vdef->type == macrolet_type() && vdef->data != NULL){
     return compile_expr(expected_type, block, val, vdef->data);
   }

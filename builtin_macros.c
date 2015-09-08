@@ -693,15 +693,7 @@ type_def * the_macro(type_def * expected_type, c_block * block, c_value * value,
 }
 
 type_def * stringify_macro(type_def * expected_type, c_block * block, c_value * value, expr * str){
-  if(!(is_keyword(str) || is_symbol(str))){
-    if(!is_check_type_run()){
-      loge("Expr cannot be stringifyed");
-      print_expr(str);
-    }
-    ERROR("stringify");
-  }
-  
-  return compile_expr(expected_type, block, value, string_expr(str->value));
+  return compile_expr(expected_type, block, value, string_expr(symbol_name(str)));
 }
 
 type_def * defun_macro(type_def * expected_type, c_block * block, c_value * value, expr * * sub_exprs, size_t expr_cnt){

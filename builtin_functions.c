@@ -162,7 +162,7 @@ void set_printer(expr * sym){
 }
 
 type_def * var_type(expr * sym){
-  var_def * var = get_any_variable(intern_expr(sym));
+  var_def * var = get_global(intern_expr(sym));
   if(var != NULL)
     return var->type;
   return NULL;
@@ -177,7 +177,6 @@ void * get_var(expr * sym){
 }
 
 void eval(expr * e){
-  logd("Evaling: "); print_expr(e); logd("\n");
   compile_status cs = lisp_run_expr(e);
   if(cs == COMPILE_ERROR){
     loge("Error during compiling ");
@@ -187,7 +186,7 @@ void eval(expr * e){
 
 void evalimeanit(expr * e){
   bool prev = lisp_print_errors;
-  lisp_print_errors = false;
+  lisp_print_errors = true;
   eval(e);
   lisp_print_errors = prev;
   
@@ -221,8 +220,13 @@ void load_builtin(char * path){
 
 bool start_read_eval_print_loop();
 
+void signal_error(char * msg){
+  ERROR(msg);
+}
+
 
 void load_functions(){
+  defun("signal-error", "(fcn void (msg (ptr char)))", signal_error);
   defun("print-type", ("(fcn void (a (ptr type_def)))"), print_type);
   defun("eval!", ("(fcn void (expr (ptr expr)))"), eval);
   defun("eval!!", "(fcn void (expr (ptr expr)))", evalimeanit);
@@ -261,5 +265,5 @@ void load_functions(){
   str2type("(alias (opaque-struct _ccdispatch) ccdispatch)");
   defun("timestamp", ("(fcn i64)"), timestamp);
   defun("expr2type", "(fcn (ptr type_def) (e (ptr expr)))", expr2type);
-  
+  defun("check-type-run", "(fcn bool)", is_check_type_run);
 }
