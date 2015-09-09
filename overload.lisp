@@ -184,7 +184,7 @@
 								      (get-var fcn)
 								      (ptr macro_store))))))
 		     (add-to-list (cast (addrof (member (unexpr s) macros)) (ptr (ptr void)))
-				  (cast (addrof (member (unexpr s) macro-cnt)) (ptr u64))
+				  (addrof (member (unexpr s) macro-cnt))
 				  (cast (addrof macroitem) (ptr void))
 				  (size-of (type overload-macro)))
 		     (noop)))

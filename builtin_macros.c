@@ -669,6 +669,23 @@ type_def * cast_macro(type_def * expected_type, c_block * block, c_value * value
   type_def * td = compile_expr(NULL, block, v, body);
   COMPILE_ASSERT(td != error_def);	  
 
+  if(expected_type != NULL && expected_type != cast_to){
+    loge("Unexpected cast target.");
+    logd("\nExpected type is '");
+    print_decl(expected_type, get_symbol("t"));
+    logd("'\nbut casting to '");
+    print_decl(cast_to, get_symbol("t"));
+    logd("'\n");
+    COMPILE_ERROR("");
+  }
+  if(td == cast_to){
+    logd("Warning: Redundant cast at ");
+    print_expr(body);
+    logd("\n");
+    *value = *v;
+    dealloc(v);
+    return td;
+  }
   CHECK_TYPE(expected_type, cast_to);
 
   value->type = C_CAST;
