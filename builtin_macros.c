@@ -1190,7 +1190,7 @@ expr * sub_expr_skip(expr * e){
 
 expr * gensym(){
   static int symid = 0;
-  return get_symbol_fmt("__sym_%i", symid++);
+  return get_symbol_fmt("sym#%i", symid++);
 }
 
 void free_expr(expr * e){

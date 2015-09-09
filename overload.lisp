@@ -160,7 +160,6 @@
       (setf overload:current fcn)
   
       (let ((s (expr ((unexpr name) info))))
-	(print-expr fcn) (printstr newline)
 	(let ((fcn-type (var-type fcn)))
 	  (assert (not (eq (cast fcn-type (ptr void)) null)))
 	  (if (is-fcn-type? fcn-type)

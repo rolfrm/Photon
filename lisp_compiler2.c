@@ -177,6 +177,7 @@ type_def * expr2type(expr * typexpr){
       
       type_def * td = type_pool_simple(typexpr);
       if(td == NULL){
+	// if it is not a simple type, it might be a macro.
 	expr * name = intern_expr(sexp.exprs[0]);
 	expr e;
 	e.type = EXPR;
