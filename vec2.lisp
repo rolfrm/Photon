@@ -267,9 +267,9 @@
     (let ((o mat4-default))
       (setf (member o m00) (/ near r))
       (setf (member o m11) (/ near t))
-      (setf (member o m22) (/ (+ near far) (- far near)))
+      (setf (member o m22) (/ (* (+ near far) -1) (- far near)))
       (setf (member o m23) (/ (* far near -2) (- far near)))
-      (setf (member o m32) 1)
+      (setf (member o m32) -1)
       o)))
 
 
