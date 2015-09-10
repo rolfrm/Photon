@@ -155,18 +155,29 @@
 (overload print printvec3)
 (overload print printvec4)
 
-(type 
- (alias
-  (struct _mat4
-	  (m00 f64) (m01 f64) (m02 f64) (m03 f64) 
-	  (m10 f64) (m11 f64) (m12 f64) (m13 f64) 
-	  (m20 f64) (m21 f64) (m22 f64) (m23 f64) 
-	  (m30 f64) (m31 f64) (m32 f64) (m33 f64))
-  mat4))
+(defstruct mat4
+  (m00 f64) (m01 f64) (m02 f64) (m03 f64) 
+  (m10 f64) (m11 f64) (m12 f64) (m13 f64) 
+  (m20 f64) (m21 f64) (m22 f64) (m23 f64) 
+  (m30 f64) (m31 f64) (m32 f64) (m33 f64))
 
+(defstruct mat4f
+  (m00 f32) (m01 f32) (m02 f32) (m03 f32) 
+  (m10 f32) (m11 f32) (m12 f32) (m13 f32) 
+  (m20 f32) (m21 f32) (m22 f32) (m23 f32) 
+  (m30 f32) (m31 f32) (m32 f32) (m33 f32))
+
+(defun mat4-to-mat4f (mat4f (m mat4))
+  (let ((out :type mat4f))
+    (let ((inptr (cast (addrof m) (ptr f64)))
+	  (optr (cast (addrof out) (ptr f32))))
+      (range it 0 16
+	     (setf (deref (+ optr it)) (cast (deref (+ inptr it)) f32))))
+    out))
+	   
 (defvar mat4-default :type mat4)
-
 (memset (cast (addrof mat4-default) (ptr void)) 0 (size-of (type mat4)))
+
 (defun mat4-aref ((ptr f64) (a mat4) (row i64) (col i64))
   (ptr+ (cast (addrof a) (ptr f64)) 
 	(the (+ (* col 4) row ) i64)))
@@ -238,7 +249,7 @@
 		   (let ((v 0.0))
 		     (range j 0 4 
 			    (let ((from-b (deref (aref b j)))
-				  (from-a (deref (aref a i j))))
+				  (from-a (deref (aref a j i))))
 			      (incr v (* from-b from-a))))
 		     v))))
     vout))
@@ -250,43 +261,42 @@
     (setf (member mat m23) (member offset z))
     mat))
 
+(defun projection-matrix (mat4 (width f64) (height f64) (near f64) (far f64))
+  (let ((r (* width 0.5))
+	(t (* height 0.5)))
+    (let ((o mat4-default))
+      (setf (member o m00) (/ near r))
+      (setf (member o m11) (/ near t))
+      (setf (member o m22) (/ (+ near far) (- far near)))
+      (setf (member o m23) (/ (* far near -2) (- far near)))
+      (setf (member o m32) 1)
+      o)))
+
+
+
 (overload dot mat4-dot)
 (overload dot mat4vec4-dot)	   
 
 (defun mat4-print (void (mat mat4))
   (progn
-    (print (member mat m00))
-    (printstr " ")
-    (print (member mat m01))
-    (printstr " ")
-    (print (member mat m02))
-    (printstr " ")
-    (print (member mat m03))
-    (printstr "\n")
-    (print (member mat m10))
-    (printstr " ")
-    (print (member mat m11))
-    (printstr " ")
-    (print (member mat m12))
-    (printstr " ")
-    (print (member mat m13))
-    (printstr "\n")
-    (print (member mat m20))
-    (printstr " ")
-    (print (member mat m21))
-    (printstr " ")
-    (print (member mat m22))
-    (printstr " ")
-    (print (member mat m23))
-    (printstr "\n")    
-    (print (member mat m30))
-    (printstr " ")
-    (print (member mat m31))
-    (printstr " ")
-    (print (member mat m32))
-    (printstr " ")
-    (print (member mat m33))))
+    (print (member mat m00) (member mat m01) (member mat m02) (member mat m03) newline)
+    (print (member mat m10) (member mat m11) (member mat m12) (member mat m13) newline)
+    (print (member mat m20) (member mat m21) (member mat m22) (member mat m23) newline)
+    (print (member mat m30) (member mat m31) (member mat m32) (member mat m33) newline)
+    ))
 (overload print mat4-print)
+
+(defun homogenize (vec3 (a vec4))
+  (let ((o :type vec3))
+    (setf (member o x) (/ (member a x) (member a w)))
+    (setf (member o y) (/ (member a y) (member a w)))
+    (setf (member o z) (/ (member a z) (member a w)))
+    o))
+;; (defvar p (projection-matrix 10.0 10.0 0.1 10.1 ))
+;; (print p)
+;; (print (homogenize (dot p (vec 0 0 10 1))) newline)
+;; (mat4-to-mat4f p)
+;(exit 0)
 
 (defun vec2-normalize (vec2 (a vec2))
   (let ((len (vec2-length a)))
