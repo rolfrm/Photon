@@ -110,6 +110,7 @@ type_def * type_of(expr * ex);
 // Gets the return type of an expression. Expected type can be NULL if dont care. returned type might be different from expected_type although this is usually an error.
 type_def * type_of2(type_def * expected_type, expr * ex);
 
+type_def * type_of3(type_def * expected_type, expr * ex);
 
 // Creates a new type from the string 'str'. for example "(struct x2 (x i64) (x_2 i64))".
 type_def * str2type(char * str);

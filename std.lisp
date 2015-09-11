@@ -429,15 +429,16 @@
     (expr
      (var! (((unexpr it) (unexpr start))
 	   ((unexpr s) (unexpr stop)))
-       (var!(((unexpr d) (sign (.- (unexpr s) (unexpr start)))))
-	 (while! (not (eq (unexpr it) (unexpr s)))
-		 (progn
-		   (unexpr (unfold-body (expr progn) body))
-		   (setf (unexpr it) (.+ (unexpr it) (unexpr d))))))))))
+	   (var!(((unexpr d) (sign (.- (unexpr s) (unexpr start)))))
+		(while! (< (.* (unexpr d) (unexpr it)) (.* (unexpr d) (unexpr s)))
+			(progn
+			  (unexpr (unfold-body (expr progn) body))
+			  (setf (unexpr it) (.+ (unexpr it) (unexpr d))))))))))
 ; Usage:
 ;;; (range a 0 -10 (printi64 a) (printstr newline))
 ;;; (range b 0 10 (printi64 b) (printstr newline))
-
+(range b 0 10 (printi64 b) (printstr newline))
+;(exit 0)
 (defun unfold-body2 ((ptr expr) (header (ptr expr)) (args (ptr expr)))
     (let ((sexprs (cast
 		   (alloc (.* (cast (size-of (type (ptr expr))) u64)

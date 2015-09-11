@@ -173,7 +173,9 @@ type_def * var_macro(type_def * expected_type, c_block * block, c_value * val, e
     cvars[i].var = var;
   }
   push_symbols(&lisp_vars, &sexpr.cnt);
-  type_def * rettype = type_of(body);
+  // lisp_compile called later, we dont need detailed error
+  // message here.. 
+  type_def * rettype = type_of2(NULL, body);
   bool is_void = rettype == &void_def;
   pop_symbols();
   
@@ -906,12 +908,14 @@ type_def * comparison_macro(char * operator, type_def * expected_type, c_block *
   c_value * val1 = alloc0(sizeof(c_value));
   c_value * val2 = alloc0(sizeof(c_value));
   c_value * comp = alloc0(sizeof(c_value));
-  type_def * t1 = type_of2(NULL,item1);//
-  type_def * t2 = type_of2(t1,item2);//compile_expr(t1, block, val2, item2);
+  type_def * t1 = type_of3(NULL,item1);//
+  type_def * t2 = type_of3(t1,item2);//compile_expr(t1, block, val2, item2);
   if(t2 != t1){
-    t2 = type_of2(NULL, item2);    
-    t1 = type_of2(t2, item1);
+    t2 = type_of3(NULL, item2);    
+    t1 = type_of3(t2, item1);
   }
+  //if(t1 == error_def)
+  //  COMPILE_ERROR("Unable to compile value");
   COMPILE_ASSERT(t1 != error_def && t1 != &void_def);
   if(t1 != t2){
 
