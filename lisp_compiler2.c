@@ -239,7 +239,9 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
     cmacro_def * macro = var_data;
 
     if(macro->arg_cnt != argcnt && macro->arg_cnt != -1){
-      print_expr(name); logd(" : ");
+      if(!is_check_type_run()){
+	print_expr(name); logd(" : ");
+      }
       COMPILE_ERROR("Unsupported number of arguments %i",argcnt); 
       COMPILE_ERROR("");
     }
