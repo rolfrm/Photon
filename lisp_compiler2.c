@@ -239,7 +239,8 @@ type_def * _compile_expr(type_def * expected_type, c_block * block, c_value * va
     cmacro_def * macro = var_data;
 
     if(macro->arg_cnt != argcnt && macro->arg_cnt != -1){
-      COMPILE_ERROR("Unsupported number of arguments %i",argcnt); print_expr(name);
+      print_expr(name); logd(" : ");
+      COMPILE_ERROR("Unsupported number of arguments %i",argcnt); 
       COMPILE_ERROR("");
     }
     type_def * ( *macro_fcn)(type_def * ex_type, c_block * block, c_value * val, ...) = macro->fcn;
