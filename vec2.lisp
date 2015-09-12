@@ -43,7 +43,13 @@
 (overload aref vec4-aref)
 
 (defun makevec2 (vec2 (x f64) (y f64))
-  (let ((out vec2-default))
+  (let ((out :type vec2))
+    (setf (member out x) x)
+    (setf (member out y) y)
+    out))
+
+(defun makevec2f (vec2f (x f32) (y f32))
+  (let ((out :type vec2f))
     (setf (member out x) x)
     (setf (member out y) y)
     out))
@@ -54,6 +60,14 @@
     (setf (member out y) y)
     (setf (member out z) z)
     out))
+
+(defun makevec3f (vec3f (x f32) (y f32) (z f32))
+  (let ((out :type vec3f))
+    (setf (member out x) x)
+    (setf (member out y) y)
+    (setf (member out z) z)
+    out))
+
 
 (defun makevec4 (vec4 (x f64) (y f64) (z f64) (w f64))
   (let ((out vec4-default))
@@ -67,7 +81,8 @@
 (overload vec makevec2)
 (overload vec makevec3)
 (overload vec makevec4)
-
+(overload vec makevec2f)
+(overload vec makevec3f)
 (defmacro vec2op (operator)
   (let ((name (expr (vec2 (unexpr operator)))))
     (let ((r (expr

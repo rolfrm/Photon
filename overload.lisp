@@ -116,11 +116,12 @@
 	    (if (eq maco (cast null (ptr expr)))
 		(let ((def (member ol-info default)))
 		  (if (eq def (cast null (ptr expr)))
-		      ;(progn ;; Consider enabling error msg.
+		      (progn ;; Consider enabling error msg.
 			;(print-type return-type)
 			;(print-expr d)
 			;(printstr "Error no matching  overload found for '")
-			;(print-symbol (member ol-info name))
+			;(print-expr (member ol-info name))
+			;(printstr newline)
 			;(printstr "'.\n Argument types:\n ")
 			;  (let ((j (cast 0 u64)))
 			;    (while (not (eq j (sub-expr.cnt d)))
@@ -129,7 +130,7 @@
 			;	(printstr " ")
 			;	(setf j (u64+ j 1)))))
 			;  (printstr "\n")
-			  null-expr
+			  null-expr)
 		      (unfold-body def d)))
 		maco))
 	  
