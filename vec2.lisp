@@ -5,22 +5,12 @@
 (defstruct vec3f  (x f32) (y f32) (z f32))
 (defstruct vec4f  (x f32) (y f32) (z f32) (w f32))
 
-;numbers:three ;; 3
 (defvar vec2-default :type vec2)
 (memset (cast (addrof vec2-default) (ptr void)) 0 (size-of (type vec2)))
 (defvar vec3-default :type vec3)
 (memset (cast (addrof vec3-default) (ptr void)) 0 (size-of (type vec3)))
 (defvar vec4-default :type vec4)
 (memset (cast (addrof vec4-default) (ptr void)) 0 (size-of (type vec4)))
-
-;; (defmacro decl-vec-type (n-elements type)
-;;   ;(let ((
-;;   (expr
-;;    (defstruct (vec (unexpr n-lements) (unexpr type))
-;;      (
-
-
-(print (type vec2) newline)
 
 (defmacro vec-dim (vec-expr)
   (let ((n (let ((t1 (type-of vec-expr)))
@@ -78,13 +68,10 @@
 (overload vec makevec3)
 (overload vec makevec4)
 
-(print " " (vec-dim (vec 1 2 3)) newline)
-
-
 (defmacro vec2op (operator)
   (let ((name (expr (vec2 (unexpr operator)))))
     (let ((r (expr
-	     (progn
+	      (progn
 	       (defun (unexpr name) (vec2 (a vec2) (b vec2))
 		 (let ((out vec2-default))
 		   (setf (member out x) 
@@ -94,8 +81,7 @@
 		   out))
 	       (overload (unexpr operator) (unexpr name))))))
       r)))
-(vec2op *)
-(vec2op +) (vec2op /) (vec2op -)
+(vec2op *) (vec2op +) (vec2op /) (vec2op -)
 
 (defun vec2turn (vec2 (a vec2) (radians f64))
   (let ((sinr (sin radians))
@@ -110,45 +96,17 @@
 	     (bx (member b x)) (by (member b y)))
     (and (eq ax bx) (eq ay by))))
 
-;(let (( a (vec2turn (vec2 1 1) pi)) (b (vec2:rot90 (vec2:rot90 (vec2 1 1)))))
-;  (assert (eq 
-
 (defun vec2scale (vec2 (a vec2) (b f64))
-  (progn
-    (setf (member a x) (* (member a x) b))
-    (setf (member a y) (* (member a y) b))
-    a))
+  (vec (* (member a x) b)  (* (member a y) b)))
 
 (defun printvec2 (void (a vec2))
-  (progn
-    (printstr "(") 
-    (print (member a x))
-    (printstr ", ")
-    (print (member a y))
-    (printstr ")")))
+  (print "(" (member a x) " " (member a y) ")"))
 
 (defun printvec3 (void (a vec3))
-  (progn
-    (printstr "(") 
-    (print (member a x))
-    (printstr ", ")
-    (print (member a y))
-    (printstr ", ")
-    (print (member a z))
-    (printstr ")")))
-
+  (print "(" (member a x) " " (member a y) " " (member a z) ")"))
 
 (defun printvec4 (void (a vec4))
-  (progn
-    (printstr "(") 
-    (print (member a x))
-    (printstr ", ")
-    (print (member a y))
-    (printstr ", ")
-    (print (member a z))
-    (printstr ", ")
-    (print (member a w))
-    (printstr ")")))
+  (print "(" (member a x) " " (member a y) " " (member a z) " " (member a w) ")"))
 
 (overload * vec2scale)
 (overload print printvec2)
@@ -176,7 +134,7 @@
     out))
 	   
 (defvar mat4-default :type mat4)
-(memset (cast (addrof mat4-default) (ptr void)) 0 (size-of (type mat4)))
+(zeroize mat4-default)
 
 (defun mat4-aref ((ptr f64) (a mat4) (row i64) (col i64))
   (ptr+ (cast (addrof a) (ptr f64)) 
@@ -272,8 +230,6 @@
       (setf (member o m32) -1)
       o)))
 
-
-
 (overload dot mat4-dot)
 (overload dot mat4vec4-dot)	   
 
@@ -287,11 +243,9 @@
 (overload print mat4-print)
 
 (defun homogenize (vec3 (a vec4))
-  (let ((o :type vec3))
-    (setf (member o x) (/ (member a x) (member a w)))
-    (setf (member o y) (/ (member a y) (member a w)))
-    (setf (member o z) (/ (member a z) (member a w)))
-    o))
+  (vec (/ (member a x) (member a w))
+       (/ (member a y) (member a w))
+       (/ (member a z) (member a w))))
 
 (defun mat4-rot-x (mat4 (a f64))
   (let ((m mat4-eye)
@@ -321,15 +275,7 @@
     (setf (member m m10) (- 0 s))
     (setf (member m m01) s)
     (setf (member m m11) c)
-    m))    
-    
-
-;; (defvar p (projection-matrix 10.0 10.0 0.1 10.1 ))
-;; (print p)
-;; (print (homogenize (dot p (vec 0 0 10 1))) newline)
-;; (mat4-to-mat4f p)
-;;(print (dot (mat4-rot-y (* pi 0.5)) (vec 1 0 0 1)) newline)
-;;(exit 0)
+    m))
 
 (defun vec2-normalize (vec2 (a vec2))
   (let ((len (vec2-length a)))
@@ -345,3 +291,14 @@
 
 (defun vec2:floor (vec2 (a vec2))
   (vec (floor (member a x)) (floor (member a y))))
+
+(defmacro . (a b)
+  (expr (dot (unexpr a) (unexpr b))))
+
+
+;; (defvar p (projection-matrix 10.0 10.0 0.1 10.1 ))
+;; (print p)
+;; (print (homogenize (dot p (vec 0 0 10 1))) newline)
+;; (mat4-to-mat4f p)
+;;(print (dot (mat4-rot-y (* pi 0.5)) (vec 1 0 0 1)) newline)
+;;(exit 0)

@@ -35,8 +35,6 @@
 (load-symbol+ libm floorf floorf (fcn f32 (x f32)))
 (load-symbol+ libm floor floor (fcn f64 (x f64)))
 
-
-
 (defvar pi 3.141592653)
 (defvar 2pi (* pi 2))
 
@@ -106,16 +104,7 @@
 	  (make-sub-expr sub-exprs (+ 1 (sub-expr.cnt exprs)))))
       (cast null (ptr expr))))
 
-;; (printstr "??
-;; ")
-;(defvar ms (cast (get-var (quote print-rest)) (ptr macro_store)))
-; (print-macro-store ms)
-;; (printstr "
-;; ??
-;; ")
 (overload print print-rest)
-(print 1 " " 2 " " 3 newline)
-(print "hello" " " "world!" newline)
 
 (load-symbol+ libc std:rand rand (fcn i32))
 (load-libc usleep (fcn void (time i32)))
@@ -161,18 +150,11 @@
 (defvar seek-cur (cast 1 seek-mode)) ; Seek from current position.
 (defvar seek-end (cast 2 seek-mode)) ; Seek from end of file.
 
-
 (load-libc fclose (fcn i32 (file (ptr void))))
 (load-libc fseek (fcn i32 (file (ptr void)) (offset u64) (mode seek-mode)))
 (load-libc ftell (fcn u64 (file (ptr void))))
 (load-libc fread (fcn u64 (buffer (ptr void))  (size u64) (count u64) (file (ptr void))))
 (load-libc fwrite (fcn u64 (data (ptr void)) (size u64) (count u64) (file (ptr void))))
-
-
-(remove "test.txt")
-(let ((f (fopen "test.txt" "a")))
-  (fwrite (cast "hello?" (ptr void)) 1 6 f)
-  (fclose f))
 
 (defun print-seek (void (mode seek-mode))
   (if (eq mode seek-set)
@@ -200,12 +182,6 @@
       (fclose file))
     buffer))
 
-(let ((s (cast 0 u64)))
-  (let ((alldata (read-all-data "/usr/include/stdio.h" (addrof s))))
-    ;(print "Read: " s newline)
-    ;(print s ":" newline alldata newline)
-    (dealloc (cast alldata (ptr void)))))
-
 (defmacro ptr-null? (_ptr)
   (expr (eq null (cast (unexpr _ptr) (ptr void)))))
 
@@ -215,6 +191,6 @@
       (expr (memset 
 	     (cast (addrof (unexpr item)) (ptr void)) 
 	     0
-	     (unexpr (number2expr (cast size i64))) )))))
+	     (unexpr (number2expr (cast size i64))))))))
 
 (load "vec2.lisp")
