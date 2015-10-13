@@ -50,6 +50,7 @@ bool test_get_cname();
 bool test_symbols();
 bool test_type_pool();
 bool test_intern_expr();
+bool test_dataflow();
 #ifdef _WIN32
 #undef ASSERT
 #include <windows.h>
@@ -95,6 +96,8 @@ void parse_args(char * argv[], int cnt){
   }
 }
 int main(int argc, char *argv[] ){
+  test_dataflow();
+  return 0;
   parse_args(argv, argc);
   logd("Running from %s\n", exec_path);
   if(run_test){
