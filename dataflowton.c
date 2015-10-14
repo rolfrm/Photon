@@ -45,32 +45,48 @@ size_t calc_delay_line(double * in, size_t cnt, double ** out, double ** delay_b
   return cnt;
 }
 
-size_t copy_buffer(double *in, size_t cnt, double ** out){
+size_t copy_buffer(const double * in, size_t cnt, double ** out){
   ensure_size((void **)out, sizeof(double)* cnt);
   memcpy(*out, in, cnt * sizeof(double));
   return cnt;
 }
 
+size_t sine_generator(double frequency, double phase, size_t cnt, double ** out_buffer){
+  ensure_size((void **) out_buffer, cnt * sizeof(double));
+  for(size_t i = 0; i < cnt; i++){
+    (*out_buffer)[i] = sin((double)i * frequency + phase);
+  }
+  return cnt;
+} 
+
+size_t add_line(const double * a, const double * b, size_t cnt, double ** o){
+  ensure_size((void **) o, cnt * sizeof(double));
+  for(size_t i = 0; i < cnt; i++)
+    (*o)[i] = a[i] + b[i];
+  return cnt;
+}
+
 bool test_dataflow(){
   logd("Testing dataflow..\n");
-  double x[10], y[10], z[10];
+  double * x = NULL, * y = NULL, * z = NULL;
   double * r = NULL;
   double * r2 = NULL;
   double * r3 = NULL;
+  size_t cnt = sine_generator(0.1, 0.0, 100, &x);
+  sine_generator(0.1, 3.14/3, 100, &y);
+  sine_generator(0.1, 2 * 3.14/3, 100, &z);
   
-  for(size_t i = 0; i < array_count(z); i++){
-    x[i] = i & 1;
-    y[i] = i & 3;
-    z[i] = i ^ 4;
+  //size_t r_size = calc_norm2(x, y, z, cnt, &r);
+  add_line(x,y,cnt,&r);
+  add_line(r,z,cnt,&r);
+  calc_norm2(r, r, r, cnt, &r);
+  calc_norm2(r, r, r, cnt, &r);
+  for(int i = 0; i < 1; i++){
+    calc_delay_line(r, cnt, &r2, &r3);
+    copy_buffer(r2,cnt, &r);
   }
-
-  size_t r_size = calc_norm2(x, y, z, array_count(z), &r);
-  for(int i = 0; i < 5; i++){
-    calc_delay_line(r, r_size, &r2, &r3);
-    copy_buffer(r2,r_size, &r);
-  }
-  for(size_t i = 0; i < r_size; i++){
-    logd("%f  %i\n", r2[i], r);
+  for(size_t i = 0; i < cnt; i++){
+    //logd("%f  %i\n", r2[i], r);
   }
   return true;
 }
