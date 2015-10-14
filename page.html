@@ -1,0 +1,65 @@
+<html>
+<head>
+<script type="text/javascript">
+function post(path, params, method) {
+    method = method || "post"; // Set method to post by default if not specified.
+
+    // The rest of this code assumes you are not using a library.
+    // It can be made less wordy if you use one.
+    var form = document.createElement("form");
+    form.setAttribute("method", method);
+    form.setAttribute("action", path);
+
+    for(var key in params) {
+        if(params.hasOwnProperty(key)) {
+            var hiddenField = document.createElement("input");
+            hiddenField.setAttribute("type", "hidden");
+            hiddenField.setAttribute("name", key);
+            hiddenField.setAttribute("value", params[key]);
+
+            form.appendChild(hiddenField);
+         }
+    }
+
+    document.body.appendChild(form);
+    form.submit();
+}
+responses = 0
+kresponses = -1
+function fun(){
+   xmlhttp = new XMLHttpRequest();
+   xmlhttp.responseType = 'arraybuffer';
+    xmlhttp.onreadystatechange = function() {
+        if (xmlhttp.readyState == XMLHttpRequest.DONE ) {
+           if(xmlhttp.status == 200){
+               alert(new Float64Array(xmlhttp.response)[2]);
+               //alert(xmlhttp.responseText);
+               responses = responses + 1
+               if(Math.floor(responses / 1000) != kresponses){
+                  document.getElementById("myDiv").innerHTML = kresponses.toString()
+                  kresponses = Math.floor(responses / 1000)
+                  }
+                  //xmlhttp.open("GET", "thedata", true);
+                  //xmlhttp.send();
+                  //fun();
+           }
+           else if(xmlhttp.status == 400) {
+              alert('There was an error 400')
+           }
+           else {
+               alert('something else other than 200 was returned')
+           }
+        }
+    }
+   xmlhttp.open("GET", "thedata", true);
+   xmlhttp.send();
+}
+window.onload = fun;
+</script>
+</head>
+<body>
+Hello.. you..
+<div id="myDiv"/>
+</body>
+
+<html/>

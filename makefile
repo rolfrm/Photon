@@ -1,5 +1,5 @@
 OPT = -O0 -g3
-SOURCES =  foton.c ../iron/linmath.c ../iron/utils.c lisp_types.c lisp_std_types.c ../iron/mem.c ../iron/fileio.c ../iron/array.c ../iron/math.c ../iron/time.c ../iron/hashtable.c ../iron/log.c  lisp_symbols.c lisp_compiler2.c lisp_compiler.c lisp_parser.c type_pool.c builtin_macros.c expr_utils.c c_ast.c builtin_functions.c dataflowton.c #repl.c
+SOURCES =  foton.c ../iron/linmath.c ../iron/utils.c lisp_types.c lisp_std_types.c ../iron/mem.c ../iron/fileio.c ../iron/array.c ../iron/math.c ../iron/time.c ../iron/hashtable.c ../iron/log.c  lisp_symbols.c lisp_compiler2.c lisp_compiler.c lisp_parser.c type_pool.c builtin_macros.c expr_utils.c c_ast.c builtin_functions.c dataflowton.c flowgui.c #repl.c
 CC = gcc
 TARGET = foton
 OBJECTS =$(SOURCES:.c=.o)
@@ -12,7 +12,7 @@ SYS := $(firstword $(shell uname -s))
 ifeq ($(SYS),Linux)
   rmcmd = rm
   LDFLAGS = $(LDFLAGS1)
-  LIBS += libtcc.a -ldl
+  LIBS += libtcc.a -ldl -lmicrohttpd
 else
   rmcmd = remove
   LDFLAGS = $(LDFLAGS1) libtcc.dll

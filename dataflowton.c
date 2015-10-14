@@ -51,7 +51,12 @@ size_t copy_buffer(double *in, size_t cnt, double ** out){
   return cnt;
 }
 
+
+void run_http_serv();
 bool test_dataflow(){
+  run_http_serv();
+  while(true)
+    usleep(100000);
   logd("Testing dataflow..\n");
   double x[10], y[10], z[10];
   double * r = NULL;
@@ -72,5 +77,6 @@ bool test_dataflow(){
   for(size_t i = 0; i < r_size; i++){
     logd("%f  %i\n", r2[i], r);
   }
+
   return true;
 }
