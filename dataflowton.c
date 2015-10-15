@@ -27,7 +27,7 @@ void ensure_size(void ** buffer, size_t min_size){
 }
 
 void ensure_size2(void ** buffer, size_t * size, size_t min_size){
-  if(size < min_size){
+  if(*size < min_size){
     *buffer = ralloc(*buffer, min_size);
     *size = min_size;
   } 
@@ -35,12 +35,16 @@ void ensure_size2(void ** buffer, size_t * size, size_t min_size){
 typedef struct{
   type_def * fcn_type;
   void * fcn;
-  
+  void (* destroy) (void * node, void * destroy_userdata);  
+  int * inputs;
+  int * outputs;
 }node_type;
 
 typedef struct{
   node_type type;
-  void (* destroy) (node_base * node);
+  void * userdata;
+  int activity;
+  void ** output_buffers;
 }node_base;
 
 typedef struct{
@@ -49,15 +53,25 @@ typedef struct{
   u64 buffer_size;
 }norm2_data;
 
-size_t calc_norm2(double * in_xes, double * in_yes, double * in_zes, size_t cnt, norm2_data * output){
+size_t calc_norm2(norm2_data * output, double * in_xes, double * in_yes, double * in_zes, size_t cnt, double ** output_buffer){
   ensure_size2((void **) &output->buffer, &output->buffer_size, cnt * sizeof(double));
   double * o = output->buffer;
   for(size_t i = 0; i < cnt; i++){
     o[i] = sqrt(in_xes[i] * in_xes[i] + in_yes[i] * in_yes[i] + in_zes[i] * in_zes[i]);
   }
+  *output_buffer = output->buffer;
   return cnt;
 }
-
+typedef struct{
+  node_base base;
+  double * buffer;
+  u64 buffer_size;
+}array_node;
+u64 array_node(array_node *node, double ** output_buffer){
+  *output_buffer = node->buffer;
+  return node->buffer_size;
+}
+/*
 typedef struct{
   node_base base;
   double * buffer;
@@ -98,19 +112,108 @@ size_t add_line(const double * a, const double * b, size_t cnt, double ** o){
   for(size_t i = 0; i < cnt; i++)
     (*o)[i] = a[i] + b[i];
   return cnt;
+  }*/
+
+#include <stdarg.h>
+typedef struct{
+  size_t node_id;
+  size_t local_index;
+  size_t remote_index;
+}connection;
+
+typedef struct{
+  connection * inputs;
+  size_t input_cnt;
+  connection * outputs;
+  size_t output_cnt;
+}node_connections;
+
+typedef struct{
+  node_connections ** connections;
+  node_base ** nodes;
+  size_t node_cnt;
+}connections;
+
+void update_nodes(connections * con){
+  for(size_t i = 0; i < con->node_cnt; i++){
+    node_base * node = con->nodes[i];
+    if(node->activity){
+      node->activity = 0;
+      int input_cnt = 0, output_cnt = 0;
+      for(int * inputs = node->node_type.inputs; *inputs != 0; inputs++)
+	input_cnt += 1;
+      for(int * outputs = node->node_type.outputs; *outputs != 0; outputs++)
+	output_cnt += 1;      
+      void * outputs[output_cnt];
+      void * args[input_cnt + output_cnt];
+      for(int i = 0; i < output_cnt; i++)
+	args[i + input_cnt] = outputs + i;
+      node_connections * ncon = con->connections[i];
+      for(int i = 0; i < ncon->input_cnt; i++){
+	connection * connection = ncon->inputs + i;
+	args[i] = con->nodes[connection->node_id].output_buffers[connection->remote_index];
+      }
+      
+      
+      u64 (fcn *) (node_base * n, ...) = node->type.fcn;
+    }
+  }
+}
+
+size_t ensure_node_con(connections * con, node_base * node){
+  for(size_t i = 0; i < con->node_cnt; i++)
+    if(con->nodes[i] == node)
+      return i;
+  size_t ocnt = con->node_cnt++;
+  con->connections = realloc(con->connections, sizeof(node_connections *) * con->node_cnt);
+  con->nodes = realloc(con->nodes, sizeof(node_connections *) * con->node_cnt);
+  con->nodes[ocnt] = node;
+  node_connections * new_con = alloc0(node_connections);
+  con->connections[ocnt] = new_con;
+  return ocnt;
+}
+
+void add_connection(connection ** con, size_t * size, size_t node_id, size_t local_index, size_t remote_ndex){
+  size_t old_size = (*size)++;
+  *con = realloc(*con, *size * sizeof(connection));
+  (*con)[old_size].node_id = node_id;
+  (*con)[old_size].local_index = local_index;
+  (*con)[old_size].remote_index = remote_index;
+}
+
+
+void connect_nodes(connections * con, node_base * output, size_t output_index, 
+		   node_base * input, size_t input_index){
+  size_t input_id = ensure_node_con(con, input);
+  size_t output_id = ensure_node_con(con, output);
+  add_connection(&con->connections[input_id].inputs, &con->connections[input_id].input_cnt, output_id, output_index, input_index);
+  add_connection(&con->connections[output_id].outputs, &con->connections[output_id].output_cnt, input_id, input_index, output_index);
+
 }
 
 void run_http_serv();
 void load_defs();
 bool test_dataflow(){
   load_defs();
-  type_def * t = str2type("(fcn u64 (frequency f64) (phase f64) (cnt u64) (output (ptr (ptr f64))))");
   // this can be used to describe types to the system.
+  norm2_data n2;
+  memset(&n2,0,sizeof(n2));
+  n2.base.type.fcn_type = str2type("(fcn u64 (user_data (ptr void)) (xes (ptr f64)) (yes (ptr f64)) (zes (ptr f64)) (cnt u64) (result (ptr f64)))");
+  n2.base.type.fcn = calc_norm2;
+  int inputs [] = {1,2,3,0};
+  int outputs[] = {5,0};
+  n2.base.type.inputs = inputs;
+  n2.base.type.outputs = outputs;
+  u64 (*fcn)(node_base * node, ...) = n2.base.type.fcn;
+  double values[] = {1, 2, 3, 4};
+  double * result_buffer = NULL;
+  fcn((node_base *) &n2, values, values, values, array_count(values), &result_buffer);
   
+  logd("Done.. %f\n", result_buffer[2]);
   run_http_serv();
   while(true)
     usleep(100000);
-  logd("Testing dataflow..\n");
+  /*logd("Testing dataflow..\n");
   double * x = NULL, * y = NULL, * z = NULL;
   double * r = NULL;
   double * r2 = NULL;
@@ -131,6 +234,6 @@ bool test_dataflow(){
   for(size_t i = 0; i < cnt; i++){
     //logd("%f  %i\n", r2[i], r);
   }
-
+  */
   return true;
 }
