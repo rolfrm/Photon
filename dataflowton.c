@@ -37,6 +37,7 @@ typedef struct{
   void * fcn;
   void (* destroy) (void * node, void * destroy_userdata);  
   int * inputs;
+  bool * hot_inputs;
   int * outputs;
 }node_type;
 
@@ -53,6 +54,26 @@ typedef struct{
   u64 buffer_size;
 }norm2_data;
 
+typedef struct{
+  node_base base;
+  u64 value;
+}value_node_u64;
+	  
+size_t value_node_u64_fcn(value_node_u64 * node, u64 * output){
+  *output = node->value;
+  return 1;
+}
+	  
+typedef struct{
+  node_base base;
+  void (* fcn) (u64 value);
+}callback_u64_node;
+
+size_t callback_u64(callback_u64_node * node, u64 value){
+  node->fcn(value);
+  return 0;
+}
+	  
 size_t calc_norm2(norm2_data * output, double * in_xes, double * in_yes, double * in_zes, size_t cnt, double ** output_buffer){
   ensure_size2((void **) &output->buffer, &output->buffer_size, cnt * sizeof(double));
   double * o = output->buffer;
@@ -149,13 +170,37 @@ void update_nodes(connections * con){
       for(int i = 0; i < output_cnt; i++)
 	args[i + input_cnt] = outputs + i;
       node_connections * ncon = con->connections[i];
-      for(int i = 0; i < ncon->input_cnt; i++){
+      for(size_t i = 0; i < ncon->input_cnt; i++){
 	connection * connection = ncon->inputs + i;
 	args[i] = con->nodes[connection->node_id].output_buffers[connection->remote_index];
       }
-      
-      
       u64 (fcn *) (node_base * n, ...) = node->type.fcn;
+      switch(output_cnt + input_cnt){
+      case 0:
+	fcn(node); break;
+      case 1:
+	fcn(node, args[0]); break;
+      case 2:
+	fcn(node, args[0], args[1]); break;
+      case 3:
+	fcn(node, args[0], args[1], args[2]); break;
+      case 4:
+	fcn(node, args[0], args[1], args[2], args[3]); break;
+      case 5:
+	fcn(node, args[0], args[1], args[2], args[3], args[4]); break;
+      case 6:
+	fcn(node, args[0], args[1], args[2], args[3], args[4], args[5]); break;
+      case 7:
+	fcn(node, args[0], args[1], args[2], args[3], args[4], args[5], args[6]); break;
+      case 8:
+	fcn(node, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7]); break;
+      }
+      for(size_t i = 0; i < ncon->output_cnt; i++){
+	connection connection = ncon->inputs[i];
+	if(con->nodes[connection.node_id].type.hot_inputs[connection.remote_index]){
+	  con->nodes[connection.node_id].activity++;
+	}
+      }
     }
   }
 }
@@ -200,14 +245,34 @@ bool test_dataflow(){
   memset(&n2,0,sizeof(n2));
   n2.base.type.fcn_type = str2type("(fcn u64 (user_data (ptr void)) (xes (ptr f64)) (yes (ptr f64)) (zes (ptr f64)) (cnt u64) (result (ptr f64)))");
   n2.base.type.fcn = calc_norm2;
-  int inputs [] = {1,2,3,0};
-  int outputs[] = {5,0};
-  n2.base.type.inputs = inputs;
-  n2.base.type.outputs = outputs;
-  u64 (*fcn)(node_base * node, ...) = n2.base.type.fcn;
-  double values[] = {1, 2, 3, 4};
+  {
+    int inputs [] = {1, 2, 3, 4, 0};
+    int outputs[] = {5, 0};
+    bool hot_inputs[] = {true, true, true, false};
+    n2.base.type.inputs = inputs;
+    n2.base.type.outputs = outputs;
+    n2.base.type.hot_inputs = hot_inputs;
+  }
   double * result_buffer = NULL;
-  fcn((node_base *) &n2, values, values, values, array_count(values), &result_buffer);
+  
+  int empty_con[] = {0};
+  value_node_u64 count_node;
+  {
+    int outputs [] = {1, 0};
+    bool hot_inputs[] = {false};
+    count_node.base.type.fcn_type = str2type("(fcn u64 (user_data (ptr void)) (output (ptr u64)))");
+    count_node.base.type.inputs = empty_con;
+    count_node.base.type.hot_inputs = hot_inputs;
+    count_node.base.type.outputs = outputs;
+    count_node.base.output_buffers = alloc0(sizeof(void *));
+  }
+  callback_node_u64 callback_node;
+  {
+    callback_node.base.type.fcn_type = str2type("(fcn u64 (user_data (ptr void)) (input u64))");
+  }
+  
+  
+  //fcn((node_base *) &n2, values, values, values, array_count(values), &result_buffer);
   
   logd("Done.. %f\n", result_buffer[2]);
   run_http_serv();
