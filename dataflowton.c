@@ -88,6 +88,7 @@ typedef struct{
   double * buffer;
   u64 buffer_size;
 }array_node;
+
 u64 array_node(array_node *node, double ** output_buffer){
   *output_buffer = node->buffer;
   return node->buffer_size;
