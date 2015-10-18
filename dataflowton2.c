@@ -186,7 +186,7 @@ void connect_nodes(dataflow_context * ctx, id output_node, size_t output_index, 
   id output_offset = ctx->nodes.output_buffers_start[output_node] + output_index;
   id input_type = ctx->nodes.type_id[input_node];
   u64 hot_input_conf = ctx->node_definitions.hot_inputs[input_type];
-  if(hot_input_conf & (1 >> input_index))
+  if(hot_input_conf & (1 << input_index))
     alloc_hot_connection(&ctx->hot_connections, output_node, input_node);
   ctx->connections.output_buffer[input_offset] = output_offset;
 }
@@ -226,15 +226,15 @@ size_t distinct_sorted(void * array, size_t cnt, size_t elem_size, int (* cmp)(c
 
 void update_nodes(dataflow_context * ctx){
   if(ctx->active_nodes.cnt == 0) return;
-  qsort(ctx->active_nodes.active_node_id, sizeof(id), ctx->active_nodes.cnt, compare);
+  qsort(ctx->active_nodes.active_node_id, ctx->active_nodes.cnt, sizeof(ctx->active_nodes.active_node_id[0]), compare);
   id * ids = ctx->active_nodes.active_node_id;
-  size_t unique_cnt = distinct_sorted(ctx->active_nodes.active_node_id, ctx->active_nodes.cnt, sizeof(id), compare2);
+  size_t unique_cnt = distinct_sorted(ctx->active_nodes.active_node_id, ctx->active_nodes.cnt, sizeof(ctx->active_nodes.active_node_id[0]), compare2);
   swap_ptr(ctx->active_nodes.active_node_id, ctx->active_nodes.active_node_backbuffer);
   ctx->active_nodes.cnt = 0;  
   for(size_t i= 0; i < unique_cnt; i++){
+    
     id n_id = ids[i];
     id t_id = ctx->nodes.type_id[n_id];
-    
     bool is_reflective = ctx->node_definitions.reflective[t_id];
     size_t n_inputs = ctx->node_definitions.n_inputs[t_id];
     size_t n_userdatas = ctx->node_definitions.n_userdatas[t_id];
@@ -351,19 +351,31 @@ bool test_dataflow(){
   id c1 = add_node(&ctx, t1);
   id c2 = add_node(&ctx, t1);
   id n2 = add_node(&ctx, t2);
+  id print2 = add_node(&ctx, t2);
+  id print3 = add_node(&ctx, t2);
+  id print4 = add_node(&ctx, t2);
   id add = add_node(&ctx, t3);
+  id add2 = add_node(&ctx, t3);
+
+
   connect_nodes(&ctx, c1, 0, add, 0);
   connect_nodes(&ctx, c2, 0, add, 1);
   connect_nodes(&ctx, add, 0, n2, 0);
-  
+  connect_nodes(&ctx, add, 0, print2, 0);
+  connect_nodes(&ctx, add, 0, print3, 0);
+  connect_nodes(&ctx, add, 0, add2, 0);
+  connect_nodes(&ctx, add2, 0, add2, 1);
+  connect_nodes(&ctx, add2, 0, print4, 0);
+
+  //UNUSED(print2);
   push_active(&ctx.active_nodes, c1);
   push_active(&ctx.active_nodes, c2);
   update_nodes(&ctx);
   update_nodes(&ctx);
-  update_nodes(&ctx);
-  update_nodes(&ctx);
-  //update_nodes(&ctx);
-  //update_nodes(&ctx);	  
+  logd("p: %p\n", ctx.active_nodes.active_node_id[0]);
+  for(int i = 0; i < 20;i++){
+    update_nodes(&ctx);
+  }
 
   
   return true;
