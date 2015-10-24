@@ -15,10 +15,10 @@ typedef struct{
   void ** destroy_fcn;
   // initializer
   void ** init_fcn;
-  
+
   // bit field of hot inputs.
   u64 * hot_inputs;
-	  
+
   // number of inputs
   int * n_inputs;
   // number of outputs
@@ -27,7 +27,7 @@ typedef struct{
   int * n_userdatas;
   // if the node is reflective (2 extra args)
   bool * reflective;
-  
+
   size_t cnt, capacity;
 }node_definition;
 
@@ -40,7 +40,7 @@ typedef struct{
   size_t * userdata_start;
   // points to the output buffer that it can take its input from. 0 means no input.
   id * input_connections_start;
-  
+
   size_t cnt, capacity;
 }node;
 
@@ -75,8 +75,13 @@ typedef struct{
   hot_connection hot_connections;
 }dataflow_context;
 #define realloc_column(table,column,capacity) table->column = realloc(table->column,sizeof(table->column[0]) * capacity);
+#define unroll_define(type, var, ...) type var;
+#define decl_table(name,...)\
+typedef struct{\
+  \
+}#name;
 
-id add_node_def(node_definition * ctx, type_def * type, void * update_fcn, 
+id add_node_def(node_definition * ctx, type_def * type, void * update_fcn,
 		int n_inputs, int n_outputs, int n_userdata, bool is_reflective){
 
   if(ctx->cnt == ctx->capacity){
@@ -84,14 +89,14 @@ id add_node_def(node_definition * ctx, type_def * type, void * update_fcn,
     if(ctx->capacity != 0)
       newcap = ctx->capacity * 2;
     ctx->capacity = newcap;
-    ctx->type = realloc(ctx->type, sizeof(void *) * newcap);
-    ctx->update_fcn = realloc(ctx->update_fcn, sizeof(void *) * newcap);
-    ctx->destroy_fcn = realloc(ctx->destroy_fcn, sizeof(void *) * newcap);
-    ctx->init_fcn = realloc(ctx->init_fcn, sizeof(void *) * newcap);
-    ctx->n_inputs = realloc(ctx->n_inputs, sizeof(int) * newcap);
-    ctx->n_outputs = realloc(ctx->n_outputs, sizeof(int) * newcap);
-    ctx->n_userdatas = realloc(ctx->n_userdatas, sizeof(int) * newcap);
-    ctx->reflective = realloc(ctx->reflective, sizeof(bool) * newcap);
+    realloc_column(ctx, type, newcap);
+    realloc_column(ctx, update_fcn, newcap);
+    realloc_column(ctx, destroy_fcn, newcap);
+    realloc_column(ctx, init_fcn, newcap);
+    realloc_column(ctx, n_inputs, newcap);
+    realloc_column(ctx, n_outputs, newcap);
+    realloc_column(ctx, n_userdatas, newcap);
+    realloc_column(ctx, reflective, newcap);
     realloc_column(ctx, hot_inputs, newcap);
   }
   size_t i = ctx->cnt++;
@@ -106,6 +111,8 @@ id add_node_def(node_definition * ctx, type_def * type, void * update_fcn,
 }
 
 size_t alloc_heap_buffer(heap_buffer * ctx, size_t cnt){
+if(cnt == 0) return ctx->cnt;
+
   if(ctx->cnt == ctx->capacity){
     size_t newcap = 16;
     if(ctx->capacity != 0)
@@ -119,6 +126,7 @@ size_t alloc_heap_buffer(heap_buffer * ctx, size_t cnt){
 }
 
 id alloc_input_connections(input_connection * ctx, size_t cnt){
+  if(cnt == 0) return ctx->cnt;
   if(ctx->cnt == ctx->capacity){
     size_t newcap = 16;
     if(ctx->capacity != 0)
@@ -145,7 +153,7 @@ id alloc_hot_connection(hot_connection * table, id output_node, id input_node){
   table->input_node[i] = input_node;
   return i;
 }
-	  
+
 id add_node(dataflow_context * ctx, id node_type_id){
   node_definition * nd = &ctx->node_definitions;
   node * n = &ctx->nodes;
@@ -157,14 +165,14 @@ id add_node(dataflow_context * ctx, id node_type_id){
     realloc_column(n, type_id, newcap);
     realloc_column(n, output_buffers_start, newcap);
     realloc_column(n, userdata_start, newcap);
-    realloc_column(n, input_connections_start, newcap); 
+    realloc_column(n, input_connections_start, newcap);
   }
   size_t i = n->cnt++;
   n->type_id[i] = node_type_id;
   n->output_buffers_start[i] = alloc_heap_buffer(&ctx->heap, nd->n_outputs[node_type_id]);
   n->userdata_start[i] = alloc_heap_buffer(&ctx->heap, nd->n_userdatas[node_type_id]);
   n->input_connections_start[i] = alloc_input_connections(&ctx->connections, nd->n_inputs[node_type_id]);
-  
+
   return i;
 }
 
@@ -180,7 +188,7 @@ size_t push_active(active_node * ctx, id node){
   ctx->active_node_id[i] = node;
   return i;
 }
-	  
+
 void connect_nodes(dataflow_context * ctx, id output_node, size_t output_index, id input_node, size_t input_index){
   id input_offset = ctx->nodes.input_connections_start[input_node] + input_index;
   id output_offset = ctx->nodes.output_buffers_start[output_node] + output_index;
@@ -190,7 +198,7 @@ void connect_nodes(dataflow_context * ctx, id output_node, size_t output_index, 
     alloc_hot_connection(&ctx->hot_connections, output_node, input_node);
   ctx->connections.output_buffer[input_offset] = output_offset;
 }
-	  
+
 int compare( const void* a, const void* b)
 {
      id int_a = * ( (id*) a );
@@ -200,7 +208,7 @@ int compare( const void* a, const void* b)
      else if ( int_a > int_b ) return -1;
      else return 1;
 }
-	  
+
 int compare2(const void * a, const void * b){
      id int_a = * ( (id*) a );
      id int_b = * ( (id*) b );
@@ -211,7 +219,7 @@ size_t distinct_sorted(void * array, size_t cnt, size_t elem_size, int (* cmp)(c
   if(cnt == 0) return 0;
   size_t current = 0;
   size_t current_index = 0;
-  
+
   for(size_t i = 0; i < cnt; i++){
     size_t index = i * elem_size;
     if(!cmp(array + current_index, array + index)){
@@ -230,49 +238,46 @@ void update_nodes(dataflow_context * ctx){
   id * ids = ctx->active_nodes.active_node_id;
   size_t unique_cnt = distinct_sorted(ctx->active_nodes.active_node_id, ctx->active_nodes.cnt, sizeof(ctx->active_nodes.active_node_id[0]), compare2);
   swap_ptr(ctx->active_nodes.active_node_id, ctx->active_nodes.active_node_backbuffer);
-  ctx->active_nodes.cnt = 0;  
+  ctx->active_nodes.cnt = 0;
   for(size_t i= 0; i < unique_cnt; i++){
-    
     id n_id = ids[i];
     id t_id = ctx->nodes.type_id[n_id];
     bool is_reflective = ctx->node_definitions.reflective[t_id];
     size_t n_inputs = ctx->node_definitions.n_inputs[t_id];
     size_t n_userdatas = ctx->node_definitions.n_userdatas[t_id];
     size_t n_outputs = ctx->node_definitions.n_outputs[t_id];
-    size_t total_inputs = n_inputs + n_outputs + n_userdatas + (is_reflective ? 0 : 2);
+    size_t total_inputs = n_inputs + n_outputs + n_userdatas + (is_reflective ? 2 : 0);
     void * args[total_inputs];
-    void ** pargs = args;
+    size_t offset = 0;
     if(is_reflective){
-      pargs[0] = ctx;
-      pargs[1] = (void *) n_id;
-      pargs += 2;
+      args[0] = ctx;
+      args[1] = (void *) &n_id;
+      offset += 2;
     }
     {
       id userdatas_start = ctx->nodes.userdata_start[n_id];
       for(size_t j = 0; j < n_userdatas; j++){
-	pargs[j] = ctx->heap.buffers[userdatas_start + j];
-      }
-      pargs += n_userdatas;
+	       args[offset + j] = &ctx->heap.buffers[userdatas_start + j];
+       }
+      offset += n_userdatas;
     }
     {
       id con_start = ctx->nodes.input_connections_start[n_id];
       for(size_t j = 0; j < n_inputs; j++){
-
-	id con_this = con_start + j;
-	id conn = ctx->connections.output_buffer[con_this];
-	pargs[j] = &ctx->heap.buffers[conn];
+        size_t con_this = con_start + j;
+	      id conn = ctx->connections.output_buffer[con_this];
+	      args[offset + j] = &ctx->heap.buffers[conn];
       }
-      pargs += n_inputs;
+      offset += n_inputs;
     }
     {
       size_t output_start = ctx->nodes.output_buffers_start[n_id];
+
       for(size_t j = 0; j < n_outputs; j++){
-	pargs[j] = &ctx->heap.buffers[output_start + j];
-      }
-      pargs += n_outputs;
+         args[offset + j] = &ctx->heap.buffers[output_start + j];
+       }
     }
     void (* fcn)(void * v, ...)  = ctx->node_definitions.update_fcn[t_id];
-
     switch(total_inputs){
     case 1: fcn(args[0]); break;
     case 2: fcn(args[0], args[1]); break;
@@ -282,28 +287,45 @@ void update_nodes(dataflow_context * ctx){
     case 6: fcn(args[0], args[1], args[2], args[3], args[4], args[5]); break;
     case 7: fcn(args[0], args[1], args[2], args[3], args[4], args[5], args[6]); break;
     default: ERROR("Unsupported number of args");break;
-    } 
+    }
+
   }
   for(size_t i= 0; i < unique_cnt; i++){
     for(size_t j = 0; j < ctx->hot_connections.cnt; j++)
       if(ctx->hot_connections.output_node[j] == ids[i]){
-	push_active(&ctx->active_nodes, ctx->hot_connections.input_node[j]);
+
+	       push_active(&ctx->active_nodes, ctx->hot_connections.input_node[j]);
       }
   }
 }
-	  
-
 
 static void random_value(f32 * out){
   *out = 3.14;
 }
-	  
+
 static void add_values(f32 * a, f32 * b, f32 * result){
   *result = *a + *b;
 }
 
+static void constant_value_fcn(f32 * cnst, f32 * output){
+  *output = *cnst;
+}
+
+static void always_active_sine(dataflow_context * ctx, id * node, f32 * phase, f32 * delta_phase, f32 * output){
+  //UNUSED(delta_phase); UNUSED(output);
+  //logd("delta %f %i %f\n", *delta_phase, *node, *phase);
+  push_active(&ctx->active_nodes, *node);
+  *output = sin(*phase);
+  *phase += *delta_phase;
+
+}
 static void print_value(f32 * in){
   logd("Value: %f\n", *in);
+}
+
+void integrator(f32 * alloc, f32 * input, f32 *output){
+  *alloc += *input;
+  *output = *alloc;
 }
 int compare3( const void* a, const void* b)
 {
@@ -329,36 +351,59 @@ bool qsort_test(){
   size_t distinct_cnt = distinct_sorted(values,array_count(values), sizeof(values[0]), compare4);
   for(size_t i = 0; i < distinct_cnt; i++)
     logd("distinct? %i\n", values[i]);
-  return true;	  
-} 
-	  
+  return true;
+}
+
+type_def * str2type(char * type_string){
+  UNUSED(type_string);
+  return NULL;
+}
 void load_defs();
 bool test_dataflow(){
-  load_defs();
+  //load_defs();
   dataflow_context ctx;
   memset(&ctx, 0, sizeof(ctx));
-  id t1 = add_node_def(&ctx.node_definitions, 
+  id t1 = add_node_def(&ctx.node_definitions,
 		       str2type("(fcn void (out (ptr f64)))"), random_value,
 		       0,1,0,0);
-  id t2 = add_node_def(&ctx.node_definitions, 
+  id t2 = add_node_def(&ctx.node_definitions,
 		       str2type("(fcn void (in f64))"), print_value,
 		       1,0,0,0);
-  id t3 = add_node_def(&ctx.node_definitions, 
+  id t3 = add_node_def(&ctx.node_definitions,
 		       str2type("(fcn void (in f64) (in2 f64) (in3 f64))"), add_values,
 		       2,1,0,0);
+  id t_integrator = add_node_def(&ctx.node_definitions, NULL, integrator, 1,1,1,0);
+  id constant_node_t = add_node_def(&ctx.node_definitions, NULL, constant_value_fcn, 0,1,1,0);
+  id sine_osc_t = add_node_def(&ctx.node_definitions, NULL, always_active_sine, 1,1,1,1);
+  ctx.node_definitions.hot_inputs[sine_osc_t] = 0b1;
   ctx.node_definitions.hot_inputs[t2] = 0b1;
   ctx.node_definitions.hot_inputs[t3] = 0b11;
-  id c1 = add_node(&ctx, t1);
-  id c2 = add_node(&ctx, t1);
+  ctx.node_definitions.hot_inputs[t_integrator] = 0b1;
+  //id c1 = add_node(&ctx, t1);
+  UNUSED(t1);
+  id c0 = add_node(&ctx, constant_node_t);
+  ((f32 *)((void **)ctx.heap.buffers + ctx.nodes.userdata_start[c0]))[0] = PI * 0.2;
+  id p0 = add_node(&ctx, t2);
+  id ic = add_node(&ctx, t_integrator);
+  id c1 = add_node(&ctx, sine_osc_t);
+  connect_nodes(&ctx, c0, 0, c1, 0);
+  connect_nodes(&ctx, c1, 0, ic, 0);
+  connect_nodes(&ctx, ic, 0, p0, 0);
+  //connect_nodes(&ctx, ic, 0, p0, 0);
+
+  for(size_t i = 0; i < ctx.hot_connections.cnt; i++)
+    logd("Hot con: %i %i\n", ctx.hot_connections.output_node[i], ctx.hot_connections.input_node[i]);
+  /*id c2 = add_node(&ctx, t1);
   id n2 = add_node(&ctx, t2);
   id print2 = add_node(&ctx, t2);
   id print3 = add_node(&ctx, t2);
   id print4 = add_node(&ctx, t2);
   id add = add_node(&ctx, t3);
   id add2 = add_node(&ctx, t3);
-
-
-  connect_nodes(&ctx, c1, 0, add, 0);
+  UNUSED(c1);
+  //connect_nodes(&ctx, c0, 0, c1, 0);
+  connect_nodes(&ctx, c0, 0, p0, 0);
+  connect_nodes(&ctx, c0, 0, add, 0);
   connect_nodes(&ctx, c2, 0, add, 1);
   connect_nodes(&ctx, add, 0, n2, 0);
   connect_nodes(&ctx, add, 0, print2, 0);
@@ -366,17 +411,12 @@ bool test_dataflow(){
   connect_nodes(&ctx, add, 0, add2, 0);
   connect_nodes(&ctx, add2, 0, add2, 1);
   connect_nodes(&ctx, add2, 0, print4, 0);
-
-  //UNUSED(print2);
-  push_active(&ctx.active_nodes, c1);
-  push_active(&ctx.active_nodes, c2);
-  update_nodes(&ctx);
-  update_nodes(&ctx);
-  logd("p: %p\n", ctx.active_nodes.active_node_id[0]);
-  for(int i = 0; i < 20;i++){
+*/
+  push_active(&ctx.active_nodes, c0);
+  //push_active(&ctx.active_nodes, c2);
+  //logd("p: %p\n", ctx.active_nodes.active_node_id[0]);
+  for(int i = 0; i < 2000;i++){
     update_nodes(&ctx);
   }
-
-  
   return true;
 }
